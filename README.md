@@ -1,15 +1,9 @@
-## My Project
+## Cedar RFCs
 
-TODO: Fill this README out!
+The "RFC" (request for comments) process is intended to provide a consistent and controlled path for new features to enter the Cedar language. 
 
-Be sure to:
+Many changes, including bug fixes and documentation improvements, can be implemented and reviewed via the normal GitHub pull request workflow. Some changes though are "substantial", and we ask that these be put through a bit of a design process and produce a consensus among the Cedar core team and the community.
 
-* Change the title in this README
-* Edit your repository description on GitHub
-
-## Security
-
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 
 ## License
 
