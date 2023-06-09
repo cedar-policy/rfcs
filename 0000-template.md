@@ -1,5 +1,5 @@
 - Start Date: (fill me in with today's date, YYYY-MM-DD)
-- Target Major Version: (2.x / 3.x)
+- Target Major Version: (2.x / 3.x / X.x)
 - Reference Issues: (fill in existing related issues, if any)
 - Implementation PR: (leave this empty)
 
@@ -31,8 +31,6 @@ This is the bulk of the RFC. Explain the design in enough detail for somebody fa
 Why should we *not* do this? Please consider:
 
 * implementation cost, both in term of code size and complexity
-* whether the proposed feature can be implemented in user space
-* the impact on teaching people Cedar
 * integration of this feature with other existing and planned features
 * cost of migrating existing Cedar applications (is it a breaking change?)
 
