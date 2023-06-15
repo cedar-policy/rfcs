@@ -30,9 +30,9 @@ This is the bulk of the RFC. Explain the design in enough detail for somebody fa
 
 Why should we *not* do this? Please consider:
 
-* implementation cost, both in term of code size and complexity
-* integration of this feature with other existing and planned features
-* cost of migrating existing Cedar applications (is it a breaking change?)
+- implementation cost, both in term of code size and complexity
+- integration of this feature with other existing and planned features
+- cost of migrating existing Cedar applications (is it a breaking change?)
 
 There are tradeoffs to choosing any path. Attempt to identify them here.
 
