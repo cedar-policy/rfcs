@@ -35,7 +35,7 @@ If you submit a pull request to implement a new feature without going through th
 
 ## Why do you need to do this
 
-You are suggesting new features or changes to Cedar - we appreciate your willingness to contribute! We have to carefully consider the impact of every change we make that may affect end users. These constraints and tradeoffs may not be immediately obvious to users who are proposing a change to solve a specific problem they just ran into. The RFC process serves as a way to guide you through our thought process when making changes to Cedar, so that everyone can be on the same page when discussing why these changes should or should not be made.
+You are suggesting new features or changes to Cedar — we appreciate your willingness to contribute! We have to carefully consider the impact of every change we make that may affect end users. These constraints and tradeoffs may not be immediately obvious to users who are proposing a change to solve a specific problem they just ran into. The RFC process serves as a way to guide you through our thought process when making changes to Cedar, so that everyone can be on the same page when discussing why these changes should or should not be made.
 
 It's often helpful to get feedback on your concept before diving into the design details required for an RFC. You may open an issue with a `Question` label on this repo to start a high-level discussion, with the goal of eventually formulating an RFC pull request with the specific implementation design.
 
@@ -43,8 +43,8 @@ It's often helpful to get feedback on your concept before diving into the design
 
 In short, to get a major feature added to Cedar, you must first get the RFC merged into the RFC repo as a markdown file. At that point the RFC is 'active' and may be implemented with the goal of eventual inclusion into Cedar.
 
-* Work on your proposal in a markdown file based on the template (<https://github.com/cedar-policy/rfcs/blob/main/template.md>). Put care into the details: RFCs that do not present convincing motivation, demonstrate understanding of the impact of the design, or are disingenuous about the drawbacks or alternatives tend to be poorly-received. Copy your markdown file in `text/my-feature.md`, where my-feature is descriptive.
-* Fork this repository and create a PR with your markdown file. We will use the PR to provide feedback, and to come to a consensus on whether the RFC should be accepted. Revisions to the RFC based on feedback should all be done in the same PR.
+* Work on your proposal in a markdown file based on the template (<https://github.com/cedar-policy/rfcs/blob/main/0000-template.md>). Put care into the details: RFCs that do not present convincing motivation, demonstrate understanding of the impact of the design, or are disingenuous about the drawbacks or alternatives tend to be poorly-received. Copy your markdown file into `text/0000-my-feature.md`, where my-feature is descriptive.
+* Fork this repository and create a PR with your markdown file. Once you have a PR, fill in the number in your filename with the PR number (e.g., `0003-my-feature.md` for PR #3). We will use this PR to provide feedback and to come to a consensus on whether the RFC should be accepted. Revisions to the RFC based on feedback should be done in the same PR.
 * Eventually, the Cedar core team will decide whether the RFC is a candidate for inclusion in Cedar.
   * For every RFC, we will have a 1 week final comment period (FCP) before accepting or rejecting the RFC. This means that once a core member of the team has commented confirming that we will accept/reject, an RFC PR must have no new substantial discussion for 1 week before we take one of the actions below.
   * An RFC may be rejected at the close of its FCP. A member of the Cedar core team will then close the RFC PR.
