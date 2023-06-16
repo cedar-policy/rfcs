@@ -51,9 +51,14 @@ Grouping is also useful when reading and analyzing policies, since it makes evid
 
 The updated APIs are for the CLI and core Cedar.
 
-In the presentation above in the [Basic example](#basic-example), I have shown the syntax that would be available to user using the CLI. While the CLI interprets `@id` to be the policy ID, the Cedar libraries do not treat it specially. The same should be true for `@templategroup`. 
+In the presentation above in the [Basic example](#basic-example), I have shown the syntax that would be available to users of the CLI. While the CLI interprets `@id` to be the policy ID, the Cedar libraries do not treat it specially. The same should be true for `@templategroup`. 
 
-The change to APIs to implement this CLI syntax change would be to allow linking not just by policy ID, but also (or instead) by group ID. You would have to change APIs so that templates can be coupled either with _just_ a group ID, or with both a group ID and policy ID. In the former case, the linking API would not have to change -- all of the templates in the group identified by the ID are linked. As a practical matter, I have a feeling this won't work because `PolicySet`s seem to store templates in a map indexed by `PolicyID`, which has to be unique. Whichever approach we take, a linkage for group `role1` should link any template having that group. A linkage for ID `policy1` should _fail_ if `policy1` also has a `@templategroup` annotation -- this is important for forbidding linkages to individual group policies.
+The change to APIs to implement this CLI syntax change would be to allow linking not just by policy ID, but also (or instead) by group ID. You would have to change APIs so that templates can be coupled either with _just_ a group ID, or with both a group ID and policy ID. In the former case, the linking API would not have to change -- all of the templates in the group identified by the ID are linked. As a practical matter, I have a feeling this won't work because `PolicySet`s seem to store templates in a map indexed by `PolicyID`, which has to be unique. 
+
+Whichever approach we take, a linkage for group `role1` should link any template having that group. A linkage for ID `policy1` should _fail_ if `policy1` also has a `@templategroup` annotation -- this is important for forbidding linkages to individual group policies. It seems that `@id` and `@templategroup` should operate in the _same_ namespace. Otherwise if you had a `@id("foo")` and a `@templategroup("foo")` in the same policyset you couldn't tell which thing you were linking against.
+
+One thought is that we could reimplement `PolicyID` to have an optional `group` component. The indexing in `PolicySet` could be by the `id` part, and the `group` part would just be used for linking. 
+
 
 # Drawbacks
 
