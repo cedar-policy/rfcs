@@ -49,14 +49,17 @@ Grouping is also useful when reading and analyzing policies, since it makes evid
 
 # Detailed design
 
-We update the APIs to add semantics to the `@templategroup` annotation, as shown in the [Basic example](#basic-example). In particular, we will need to update the APIs for linking template policies to consider the `@templategroup` annotation, and not just the policy ID. A linkage for group `role1` should link any template having that group. A linkage for ID `policy1` should _fail_ if `policy1` also has a `@templategroup` annotation -- this is important for forbidding linkages to individual group policies.
-
 The updated APIs are for the CLI and core Cedar.
+
+In the presentation above in the [Basic example](#basic-example), I have shown the syntax that would be available to user using the CLI. While the CLI interprets `@id` to be the policy ID, the Cedar libraries do not treat it specially. The same should be true for `@templategroup`. 
+
+The change to APIs to implement this CLI syntax change would be to allow linking not just by policy ID, but also (or instead) by group ID. You would have to change APIs so that templates can be coupled either with _just_ a group ID, or with both a group ID and policy ID. In the former case, the linking API would not have to change -- all of the templates in the group identified by the ID are linked. As a practical matter, I have a feeling this won't work because `PolicySet`s seem to store templates in a map indexed by `PolicyID`, which has to be unique. Whichever approach we take, a linkage for group `role1` should link any template having that group. A linkage for ID `policy1` should _fail_ if `policy1` also has a `@templategroup` annotation -- this is important for forbidding linkages to individual group policies.
 
 # Drawbacks
 
-The main reason not to do this is that it adds extra code that customers _could_ implement themselves, using the existing annotation mechanism. However, doing so would lose the benefits of making the mechanism known to UIs, analysis tools, etc. and it would impose extra work on customers.
+The main reason not to do this is that it adds extra code that customers _could_ implement themselves, using the existing annotation mechanism. 
 
+However, doing so would lose the benefits of making the mechanism known to UIs, analysis tools, etc. and it would impose extra work on customers. The code for handling linking in the CLI should be a basis for customers that want to identify templates and template groups in some way other than by annotation metadata.
 
 # Alternatives
 
@@ -93,12 +96,7 @@ when {
    (action == Action::"viewDoc" && resource in Directory::"DivisionDocs")
 };
 ```
-This has the drawback that the combined policy is more difficult to understand. (It also requires the template slot `?resource` to appear in the `when` condition, rather than the scope, which [RFC-0003](https://github.com/cedar-policy/rfcs/blob/main/text/0003-placeholders-in-conditions.md
-) aims to address.) Finally, this policy will not index very well in Verified Permissions because constraints on the `action` and `resource` do not appear in the policy scope (and could not, since there is more than one).
-
-# Adoption strategy
-
-Right now the APIs are hardcoded to assume that policies and templates have IDs, and linkage occurs by ID. These APIs either need to be generalized or a new API needs to be added to link according to group. Probably the easiest thing is to reinterpret "ID" in the API as "ID or Group", and to check groups first, IDs second, where linking by ID is forbidden if any group ID is present for the policy.
+This has the drawback that the combined policy is more difficult to understand. (It also requires the template slot `?resource` to appear in the `when` condition, rather than the scope, which [RFC-0003](https://github.com/cedar-policy/rfcs/pull/3) aims to address.) Finally, this policy will not index very well in Verified Permissions because constraints on the `action` and `resource` do not appear in the policy scope (and could not, since there is more than one).
 
 # Unresolved questions
 
