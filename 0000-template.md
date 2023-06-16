@@ -1,6 +1,7 @@
 - Start Date: (fill me in with today's date, YYYY-MM-DD)
 - Target Major Version: (2.x / 3.x / X.x)
 - Reference Issues: (fill in existing related issues, if any)
+- Status: Pending (change to Active if the RFC is accepted and merged)
 - Implementation PR: (leave this empty)
 
 # Summary
@@ -39,10 +40,6 @@ There are tradeoffs to choosing any path. Attempt to identify them here.
 # Alternatives
 
 What other designs have been considered? What is the impact of not doing this?
-
-# Adoption strategy
-
-If we implement this proposal, how will existing Cedar users adopt it? Is this a breaking change? Can we write a codemod? Can we provide a runtime adapter library for the original API it replaces? How will this affect other projects in the Cedar  ecosystem?
 
 # Unresolved questions
 
