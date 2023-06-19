@@ -207,4 +207,4 @@ but supporting multiple partial schema validation options could be confusing for
 
 * Policy validation is not required to use Cedar,
   so we could continue to support validation for only users who are able to provide a complete schema.
-* We could design an implement a type inference algorithm for Cedar.
+* We could design and implement a type inference algorithm for Cedar.
