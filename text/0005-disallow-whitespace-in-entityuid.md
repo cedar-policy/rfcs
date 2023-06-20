@@ -1,4 +1,4 @@
-# RFC Template Disallow embedded whitespace in EntityUID
+# RFC Template Disallow embedded whitespace in string representations of the EntityUID
 
 ## Related issues and PRs
 
@@ -14,11 +14,22 @@
 
 ## Summary
 
-Disallow embedded whitespace, comments, and control characters in EntityUID
+Disallow embedded whitespace, comments, and control characters in string representations of the EntityUID
 
 ## Basic example
-
 Currently, the following syntax is legal:
+```
+EntityTypeName::from_str("ExampleCo  ::  Photoflash  ::  User  //comment");
+```
+This change would modify the function so that the string input must be normalized; i.e. all extraneous whitespace, control characters, and comments removed.
+```
+EntityTypeName::from_str("ExampleCo::Photoflash::User");
+```
+
+## Motivation
+Similar to other programming languages such as Rust, Cedar is currently whitespace agnostic. This leads to the ability to embed whitespace, control characters like newlines, and comments around the `::` delimiter in an Entity UID.
+
+For example, the following syntax is valid:
 ```
 permit( 
   principal == ExampleCo :: Photoflash  ::  //This is a comment
@@ -28,42 +39,44 @@ permit(
 );
 
 permit( 
-  principal == ExampleCo::Photoflash::User:://"alice"
+  principal == ExampleCo::Photoflash::User:://comment
 
-  "bob",
+  "alice",
   action,
   resource
 );
 ```
 
-This change would modify the parser so that the same policies must be expressed as follows:
-```
-permit( 
-  principal == ExampleCo::Photoflash::User::"alice",
-  action,
-  resource
-);
-
-permit( 
-  principal == ExampleCo::Photoflash::User::"bob",
-  action,
-  resource
-);
-```
-## Motivation
-Similar to other programming languages such as Rust, Cedar is currently whitespace agnostic. This leads to the ability to embed whitespace, control characters like newlines, and comments around the `::` delimiter in an Entity UID.
-
-This capability was little known, even amongst Cedar team members, and was only identified as a result of a typo in a Cedar demo. This behavior presents a risk along a few dimensions. First, much of the tooling around Cedar presumes these values are strings.
+This capability was little known, even amongst many Cedar team members, and was only identified as a result of a typo in a Cedar demo. While this behavior may be OK inside policy statements, there is a risk when policy contents such as the EntityTypeName are used as strings outside the context of policy statements, such as in the JSON schema representation. For laypersons who are not Cedar experts, these values appear to be normalized strings rather than fragments of Cedar policy syntax, leading to bugs in application code when whitespace and comments can appear in the value.
 
 Examples:
-1. The Cedar Schema format models the schema configuration under a JSON key for the namespace. By all appearances, this is a JSON string rather than a fragment of Cedar syntax. Policy stores which index schemas by namespace are unlikely to recognize the need to normalize the value, leading to the possibility of storing duplicate schema definitions for "ExampleCo::Photoflash" and "ExampleCo  ::  Photoflash" and indeterminate behavior regarding which schema takes effect at runtime.
-2. Policy Stores can implement logic that relies on string comparisons against the EntityType. In a real issue, an application using Cedar sought to preclude callers from passing Actions in the inline slice of entity definitions. It did so by checking if an EntityType matched `.*::Action`. It presumed that `:: Action` was invalid syntax and would be rejected by the Cedar evalator, the same as any other syntatically invalid input. This resulted in a bug, as it allowed callers to avoid the extra validation that the application sought to enforce. While it is technically possible for the application to resolve this by using Cedar tooling to normalize the value, the little-known nature of this Cedar behavior implies that few will know they should normalize the value. Hence, this is likely to result in bugs in other Cedar-based implementation with similar logic.
+1. The Cedar Schema format models the schema configuration under a JSON key for the namespace. Policy stores which index schemas by namespace are unlikely to recognize the need to normalize the value, leading to the possibility of storing duplicate schema definitions for "ExampleCo::Photoflash" and "ExampleCo  ::  Photoflash" and indeterminate behavior regarding which schema takes effect at runtime.
+2. Policy Stores can implement logic that relies on string comparisons against the EntityTypeName. In a real issue, an application using Cedar sought to preclude callers from passing Actions in the inline slice of entity definitions. It did so by checking if an EntityTypeName matched `.*::Action`. It presumed that `:: Action` was invalid syntax and would be rejected by the Cedar evalator, the same as any other syntatically invalid input. This resulted in a bug, as it allowed callers to bypass the extra validation that the application sought to enforce.
 3. Customers are anticipated to build meta-permissions layers that restrict callers to manipulating policy store contents for only certain namespaces. This may lead to policies such as `forbid(...) when {context.namespace = "ExampleCo::Photoflash"};`. There is a risk that an unauthorized actor could bypass this restriction by using a namespace with embedded spaces. 
 
-In addition to the above, pentesters and malicious actors will explore ways to craft Cedar policy statements that look like they do one thing, but actually do another. The existence of little known parsing behaviors provide an avenue for exploration by this audience, as demonstrated by the second example in the opening of this RFC:
+While it is technically possible for applications to mitigate this risk by diligently using Cedar tooling to normalize the values, the little-known nature of this Cedar behavior implies that few will know they *should* normalize the value. As a point of reference, application developers who have worked with Cedar extensively for over a year were bitten by this bug in production. Hence, this is likely to result in bugs in many other Cedar-based implementation with similar logic, risking a perception that Cedar is fragile or unsafe.
+
+## Detailed design
+In `EntityTypeName::from_str()`, whitespace would be disallowed throughout -- either before, after, or in the middle of the typename.
+
+## Drawbacks
+This is a breaking change. We do not generally want breaking changes in Cedar. It is being proposed only because it is believed the risk of breakage is low, and any potential short-term impacts to stability will pay long-term dividends in Cedar's perceived reliability.
+
+The parties most at risk are those who accept *ad hoc* values of EntityTypeName from callers in a string format where the values may contain embedded whitespace. At the current time, the only known party who does this in a production setting is Amazon Verified Permissions. Due to the relative newness of Amazon Verified Permissions, this party is accepting of the change as it is not expected to break any production scenarios, and appears to be a valid risk to accept in order to benefit the Cedar community in the long-term.
+
+Other parties at risk are those who use static, programmatically defined values of EntityTypeName where the code contains a typo in the value that accidentally includes additional whitespace. The belief is that this is likely to get caught in a test environment before going to production, and represents a typo that the impacted party may wish to fix, regardless.
+
+The last party at risk are those who allow customers to upload custom schema files where the namespace value may contain whitespaces. The only known party who accepts adhoc schema uploads from customers with namespaces is Amazon Verified Permissions, which is accepting of this change.
+
+To test these assumptions, this change will preceeded by reach-outs to Cedar early adopters to highlight the risks and gain community buy-in on the approach.
+
+## Alternatives
+An alternative is to modify the policy syntax to disallow embedded whitespace in Entity UID across all parts of Cedar, including within policy statements. This could be done by treating the UID as a single identifier with special structure (rather than tokenizing it into `::` separated sequence of identifiers).
+
+One additional benefit of this approach is that it can mitigate attempts by pentesters and malicious actors who may seek ways to craft Cedar policy statements that look like they do one thing, but actually do another. The existence of little known parsing behaviors provide an avenue for exploration by this audience, as demonstrated by the following example:
 
 ```
-permit( 
+permit(
   principal == ExampleCo::Photoflash::User:://"alice"
 
   "bob", //TODO: Try various tricks to obfuscate this line from readers
@@ -72,11 +85,7 @@ permit(
 );
 ```
 
-## Detailed design
-The UID will be treated as a single identifier with special structure (rather than tokenizing it into `::` separated sequence of identifiers).
-
-## Drawbacks
-This is a breaking change. We do not generally want breaking changes in Cedar. In the worst case scenario, a customer may have an existing `forbid` statement that relies on this behavior as illustrated below. By changing the behavior, the `forbid` statement will error at runtime and be skipped, and hence the system could fail open.
+Despite the potential benefit, this alternative was rejected due to the high risk of breaking existing Cedar users. In the worst case scenario, a customer may have an existing `forbid` statement that relies on this behavior as illustrated below. By changing the behavior, the `forbid` statement will error at runtime and be skipped, and hence the system could fail open.
 
 ```
 forbid(
@@ -84,11 +93,6 @@ forbid(
   action == ExampleCo:: Photoflash::Action::"write",
   resource
 );
-```
+``` 
 
-This breaking change is only being considered due to the relative newness of Cedar and the probability of breaking a real production scenario being low, and it can only be done if the community agrees that altering this behavior will pay long term dividends that outweight the risk of near-term impacts.
-
-## Alternatives
-
-We could change the behavior of `EntityTypeName::from_str()` without changing the syntax used in Cedar policies themselves. In `EntityTypeName::from_str()`, whitespace would be disallowed throughout -- either before, after, or in the middle of the typename. In Cedar policies, whitespace would still be allowed in every position it’s allowed today.  This would avoid a breaking change to the Cedar language and avoid diverging from the behavior of most mainstream programming languages, which do allow whitespace around namespaces and namespace separators.  This alternative would fully address the Examples 1, 2, and 3 in this PDF, and while it would not address the malicious policy example given, that should be weighed against the impact of a breaking change to the Cedar language and diverging from other commonly-used languages.
-
+This risk is too great. Therefore, the suggested approach is a compromise that mitigates the known production bugs with fewer risks. Any concerns about pentesters and malicious actors crafting obfuscated policies will need to be addressed by other non-breaking means, such as linter warnings and syntax highlighting.
