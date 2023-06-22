@@ -2,13 +2,13 @@
 
 ## Related issues and PRs
 
-- Reference Issues:
-- Implementation PR(s): 
+- Reference Issues: none
+- Implementation PR(s): https://github.com/cedar-policy/rfcs/pull/9
 
 ## Timeline
 
 - Start Date: 2023-06-19 
-- Date Entered FCP:
+- Date Entered FCP: 2023-06-21
 - Date Accepted:
 - Date Landed:
 
