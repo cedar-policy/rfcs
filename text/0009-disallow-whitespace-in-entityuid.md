@@ -1,4 +1,4 @@
-# RFC Template Disallow embedded whitespace in string representations of the EntityUID
+# Disallow embedded whitespace in string representations of the EntityUID
 
 ## Related issues and PRs
 
