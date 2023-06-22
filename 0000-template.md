@@ -1,4 +1,4 @@
-# RFC Template (Fill in your title here)
+# RFC Template (Replace this line with your title)
 
 ## Related issues and PRs
 
