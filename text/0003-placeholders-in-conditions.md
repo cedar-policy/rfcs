@@ -81,15 +81,15 @@ Both restrictions are in place because these two placeholder variables have spec
 
 Given these restrictions, the above policy would be impossible to write without support for placeholder variables beyond `?resource` and `?principal`. With their support, we can write: 
 ```
-template ?lowerbound
+template (?lowerbound)
 permit(principal, action, resource)
 when { ?lowerbound in resource };
 ```
-Here, the `template ?lowerbound` part _introduces_ a fresh placeholder variable which can be used legally within the policy template that follows. Eliding the `template ?lowerbound` prefix would be illegal, signaling an unbound variable. 
+Here, the `template (?lowerbound)` part _introduces_ a fresh placeholder variable which can be used legally within the policy template that follows. Eliding the `template (?lowerbound)` prefix would be illegal, signaling an unbound variable. 
 
 Multiple variables can be introduced together, separated by commas, e.g.,
 ```
-template ?user, ?resourcebound
+template (?user, ?resourcebound)
 permit(principal, action, resource)
 when { 
      ?resourcebound in resource 
@@ -117,17 +117,25 @@ It relegates validation to link time, which has the drawbacks mentioned in the p
 
 # Alternatives
 
+## Type annotations
+
 One obvious alternative would be to annotate placeholder variables with types so that templates can be validated without knowing particular linkages. For example, we might rewrite the example above to be:
 ```
-template ?user:User, ?resourcebound:DeviceGroup
+template (?user:User, ?resourcebound:DeviceGroup)
 permit(principal, action, resource)
 when { 
      ?resourcebound in resource 
   && principal in ?user.delegates
 };
 ```
-Here we have added `:User` and `:DeviceGroup` type annotations to the introduced variables. The validator can treat `?user` and `resourcebound` as respectively having these types when considering this template, e.g., to make sure that `?user` truly does have a `delegates` attribute.
+Here we have added `:User` and `:DeviceGroup` type annotations to the introduced variables. The validator can treat `?user` and `?resourcebound` as respectively having these types when considering this template, e.g., to make sure that `?user` truly does have a `delegates` attribute.
 
-We could also allow the appearance of `?principal` and `?resource` in the list of variables, in order to give them types as well. As of now, this is probably not necessary because the types of these placeholder variables can be inferred from the schema (based on entity type given to `principal` and `resource` during "cross product" validation, and respectively the `memberOfTypes` portions of those entity types).
+We could also allow the appearance of `?principal` and `?resource` in the list of variables, in order to give them types as well. Doing so is probably not necessary, however, because the types of these placeholder variables can be inferred from the schema (based on entity type given to `principal` and `resource` during "cross product" validation, and respectively the `memberOfTypes` portions of those entity types).
 
 This alternative is more work to implement and more effort for users, but mitigates the drawbacks mentioned above.
+
+## Use type parameter syntax
+
+Rather than write `template (?user, ?resourcebound) permit ( principal, ...)` an alternative would be to write `permit<?user,?resourcebound>( principal, ...)`. Using the `<...>` notation resembles parameterization on types used in other languages, as with C++ templates and Java generics. 
+
+The benefit of this syntax is that (1) it does not introduce a new keyword (`template`); (2) a normal policy looks closer to a "template" without parameters; and (3) it follows conventions similar to previous languages. I don't know if the parser would be any harder to write with this alternative syntax.
