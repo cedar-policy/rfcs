@@ -9,7 +9,7 @@
 
 - Start Date: 2023-06-19 
 - Date Entered FCP: 2023-06-21
-- Date Accepted:
+- Date Accepted: 2023-06-26
 - Date Landed:
 
 ## Summary
@@ -57,7 +57,7 @@ Examples:
 While it is technically possible for applications to mitigate this risk by diligently using Cedar tooling to normalize the values, the little-known nature of this Cedar behavior implies that few will know they *should* normalize the value. As a point of reference, application developers who have worked with Cedar extensively for over a year were bitten by this bug in production. Hence, this is likely to result in bugs in many other Cedar-based implementation with similar logic, risking a perception that Cedar is fragile or unsafe.
 
 ## Detailed design
-In `EntityTypeName::from_str()`, whitespace would be disallowed throughout -- either before, after, or in the middle of the typename.
+In `EntityTypeName::from_str()`, whitespace would be disallowed throughout -- either before, after, or in the middle of the typename. The analagous change will also be made in functions `EntityNamespace::from_str()` and `EntityUid::from_str()`.
 
 ## Drawbacks
 This is a breaking change. We do not generally want breaking changes in Cedar. It is being proposed only because it is believed the risk of breakage is low, and any potential short-term impacts to stability will pay long-term dividends in Cedar's perceived reliability.
