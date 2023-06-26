@@ -1,4 +1,4 @@
-# Support template placeholders in conditions
+# Generalizing template placeholders
 
 ## Related issues and PRs
 
@@ -14,11 +14,11 @@
 
 # Summary
 
-This RFC proposes to generalize templates in two ways:
+This RFC proposes to generalize templates in three ways:
 
 1. The `?principal` and `?resource` placeholders may appear in the `when`/`unless` conditions of a policy when they also appear in the policy scope. 
 
-2. Placeholder variables are not limited to `?principal` and `?resource`. A general variable binding mechanism permits introducing additional placeholder variables in the policy, which can appear in the `when`/`unless` conditions.
+2. Placeholder variables are not limited to `?principal` and `?resource`. A general variable binding mechanism permits introducing additional placeholder variables in the policy, which can appear in the `when`/`unless` conditions. Moreover, these additional variables need not be linked to values of entity type only; any Cedar type is acceptable.
 
 # Basic examples
 
