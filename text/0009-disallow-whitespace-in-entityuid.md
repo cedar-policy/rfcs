@@ -3,7 +3,7 @@
 ## Related issues and PRs
 
 - Reference Issues: none
-- Implementation PR(s): [https://github.com/cedar-policy/rfcs/pull/9](https://github.com/cedar-policy/cedar/issues/133)
+- Implementation PR(s): https://github.com/cedar-policy/cedar/issues/133
 
 ## Timeline
 
