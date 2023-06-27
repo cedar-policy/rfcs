@@ -18,7 +18,7 @@ This RFC proposes to generalize templates in three ways:
 
 1. The `?principal` and `?resource` placeholders may appear in the `when`/`unless` conditions of a policy when they also appear in the policy scope. 
 
-2. Placeholder variables are not limited to `?principal` and `?resource`. A general variable binding mechanism permits introducing additional placeholder variables in the policy, which can appear in the `when`/`unless` conditions. Moreover, these additional variables need not be linked to values of entity type only; any Cedar type is acceptable.
+2. Placeholder variables are not limited to `?principal` and `?resource`. A general variable binding mechanism permits introducing additional placeholder variables in the policy, which can appear in the `when`/`unless` conditions. Moreover, these additional variables need not be linked to values of entity type only; any Cedar type is acceptable. Including `?principal` and/or `?resource` in this list is optional; restrictions on their use are enforced either way.
 
 # Basic examples
 
@@ -96,6 +96,10 @@ when {
   && principal in ?user.delegates
 };
 ```
+
+Policy writers can choose to include `?principal` and/or `?resource` in the list of template variables if they like, but doing so is not required. These two variables retain their special status.
+
+If a variable is included in the list that does not appear in the actual template, we can issue a warning.
 
 All introduced placeholder variables presented so far are assumed to be entities (just like `?principal` and `?resource`). The particular _type_ of the entity is not given, for simplicity. Eliding the type poses a problem for validating templates on their own; we would have to wait to validate a template each time it is linked. However, link-time validation makes it straightforward to allow placeholder variables to have any type (`string`, `bool`, etc.), not just entity types. 
 
