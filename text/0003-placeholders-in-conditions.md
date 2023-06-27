@@ -40,7 +40,7 @@ This template uses `?principal`, an ancestor of `principal`, to be used in the `
 
 ```
 @id("Admin")
-template ?bound
+template (?bound)
 permit(
   principal == ?principal,
   action,
