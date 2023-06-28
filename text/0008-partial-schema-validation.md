@@ -1,21 +1,17 @@
-- Start Date: 2023-06-16 
+- Start Date: 2023-06-16
 - Target Major Version: 3.0
 - Reference Issues: https://github.com/cedar-policy/cedar/issues/99
 - Implementation PR: https://github.com/cedar-policy/cedar/pull/79
 
 # Summary
 
-Policy authors may not always know every attribute that may exist for every entity type in their schema,
-or they may want to benefit from some amount of validation before they have finished (or even begun) enumerating every entity type, action, and every attribute for these entity types and action contexts.
-This RFC proposes extending the Cedar policy validator to operate in an unsound mode
-that would enable detecting some errors in policies with an incomplete or even entirely empty schema.
-The proposed validation mode does not attempt to detect all type error.
-A policy which validates without a schema or with a partial schema may still encounter errors during evaluation.
-
-Partial schema validation aims to permit three kinds of schema incompleteness:
-1. Incomplete enumeration of entity types or actions.
-2. Incomplete attributes for record types.
-3. Incomplete entity hierarchy specification.
+This RFC proposes extending the Cedar validator to work with partial or even complete empty schemas,
+allowing users to begin validating their polices while they construct a schema.
+When a policy mentions an undefined entity type, or attempts to access an undefined attribute of some entity type,
+the validator will not signal an error, unless it recognizes that there is an inevitable type error.
+For example, even if the type of `access_level` is not declared, we know `principal.access_level > "5"` will inevitably error due to the `>` comparison against a string.
+Partial schema validation does not attempt to detect all type errors, and is therefore unsound.
+Policies it accepts may exhibit evaluation errors, but it can still find useful bugs.
 
 # Basic example
 
@@ -29,10 +25,10 @@ permit(principal, action, resource) when {
 ```
 
 The Cedar policy validator can detect this error,
-but it will currently raise another error because the attribute `access_level` is not defined for the principal entity type.
+but it will currently raise another error if the attribute `access_level` is not defined for the principal entity type.
 With partial schema validation, we will assume that the principal entity type may have attributes which we do not know about,
 so accessing `access_level` is not an error.
-We will still  detect the error due to the application of `>` since the error arises regardless of the type of `access_level`.
+We will still detect the error due to the application of `>` since the error arises regardless of the type of `access_level`.
 Fixing the errors by replacing `"5"` with `5` will allow the policy to pass partial schema validation.
 
 The partial schema validator does not know if `access_level` will be present during policy evaluation,
@@ -41,7 +37,7 @@ When either of these is not the case, there will be an error during evaluation t
 
 # Motivation
 
-We want to provide some of the benefits of policy validation to Cedar users who have not written or may not be able to write a schema. 
+We want to provide some of the benefits of policy validation to Cedar users who have not written or may not be able to write a schema.
 Detecting any amount potential errors during development is preferable to discovering the errors later,
 but we strive to provide a guarantee of soundness which partial schema validation cannot provide on its own.
 Because of this, our second motivation is to provide a path towards adoption of validation with a complete schema,
@@ -49,7 +45,7 @@ so Cedar users who may have been discouraged by the initial investment of time r
 
 # Detailed design
 
-As stated earlier, partial schema validation supports schema with three kinds of incompleteness:
+Partial schema validation supports schemas with three kinds of incompleteness:
 entity types and actions declarations,
 attributes declarations for record types,
 and entity type and action hierarchy specifications.
@@ -59,7 +55,7 @@ The following subsections describe the design of each in detail.
 
 Policies may reference entity types and actions which are not declared in the schema.
 Undeclared entity types and actions are treated as incomplete according to the second two kinds of incompleteness.
-At the extreme, it should be possible to have a schema that does not declare any entity types or actions.
+At the extreme, it is possible to have a schema that does not declare any entity types or actions.
 
 This policy will validate with an empty schema that does not declares either of the entity types or the action.
 Partial schema validation will detect any trivial type errors like the one in the first basic example if they appear in the body of the policy.
@@ -71,7 +67,7 @@ permit(principal == User::"alice", action == Action::"view", resource == Photo::
 ## Missing attributes
 
 A record type, including when written as part of entity type or action context attributes, does not need to list every attribute in that record.
-In the basic example shown earlier an error was reported for an incorrect operand
+In the basic example shown earlier, an error was reported for an incorrect operand
 while ignoring an access to an undeclared attribute.
 After fixing the error, we are left with a policy that is accepted by partial schema validation even when there is no schema available.
 
@@ -88,7 +84,7 @@ When either of these is not the case, there will be an error during evaluation t
 ### Implementation: Bottom Type
 
 We implement typechecking for an access to an undeclared attribute by assigning all undeclared attributes the bottom type.
-The bottom type function like the [TypeScript `any` type](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any).
+The bottom type functions like the [TypeScript `any` type](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any).
 It is used to ensure that the type is allowed to appear in any expression without causing additional type errors.
 The `>` operator expects a value of type `Long` as its operand.
 It will in fact accept any subtype of `Long`, and the bottom type is a subtype of every type, so it accepted.
@@ -104,7 +100,7 @@ The standard validation mode does not assign the bottom type to undefined attrib
 
 The example so far demonstrates validation without a schema,
 but partial schema validation can use information from a partial schema to detect further errors.
-Suppose we know that the `principal` is a `User` entity and that for these entities `access_level` is not a `Long` but instead is a `String`.
+Suppose we know `principal` is a `User` entity and, for this entity type, `access_level` is not a `Long` but instead is a `String`.
 We could add the following entity type entry to the schema.
 
 ```
@@ -120,7 +116,7 @@ We could add the following entity type entry to the schema.
 ```
 
 We can now typecheck the policy under the assumption that `access_level` is a `String`,
-so the partial schema validator will report an error,
+so the partial schema validator will report an error -
 this time for the left `>` operand.
 Including `"additionalAttributes": true` in the schema informs the validator that the listed attributes are still incomplete,
 so an expression `principal.role == "Admin"` would still be accepted by the validator.
@@ -132,7 +128,8 @@ Note that it is not possible to specify that a particular attribute does *not* e
 If the entity type has some other attributes, they must be declared at this point to avoid false positives in policies accessing those attributes.
 
 The following declaration for the `User` entity type states that a `User` entity will have exactly one attribute `admin_level`.
-Given this schema, the example policy will be rejected because it contains an access to an attribute that does not exist.
+Given this schema, a `User` entity cannot have an `access_level` attribute,
+so the example policy will be rejected because it contains an access to an attribute that cannot exist.
 
 ```
 "User": {
@@ -194,8 +191,8 @@ while still reporting an error for any undeclared entity types appearing in poli
 
 # Drawbacks
 
-The primary drawback to this approach to partial schema validation is that it does not provide any soundness guarantees which could be provided by inference based approach to partial schema validation.
-When partial schema validation as proposed accepts a policy, it gives no guarantees about what error could occur when evaluating the policy.
+The primary drawback to this approach to partial schema validation is that it does not provide any soundness guarantees which could be provided by an inference based approach to partial schema validation.
+When partial schema validation as proposed accepts a policy, it gives no guarantees about what errors could occur when evaluating the policy.
 
 By adding this form of partial schema validation, we may also make it more difficult to add schema type inference later.
 A sound, type inference based, approach to partial schema validation would report _more_ type error than this proposal,
@@ -206,5 +203,5 @@ but supporting multiple partial schema validation options could be confusing for
 # Alternatives
 
 * Policy validation is not required to use Cedar,
-  so we could continue to support validation for only users who are able to provide a complete schema.
+  so we could continue to support validation only for users who are able to provide a complete schema.
 * We could design and implement a type inference algorithm for Cedar.
