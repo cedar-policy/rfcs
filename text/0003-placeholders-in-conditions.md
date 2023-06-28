@@ -14,11 +14,13 @@
 
 # Summary
 
-This RFC proposes to generalize templates in three ways:
+This RFC proposes to generalize templates in two ways:
 
-1. The `?principal` and `?resource` placeholders may appear in the `when`/`unless` conditions of a policy when they also appear in the policy scope. 
+1. The `?principal` and `?resource` placeholders may appear in the `when`/`unless` conditions of a policy when they also appear in the policy scope.
 
 2. Placeholder variables are not limited to `?principal` and `?resource`. A general variable binding mechanism permits introducing additional placeholder variables in the policy, which can appear in the `when`/`unless` conditions. Moreover, these additional variables need not be linked to values of entity type only; any Cedar type is acceptable. Including `?principal` and/or `?resource` in this list is optional; restrictions on their use are enforced either way.
+
+Because the types of placeholder variables (other than `?principal` and `?resource`) are not known, any validation of templates cannot occur until _link time_. Currently, templates are mostly validated when created, with only a small check carried out at link time.
 
 # Basic examples
 
@@ -75,17 +77,19 @@ permit(
   ?resource in resource
 );
 ```
-The only valid uses of `?resource` in the policy scope are `resource == ?resource` and `resource in ?resource`, and this RFC is not proposing to change that. This RFC also disallows the use of `?principal` and `?resource` in the condition if they don't _also_ appear in the scope. 
+The only valid uses of `?resource` in the policy scope are `resource == ?resource` and `resource in ?resource`, and this RFC is not proposing to change that. This RFC also disallows the use of `?principal` and `?resource` in the condition if they don't _also_ appear in the scope.
 
-Both restrictions are in place because these two placeholder variables have special meaning for indexing policies in a policy store. In particular, looking _only_ at the linking information (i.e., to what `?principal` and/or `?resource` are bound) is sufficient to precisely select linked policies for particular requests. If the variables could only be bound in the condition or in other positions in the scope, and used in arbitrary contexts, it would lead to selecting superfluous policies. 
+Both restrictions are in place because these two placeholder variables have special meaning for indexing policies in a policy store. In particular, looking _only_ at the linking information (i.e., to what `?principal` and/or `?resource` are bound) is sufficient to precisely select linked policies for particular requests. If the variables could only be bound in the condition or in other positions in the scope, and used in arbitrary contexts, it would lead to selecting superfluous policies.
 
-Given these restrictions, the above policy would be impossible to write without support for placeholder variables beyond `?resource` and `?principal`. With their support, we can write: 
+## Fresh placeholder variables
+
+To support a policy like the one above, this RFC proposes support for placeholder variables beyond `?resource` and `?principal`. With their support, we can write:
 ```
 template (?lowerbound)
 permit(principal, action, resource)
 when { ?lowerbound in resource };
 ```
-Here, the `template (?lowerbound)` part _introduces_ a fresh placeholder variable which can be used legally within the policy template that follows. Eliding the `template (?lowerbound)` prefix would be illegal, signaling an unbound variable. 
+Here, the `template (?lowerbound)` part _introduces_ a fresh placeholder variable which can be used legally within the policy template that follows. Eliding the `template (?lowerbound)` prefix would be illegal, signaling an unbound variable.
 
 Multiple variables can be introduced together, separated by commas, e.g.,
 ```
@@ -101,9 +105,15 @@ Policy writers can choose to include `?principal` and/or `?resource` in the list
 
 If a variable is included in the list that does not appear in the actual template, we can issue a warning.
 
-All introduced placeholder variables presented so far are assumed to be entities (just like `?principal` and `?resource`). The particular _type_ of the entity is not given, for simplicity. Eliding the type poses a problem for validating templates on their own; we would have to wait to validate a template each time it is linked. However, link-time validation makes it straightforward to allow placeholder variables to have any type (`string`, `bool`, etc.), not just entity types. 
+While all introduced placeholder variables presented so far are assumed to be entities (just like `?principal` and `?resource`), there is no reason why they cannot have arbitrary type. The particular type of the placeholder need not be given, for simplicity.
 
-Link-time validation has the benefit that it is lower overhead to write the templates, and potentially more flexible, since the particulars of the types don't need to be spelled out. New types added after the template is created that work with the template don't require changing the template.
+## Validation
+
+Eliding the type of a placeholder variable poses a problem for validating templates when they are created, without considering particular linkages. This is because we cannot validate an expression like `?bound.name` without knowing the type of `?bound`.
+
+Instead, validation of templates involving variables beyond `?principal` and `?resource` can be deferred to link time. At that point, we know the exact type of the variable, based on the value it is linked to. This is true whether the variable is an entity or a primitive like `string`, `bool`, etc.
+
+Link-time validation has the benefit that it is lower overhead to write the templates, and potentially more flexible, since the particulars of the types don't need to be spelled out, and could even be different for two linkages of the same template. New entity types created after the template don't necessarily require changing the template to add a type annotation.
 
 Link-time validation has three drawbacks, though.
 
@@ -113,11 +123,13 @@ Link-time validation has three drawbacks, though.
 
 3. Validation is more expensive at linkage time. If we provided types for placeholders, we could mostly validate the template when it is added to the store, and then just check at link time that the linkages to variables have the correct types.
 
+To avoid link-time validation being a breaking change, we can still do creation-time validation when the only variables are `?principal` and `?resource`.
+
 # Drawbacks
 
 This adds new syntax to the Cedar language.
 
-It relegates validation to link time, which has the drawbacks mentioned in the previous section.
+It relegates (most) validation to link time, which has the drawbacks mentioned in the previous section.
 
 # Alternatives
 
