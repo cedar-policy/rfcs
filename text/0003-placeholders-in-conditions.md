@@ -3,12 +3,12 @@
 ## Related issues and PRs
 
 - Reference Issues: https://github.com/cedar-policy/cedar/issues/81
-- Implementation PR(s): 
+- Implementation PR(s):
 
 ## Timeline
 
 - Start Date: 2023-06-15
-- Date Entered FCP: 
+- Date Entered FCP: 2023-06-28
 - Date Accepted:
 - Date Landed:
 
@@ -28,8 +28,8 @@ Because the types of placeholder variables (other than `?principal` and `?resour
 
 ```
 permit(
-  principal in ?principal, 
-  action, 
+  principal in ?principal,
+  action,
   resource)
 when {
        ?principal has currentAccessLevel
@@ -95,8 +95,8 @@ Multiple variables can be introduced together, separated by commas, e.g.,
 ```
 template (?user, ?resourcebound)
 permit(principal, action, resource)
-when { 
-     ?resourcebound in resource 
+when {
+     ?resourcebound in resource
   && principal in ?user.delegates
 };
 ```
@@ -139,8 +139,8 @@ One obvious alternative would be to annotate placeholder variables with types so
 ```
 template (?user:User, ?resourcebound:DeviceGroup)
 permit(principal, action, resource)
-when { 
-     ?resourcebound in resource 
+when {
+     ?resourcebound in resource
   && principal in ?user.delegates
 };
 ```
@@ -152,6 +152,6 @@ This alternative is more work to implement and more effort for users, but mitiga
 
 ## Use type parameter syntax
 
-Rather than write `template (?user, ?resourcebound) permit ( principal, ...)` an alternative would be to write `permit<?user,?resourcebound>( principal, ...)`. Using the `<...>` notation resembles parameterization on types used in other languages, as with C++ templates and Java generics. 
+Rather than write `template (?user, ?resourcebound) permit ( principal, ...)` an alternative would be to write `permit<?user,?resourcebound>( principal, ...)`. Using the `<...>` notation resembles parameterization on types used in other languages, as with C++ templates and Java generics.
 
 The benefit of this syntax is that (1) it does not introduce a new keyword (`template`); (2) a normal policy looks closer to a "template" without parameters; and (3) it follows conventions similar to previous languages. I don't know if the parser would be any harder to write with this alternative syntax.
