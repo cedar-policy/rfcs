@@ -1,13 +1,22 @@
-- Start Date: 2023-06-16
-- Target Major Version: X.x
-- Reference Issues: <https://github.com/cedar-policy/cedar/issues/94>
-- Implementation PR:
+# `is` Operator
 
-# Summary
+## Related issues and PRs
+
+- Reference Issues: <https://github.com/cedar-policy/cedar/issues/94>
+- Implementation PR(s):
+
+## Timeline
+
+- Start Date: 2023-06-16
+- Date Entered FCP:
+- Date Accepted:
+- Date Landed:
+
+## Summary
 
 This RFC proposes to add an `is` operator to the Cedar language to allow checking equality of entity types.
 
-# Basic example
+## Basic example
 
 Say that a user wants to allow any `User` to view files in the folder `Folder::"public"`.
 With an `is` operator, the following policy achieves this goal.
@@ -22,11 +31,11 @@ permit(
 
 At evaluation time, `principal is User` will evaluate to true or false depending on the type of `principal`, and `resource is File in Folder::"public"` will evaluate to true or false depending on the type of `resource`, and whether the `resource` is a member of `Folder::"public"`.
 
-# Motivation
+## Motivation
 
 The `is` operator in useful in (at least) two common scenarios.
 
-## Use case 1: Input validation
+### Use case 1: Input validation
 
 Say that a user wants to allow any `User` to view files in the folder `Folder::"public"`.
 Currently, to achieve the desired behavior, the user should define a schema with the action entity "view" that can apply to principals of type `User` and resources of type `File`, and then write the following policy.
@@ -54,7 +63,7 @@ permit(
 `is` acts as a dynamic check on the runtime types of `principal` and `resource`.
 This puts the important type information into the policy itself, as opposed to a separate schema, making it easy to tell what the policy does.
 
-## Use case 2: Reduce `has` checks
+### Use case 2: Reduce `has` checks
 
 The `is` operator can also be used in some places where `has` is currently required.
 For example, consider the following policy taken from the Cedar [document cloud example](https://github.com/cedar-policy/cedar-examples/tree/main/cedar-example-use-cases/document_cloud).
@@ -86,15 +95,15 @@ when
 };
 ```
 
-# Detailed design
+## Detailed design
 
-## Changes required to parser/AST
+### Changes required to parser/AST
 
 - Update the grammar and AST to support expressions of the form `e is et` where `et` is a `Name` (e.g., `Namespace::EntityType`).
 - Update the grammar and AST to support expressions of the form `e1 is et in e2` (but not `e1 in e2 is et`, because this is more difficult to mentally parse).
 - Update the grammar to allow expressions like `e is et` and `e1 is et in e2` in the policy scope.
 
-## Changes required to evaluator
+### Changes required to evaluator
 
 `e is et` will evaluate to true iff `et` is a `Name` (e.g., `Namespace::EntityType`) and `e` is an expression that is an entity of type `et`.
 Otherwise it will evaluate to false.
@@ -107,7 +116,7 @@ Namespaces are considered "part of" the entity type. So:
 - `Namespace::User::"alice" is Namespace::User` is true
 - `User::"alice" is Namespace::User` is false
 
-## Changes required to validator
+### Changes required to validator
 
 `e is et` will be typed as `True` if the validator can guarantee that expression `e` is an entity of type `et`, or `False` if the validator can guarantee that `e` is a non-entity type or an entity not of type `et`.
 Otherwise, the validator gives `e is et` type `Bool`.
@@ -117,11 +126,11 @@ Currently, the validator uses effects to know whether an expression is guarantee
 In particular, the validator knows that if `e has a` evaluates to true, then expression `e` is guaranteed to have attribute `a`.
 We can do something similar for `is`: when the expression `e is et` evaluates to true, expression `e` is guaranteed to be an entity of type `et`.
 
-## Other changes
+### Other changes
 
-The Dafny formalization of the Cedar language, corresponding proofs, and differential testing framework in [cedar-spec](https://github.com/cedar-policy/cedar-spec) will need to be updated with the new `is` operator.
+The Dafny formalization of the Cedar language, corresponding proofs, and differential testing framework in [cedar-spec](https://github.com/cedar-policy/cedar-spec) will need to be updated to include the new `is` operator.
 
-# Drawbacks
+## Drawbacks
 
 1. This is a substantial new feature that will require significant development effort.
 
@@ -131,7 +140,7 @@ The Dafny formalization of the Cedar language, corresponding proofs, and differe
 
 4. The `is` operator may encourage coding practices that go against our recommended "best practices" (more details below).
 
-## Best practice: Using "typed" actions
+### Best practice: Using "typed" actions
 
 From the discussion on <https://github.com/cedar-policy/cedar/issues/94>:
 
@@ -155,7 +164,7 @@ From the discussion on <https://github.com/cedar-policy/cedar/issues/94>:
 
 If we support an `is` operator, then customers may be encouraged to use a single "view" action for multiple resource types, rather than a new "viewX" actions for each resource type X.
 
-# Alternatives
+## Alternatives
 
 1. For the most part, users can currently solve the problems that `is` solves by specifying in the schema what types of principals and resources an action applies to, or by using `has` checks, per the examples in the [Motivation](#motivation) above.
 However, in some cases, `is` may result in policies that are easier to read.
@@ -169,8 +178,13 @@ For each entity type (e.g., `File`), a user could create a group (e.g., `Type::"
 Then to check whether an entity has a particular type, users could use `in` (e.g., `resource in Type::"File"`).
 Like alternative (2), this requires some extra work on the part of the user (setting up the memberOf relation), and does not prevent entities from being added as members of the wrong group.
 
-# Unresolved questions
+## Unresolved questions
 
-1. Should we allow `is` to apply to action entities? Action entities should _always_ have type `Action`, although they may have different namespaces. So `is` could still be used to distinguish between `Namespace1::Action` and `Namespace2::Action`.
+1. Should we allow `is` in the policy scope and, more broadly, how do we determine what to allow in the policy scope?
+Currently we only allow `==` and `in` expressions in the scope, with the intention that these expressions can be used to represent RBAC constraints, whereas the more general expressions in the policy condition can be used to express ABAC constraints.
+Arguably, the `is` operator helps to represent "roles".
 
-2. Should users be able to indicate that an entity may be of multiple types, e.g., `principal is [User, Group]`? Can this be combined with `in` (e.g., `principal is [User, Group] in Group::"orgA"`, or even `principal is [User, Group] in [Group::"orgA", Group::"orgB"]`)?
+2. Should we allow `is` to apply to action entities? Action entities should _always_ have type `Action`, although they may have different namespaces.
+So `is` could still be used to distinguish between `Namespace1::Action` and `Namespace2::Action`.
+
+3. Should users be able to indicate that an entity may be of multiple types, e.g., `principal is [User, Group]`? Can this be combined with `in` (e.g., `principal is [User, Group] in Group::"orgA"`, or even `principal is [User, Group] in [Group::"orgA", Group::"orgB"]`)?
