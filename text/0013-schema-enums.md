@@ -1,4 +1,4 @@
-# RFC Template (Fill in your title here)
+# Enums in Schemas
 
 ## Related issues and PRs
 
@@ -14,7 +14,7 @@
 
 ## Summary
 
-Add support for enumerations of `string`, and `long` types in schemas, and use this information when doing policy validation and schema-based-parsing.
+Add support for enumerations of `bool`, `string`, and `long` types in schemas, and use this information when doing policy validation and schema-based-parsing.
 
 ## Basic example
 
@@ -44,11 +44,12 @@ Enumerations are also useful for schema-based parsing, and reject entities/conte
 ## Detailed design
 
 Schema specification:
-* The types `String` and `Long` MAY have a field `enum` in their specification. 
+* The types `String`, `Bool`, and `Long` MAY have a field `enum` in their specification. 
 * If the field `enum` is not present the semantics is unchanged.
 * If the field `enum` is present, it's value MUST be a non-empty list. 
 * If the field `enum` is present, and it's in a `Long` specification, the values in the list MUST be numbers.
 * If the field `enum` is present, and it's in a `String` specification, the values in the list MUST be strings.
+* If the field `enum` is present, and it's in a `Boolean` specification, the values in the list MUST be booleans.
 
 The presence of the `enum` field has the validator interpret the specification as a union between singleton types for everything in the `enum` list.
 
