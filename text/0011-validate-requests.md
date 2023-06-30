@@ -27,9 +27,9 @@ Examples (using informal syntax for EUIDs):
 ```rust
 Request::new(Some(principal), Some(action), Some(resource), context); // original API; unchanged by this RFC
 
-Request::new_with_validation(Some(User::"alice"), Some(Action::"readFile"), Some(File::"secret_file.txt"), context, Some(schema)); // returns a Request
+Request::new_with_validation(Some(User::"alice"), Some(Action::"readFile"), Some(File::"secret_file.txt"), context, schema); // returns a Request
 
-Request::new_with_validation(Some(User::"alice"), Some(Action::"readFile"), Some(Folder::"some_folder"), context, Some(schema)); // returns an error (invalid resource)
+Request::new_with_validation(Some(User::"alice"), Some(Action::"readFile"), Some(Folder::"some_folder"), context, schema); // returns an error (invalid resource)
 ```
 
 ## Motivation
