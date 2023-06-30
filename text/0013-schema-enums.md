@@ -93,5 +93,5 @@ In this case, we don't specify the `Enum` is a subset of `String`, as that's imp
 ## Unresolved questions
 
 * Do we have any mechanism for enums of extensions types?
-* 
+* Do we want any way to support exhaustive case statements?
 * Any reason to support empty enums?
