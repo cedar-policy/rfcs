@@ -20,16 +20,16 @@ This RFC proposes to add support for checking that a request conforms to a schem
 ## Basic example
 
 Say the schema specifies that an action `readFile` should only be used with principals of type `User` and resources of type `File`.
-This RFC proposes to change the signature of the `Request` constructor to add an optional schema argument that can be used to check  argument types when constructing a `Request`.
+This RFC proposes to add a new constructor for the `Request` type, which takes a schema argument that is used to validate fields when constructing a `Request`.
 
 Examples (using informal syntax for EUIDs):
 
 ```rust
-Request::new(Some(principal), Some(action), Some(resource), context, None); // no schema; works like before
+Request::new(Some(principal), Some(action), Some(resource), context); // original API; unchanged by this RFC
 
-Request::new(Some(User::"alice"), Some(Action::"readFile"), Some(File::"secret_file.txt"), context, Some(schema)); // ok
+Request::new_with_validation(Some(User::"alice"), Some(Action::"readFile"), Some(File::"secret_file.txt"), context, Some(schema)); // returns a Request
 
-Request::new(Some(User::"alice"), Some(Action::"readFile"), Some(Folder::"some_folder"), context, Some(schema)); // error, invalid resource
+Request::new_with_validation(Some(User::"alice"), Some(Action::"readFile"), Some(Folder::"some_folder"), context, Some(schema)); // returns an error (invalid resource)
 ```
 
 ## Motivation
@@ -79,19 +79,35 @@ Validation and schema-based parsing are both "opt-in" in the sense that they are
 Validation is done by a separate API (`Validator::validate`), while schema-based parsing is done by passing a (optional) schema argument into various parsing APIs, e.g., `Entities::from_json_str` and `Context::from_json_str`.
 If the schema argument is `None`, then parsing does no validation.
 
-This RFC proposes to modify the constructor for the `Request` type to add an optional schema type, similar to schema-based parsing.
+This RFC proposes to add a new constructor for the `Request` type, which takes a schema argument that is used to validate fields when constructing a `Request`.
+More concretely, the new API will have the following signature:
+
+```rust
+pub fn new_with_validation(
+        principal: Option<EntityUid>,
+        action: Option<EntityUid>,
+        resource: Option<EntityUid>,
+        context: Context,
+        schema: &Schema
+    ) -> Result<Request> {
+        ...
+    }
+```
+
+(This is the same as the signature for `Request::new`, aside from the schema argument and return type.)
+
+If the action is `None` (indicating that it is "unspecified"), then the function performs no additional checks.
+If the action is `Some`, then the function checks that the specified action is present in the schema, and that the principal and resource are consistent with the action's `appliesTo` lists in the schema.
 
 ## Drawbacks
 
-- This is a breaking change that will affect any users that are manually constructing `Request`s (which is likely all users).
+One drawback of the current approach is that users may default to using `Request::new` rather than `Request::new_with_validation`, when they should really be using the latter if (1) they have a schema and (2) they are not already checking request fields through some other means.
 
 ## Alternatives
 
-- Maintain the status quo. Users should enforce that queries conform to their schema prior to authorization.
+- Modify the current `Request::new` interface to take an optional schema argument, rather than providing a new constructor. The downside of this approach is that it will break existing users. The benefit is that it is impossible to ignore: When the current API breaks, users will realize they have the option to perform validation on input requests. The optional schema argument would be consistent with other APIs that perform validation, like `Entities::from_json_str`.
+  - _Decision:_ it is not worth breaking existing users. We may revisit this decision in the future and replace `Request::new` with `Request::new_with_validation`, with appropriate deprecation warnings in advance.
 - Add support for authorization-time checks of entity types, per [#5](https://github.com/cedar-policy/rfcs/pull/5).
 This would allow users to manually encode typing restrictions on principals and resources within their policies.
 So, in the example [above](#motivation), the user could include `principal is User` and `resource is File` in the policy text to force a "deny" decision when the principal and resource are not of the appropriate types.
-
-## Unresolved questions
-
-- The text above proposes to modify the current `Request::new` interface. A less invasive alternative would be to provide a new constructor `Request::new_with_validation` that performs the validation check. The downside of the first approach is that it will break existing users. The downside of the second is that it is easy to ignore: Users may not realize they have the option to perform validation on input requests, and may not realize the importance.
+  - _Decision:_ The `is` operator can help with the current problem somewhat, but is not an ideal solution (what happens if users forget to include `is` in their policies?). The `is` operator has its own merits, and its RFC will be considered independently of this one.
