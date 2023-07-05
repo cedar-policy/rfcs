@@ -80,8 +80,10 @@ The action part of the scope will only allow expressions like `action == Action:
 ### Changes required to evaluator
 
 `e is et` will evaluate to true iff `et` is a `Name` (e.g., `Namespace::EntityType`) and `e` is an expression that is an entity of type `et`.
-Otherwise it will evaluate to false.
-To maintain the property that "conditions in the scope never error," `e is et` will never return an error; it will simply return false if any error occurs.
+If `e` is an entity-typed expression, but does not have type `et`, then `e is et` will evaluate to false.
+If `e` is a non-entity-typed expression, the evaluator will produce a type error.
+
+Note that this design maintain the property that "conditions in the scope never error" because `principal` and `resource` are guaranteed to be entities, so the expression `(principal|resource) is et` will never error.
 
 Namespaces are considered "part of" the entity type. So:
 
