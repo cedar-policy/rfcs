@@ -37,7 +37,7 @@ The `is` operator allows users to restrict the scope of their policies to partic
 
 In many cases, this can also be done by adding restrictions to the schema.
 For example, the `appliesTo` field for each action in the schema allows users to specify which entity types can be used as principals and resources for that action.
-In the example [above](#basic-example), the schema could specify that `applyFile` should only apply to principals of type `User` and resources of type `File`.
+In the example [above](#basic-example), the schema could specify that `viewFile` should only apply to principals of type `User` and resources of type `File`.
 However, this doesn't help if the user is not using a schema, the action is unconstrained, or the policy refers to an action that may act on multiple principal/resource types.
 
 For example, here is one case where the action is unconstrained, taken from the Cedar [document cloud example](https://github.com/cedar-policy/cedar-examples/tree/main/cedar-example-use-cases/document_cloud).
