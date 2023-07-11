@@ -4,16 +4,51 @@ The "RFC" (request for comments) process is intended to provide a consistent and
 
 ## The RFC life-cycle
 
-An RFC goes through the following stages:
+An RFC goes through some subset of the following stages:
 
 * **Pending**: when the RFC is submitted as a pull request (PR) to this repository. We use PRs to provide design feedback and come to a consensus about whether an RFC should be accepted.
-* **Active**: when an RFC’s associated PR is merged. The RFC being active does not guarantee that it is currently under development. It also does not guarantee that the changes will eventually be accepted or released — it is possible that the RFC could still be rejected based on additional discussion while it is active, or based on new implementation concerns that come to light during the active phase.
-* **Landed**: when an RFC's proposed changes are shipped as stable in a release.
-* **Rejected**: when an RFC is officially rejected or dropped.
+* **Pre-acceptance Experimental**: the RFC has not yet been accepted (or rejected), but permission has been given for an “experimental” Rust implementation on `main` via a dedicated Cargo feature.  See “Experimental features” below.
+* **Final comment period (FCP)**: the “last chance” for public comments or objections before an RFC is officially accepted or rejected.  Cedar maintainers will announce the FCP’s beginning and end, and whether the intent is to accept or reject the RFC following the FCP.  The FCP will typically last one calendar week.  At the end of the FCP, if there was no new substantial discussion, the RFC will either be accepted (entering the Active state below) or rejected.
+* **Active**: when an RFC’s associated PR is merged. The RFC being active does not guarantee that it is currently under development.  It also does not guarantee that the changes will eventually be accepted or released in the originally envisioned form — it is possible that the RFC could still be modified or even rejected via additional PRs to the `rfcs` repo modifying the RFC’s text.  However, a PR proposing to reject an already-active RFC will be subject to the same bar as an RFC itself, including requiring an FCP.
+* **Active Experimental**: the RFC is Active and also has an experimental Rust implementation available via a dedicated Cargo feature. See "Experimental features" below.
+* **Landed**: the RFC's changes have been accepted to the `main` branch (with no experimental feature flag) and will be released with the next appropriate Cedar release, following semver.
+* **Rejected**: the RFC is officially rejected or dropped.
+
+Here's a flowchart of the RFC process: (Newly-opened RFCs start in Pending)
+
+![RFC process flowchart](process-flowchart.png)
+
+### Experimental features
+
+Some RFCs will go through a “Pre-acceptance Experimental” and/or an “Active Experimental” phase.  During these phases, an experimental Rust implementation may be available via a dedicated Cargo feature (one feature per RFC), including on `main` and in crates.io releases.  The RFC’s changes may not yet be reflected in the formal model or Cedar DRT infrastructure in [cedar-spec].  Experimental features are unstable and do not come with semver guarantees — they may undergo breaking changes even in dot releases or patch releases.  This is analogous to Rust “nightly features”.
+
+Experimental features are a way for the community to “try out” a feature that may still undergo revisions, and are also a way for contributors to help implement Cedar features in Rust without needing to make changes to the formal model or Cedar DRT infrastructure.
+
+### More details on particular edges
+
+* Edge A — Closing a pending RFC: Typically this only happens if the RFC author unilaterally chooses to close their RFC.  If Cedar maintainers wish to reject a pending RFC, they’ll instead use edge G.
+* Edge B — Moving to Pre-acceptance Experimental: With agreement from two Cedar maintainers (via comment on the RFC PR), an RFC may be moved to Pre-acceptance Experimental, which allows Rust implementation to be merged to `main` behind a Cargo feature flag.
+* Edges C and D — Moving to FCP: After discussion on the RFC PR is clearly trending either towards accept (edge C) or reject (edge D), and all major questions have been resolved, the Cedar maintainers will meet and declare the RFC to have entered FCP, with the intent either to accept (edge C) or reject (edge D) the RFC.
+* Edges E and F — Aborting FCP: If substantial new issues are raised during the FCP process, the RFC may be returned to its previous state, either Pending (edge E) or Pre-acceptance Experimental (edge F), for more discussions or revisions.
+* Edge G — Rejecting an RFC: Following FCP-with-intent-to-reject, if there was no new substantial discussion during the FCP, the RFC will be rejected.
+* Edge H — Accepting an RFC: Following FCP-with-intent-to-accept, if there was no new substantial discussion during the FCP, the RFC will be accepted, and it becomes Active (or, if an experimental feature is already available at this time, then it becomes Active Experimental).
+* Edge J — Landing as an experimental feature: This requires that the implementation of the RFC passes code review and tests, but does not require that the corresponding changes have been made to the [cedar-spec] repo (yet).  The code will be merged to `main` but hidden behind a dedicated Cargo feature.
+* Edge K — Landing an active RFC: This requires that the implementation of the RFC passes code review and tests.  See “Stabilization requirements” below for more on the requirements for this edge.  When the PR is accepted, the code will be merged to `main` and released with the next appropriate Cedar release, following semver.
+* Edge L — Stabilizing an experimental feature: To start the stabilization process, open a PR to `cedar` that removes the dedicated feature flag for this RFC and makes the feature available to all Cedar customers (stabilizes it).  See “Stabilization requirements” below for more on the requirements for this edge.  If the stabilization PR is accepted, the change will be merged to `main` and released with the next appropriate Cedar release, following semver.
+* Edge M — Closing an Active or Active-Experimental RFC: Sometimes active RFCs could still be rejected based on additional discussion while it is active, or based on new implementation concerns that come to light during the active phase.  However, since the RFC was previously accepted, this edge requires the same bar as an RFC itself, including requiring an FCP.  This higher bar is represented as a dotted-line edge on the flowchart.
+
+### Stabilization requirements
+
+Stabilizing a new feature (edges K or L above) requires the following:
+
+* Implementation of the RFC passes code review and tests
+* If applicable, corresponding changes have been made to the [cedar-spec] repo, both the formal model and the DRT infrastructure
+* All outstanding questions about the RFC are resolved; e.g., all other PRs in the `rfcs` repo that relate to this RFC’s text have been closed one way or another
+* RFC text has been updated to match the final implementation of the feature, if the implementation has diverged from the original RFC
 
 ## When to follow this process
 
-You need to follow this process if you intend to make "substantial" changes to Cedar (<https://github.com/cedar-policy/cedar>). If you wish to suggest changes to other cedar-adjacent repositories like [cedar-spec](https://github.com/cedar-policy/cedar-spec) or [cedar-examples](https://github.com/cedar-policy/cedar-examples), please use their respective issue lists.
+You need to follow this process if you intend to make "substantial" changes to Cedar (<https://github.com/cedar-policy/cedar>). If you wish to suggest changes to other cedar-adjacent repositories like [cedar-spec] or [cedar-examples], please use their respective issue lists.
 
 What constitutes a "substantial" change is evolving based on community norms, but may include the following:
 
@@ -75,3 +110,6 @@ Cedar's RFC process owes its inspiration to the [Vue RFC process](https://github
 ## License
 
 This project is licensed under the Apache-2.0 License.
+
+[cedar-spec]: https://github.com/cedar-policy/cedar-spec/
+[cedar-examples]: https://github.com/cedar-policy/cedar-examples
