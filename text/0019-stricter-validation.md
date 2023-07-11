@@ -1,4 +1,4 @@
-# RFC Template (Fill in your title here)
+# Standalone strict validation
 
 ## Related issues and PRs
 
