@@ -202,7 +202,7 @@ representation.
 
 2. If this proposal is implemented too conservatively by simply duplicating the
    `is_authorized` function and dropping in some code to iterate over the input
-   requests, having both `is_authorized` and an `is_authorized_batch` APIs could
+   requests, having both `is_authorized` and `is_authorized_batch` APIs could
    result in double the amount of code to maintain.
 
 3. If this proposal is implemented too aggressively by making `is_authorized`
