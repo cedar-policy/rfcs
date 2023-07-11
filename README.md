@@ -80,10 +80,7 @@ In short, to get a major feature added to Cedar, you must first get the RFC merg
 
 * Work on your proposal in a markdown file based on the template (<https://github.com/cedar-policy/rfcs/blob/main/0000-template.md>). Put care into the details: RFCs that do not present convincing motivation, demonstrate understanding of the impact of the design, or are disingenuous about the drawbacks or alternatives tend to be poorly-received. Copy your markdown file into `text/0000-my-feature.md`, where my-feature is descriptive.
 * Fork this repository and create a PR with your markdown file. Once you have a PR, fill in the number in your filename with the PR number (e.g., `0003-my-feature.md` for PR #3). We will use this PR to provide feedback and to come to a consensus on whether the RFC should be accepted. Revisions to the RFC based on feedback should be done in the same PR.
-* Eventually, the Cedar core team will decide whether the RFC is a candidate for inclusion in Cedar.
-  * For every RFC, we will have a 1 week final comment period (FCP) before accepting or rejecting the RFC. This means that once a core member of the team has commented confirming that we will accept/reject, an RFC PR must have no new substantial discussion for 1 week before we take one of the actions below.
-  * An RFC may be rejected at the close of its FCP. A member of the Cedar core team will then close the RFC PR.
-  * An RFC may be accepted at the close of its FCP. A core team member will merge the RFC PR, at which point the RFC will become active. Note that merging an RFC into the repo doesn't imply total acceptance. Sometimes we will reject RFCs that are in the active state and already merged. In that case, we would make a new PR to the RFC repo to mark the RFC as rejected.
+* Your RFC is now Pending. See "The RFC life-cycle" above for more on the next steps.
 
 ## Details on Active RFCs
 
@@ -101,7 +98,7 @@ An active RFC should have the link to the implementation PR listed if there is o
 
 ## Reviewing RFCs
 
-Members of the core team will attempt to review open RFC PRs on a regular basis. Once the core team agrees that an RFC should be accepted/rejected, a member of the core team will leave a comment on the PR with the decision and an explanation for the decision. After the FCP, pending no further discussion, a member of the core team will close the PR (if the RFC is rejected) or merge the PR (if the RFC is accepted).
+Members of the core team will attempt to review open RFC PRs on a regular basis. Once the core team agrees that an RFC should be accepted/rejected, a member of the core team will leave a comment on the PR with the decision and an explanation for the decision, and start the final comment period (FCP). After the FCP, pending no further discussion, a member of the core team will close the PR (if the RFC is rejected) or merge the PR (if the RFC is accepted).
 
 ## Acknowledgments
 
