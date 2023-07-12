@@ -1,0 +1,43 @@
+{
+	"": {
+		"entityTypes": {
+			"User": {},
+			"Org": {},
+			"Admin": {},
+			"Object": {
+				"shape": {
+					"type": "Record",
+					"attributes": {
+						"owner": {
+							"type": "Entity",
+							"name": "Org"
+						},
+						"isPublic": {
+							"type": "Boolean"
+						}
+					}
+				}
+			}
+		},
+		"actions": {
+			"read": {
+				"appliesTo": {
+					"principalTypes": [
+						"User"
+					],
+					"resourceTypes": [
+						"Object"
+					],
+					"context": {
+						"type": "Record",
+						"attributes": {
+							"sudo": {
+								"type": "Boolean"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
