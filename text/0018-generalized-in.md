@@ -66,7 +66,7 @@ permit(
 
 In today's Cedar, `.contains()` is the only way to check set membership. There are two problems with this:
 1. This is simply awkward in some use cases, such as the two examples above. Subjectively, the `.contains()` syntax is hard to read in these cases, because the set is required to be on the LHS and the value you're actually interested in is required to be on the RHS. In these examples, having the set on the RHS instead of the LHS reads more intuitively.
-2. Anecdotally, many users intuitively expect that `in` can be used for set membership and not just hierarchy membership, and are confused when this results in Cedar type errors.
+2. Anecdotally, many users intuitively expect that `in` can be used for set membership and not just hierarchy membership, and are confused when this results in Cedar type errors. See, for example, [this thread](https://cedar-policy.slack.com/archives/C0547KH7R19/p1689253188448809) on the Cedar Slack.
 
 ## Detailed design
 
