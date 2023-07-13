@@ -59,15 +59,52 @@ For the future addition of numeric ranges to schemas, you could technically have
 
 Like other types, enums are usable in the "common types" mechanism.
 
+
+### Detailed Use Cases
+
+#### Strings 
+A use-case for strings was given above, but here's another one:
+```json
+"type": "Record",
+  "attributes": {
+    "department": {
+      "type": "String",
+      "enum" : ["engineering", "sales", "support"]
+    }
+}
+```
+
+#### Numbers
+Enums on numbers could be used for enforcing that a number is in a small set. 
+```json
+"type": "Record",
+  "attributes": {
+    "TrustLevel": {
+      "type": "Long",
+      "enum" : ["1", "2", "3", "4", "5"]
+    }
+}
+```
+
+#### Booleans
+Enums on booleans are perhaps the strangest. 
+Booleans are already essentially an enum in the type system, a union between the `True` type and the `False` type.
+Enums on boolean values could be used as follows:
+```json
+"type": "Record",
+  "attributes": {
+    "authenticated": {
+      "type": "Boolean",
+      "enum" : ["true"],
+      "required" : false
+    }
+}
+```
+This allows you to have a value who's meaning is only conveyed by it's presence or absence.
+
 ## Drawbacks
 
-Why should we *not* do this? Please consider:
-
-- implementation cost, both in term of code size and complexity
-- integration of this feature with other existing and planned features
-- cost of migrating existing Cedar applications (is it a breaking change?)
-
-There are tradeoffs to choosing any path. Attempt to identify them here.
+The main drawback is increasing the complexity of the schema & typechecking.
 
 ## Alternatives
 
@@ -93,5 +130,5 @@ In this case, we don't specify the `Enum` is a subset of `String`, as that's imp
 ## Unresolved questions
 
 * Do we have any mechanism for enums of extensions types?
-* Do we want any way to support exhaustive case statements?
-* Any reason to support empty enums?
+* Do we want any way to support exhaustive case statements? (No, potential future RFC)
+* Any reason to support empty enums? (No)
