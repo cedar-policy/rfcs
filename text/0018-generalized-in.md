@@ -146,6 +146,7 @@ There are many possibilities for this keyword:
 * `inSet`
 * `isOneOf`
 * `oneOf`
+
 but we'll use `inSet` in the following.
 
 In this alternative, the first example would read `principal.department inSet ["sales", "legal"]`. The semantics of `a inSet B` would be identical to `B.contains(a)`. The semantics of `in` wouldn't change from today's Cedar.
