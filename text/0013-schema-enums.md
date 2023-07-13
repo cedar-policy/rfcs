@@ -81,7 +81,7 @@ Enums on numbers could be used for enforcing that a number is in a small set.
   "attributes": {
     "TrustLevel": {
       "type": "Long",
-      "enum" : ["1", "2", "3", "4", "5"]
+      "enum" : [1, 2, 3, 4, 5]
     }
 }
 ```
