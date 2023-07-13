@@ -86,6 +86,17 @@ Enums on numbers could be used for enforcing that a number is in a small set.
 }
 ```
 
+A non-consecutive example (That wouldn't be served the ranges RFC):
+```json
+"type": "Record",
+  "attributes": {
+    "KeyBits": {
+      "type": "Long",
+      "enum" : [512 , 1024 , 2048 , 4096] 
+    }
+}
+```
+
 #### Booleans
 Enums on booleans are perhaps the strangest. 
 Booleans are already essentially an enum in the type system, a union between the `True` type and the `False` type.
