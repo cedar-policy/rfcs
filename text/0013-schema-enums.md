@@ -46,7 +46,7 @@ Enumerations are also useful for schema-based parsing, and reject entities/conte
 Schema specification:
 * The types `String`, `Bool`, and `Long` MAY have a field `enum` in their specification. 
 * If the field `enum` is not present the semantics is unchanged.
-* If the field `enum` is present, it's value MUST be a non-empty list. 
+* If the field `enum` is present, its value MUST be a non-empty list. 
 * If the field `enum` is present, and it's in a `Long` specification, the values in the list MUST be numbers.
 * If the field `enum` is present, and it's in a `String` specification, the values in the list MUST be strings.
 * If the field `enum` is present, and it's in a `Boolean` specification, the values in the list MUST be booleans.
