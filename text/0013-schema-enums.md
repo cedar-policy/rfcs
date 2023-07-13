@@ -34,7 +34,7 @@ The enum part limits the color attribute to one of three possibilities. We would
 
 ## Motivation
 
-Enumerations are a common need, and this change supports them in Cedar. It avoids the mistake of expecting a string (say) to match only a few values, but then it inadvertently matches too many.
+Enumerations are a common need, and this change supports them in Cedar. It avoids the mistake of expecting a string (say) to match only a few values, but then encountering a different value at runtime.
 
 Enumerations are particularly useful for policy building UIs -- the UI can look at the schema to know what values are valid for a particular attribute.
 
