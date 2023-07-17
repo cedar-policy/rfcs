@@ -59,6 +59,15 @@ For the future addition of numeric ranges to schemas, you could technically have
 
 Like other types, enums are usable in the "common types" mechanism.
 
+This would let us detect more policy error's statically. For example, using the Colors example above:
+
+```
+permit(principal, action, resource) when {
+  principal.color == "gree"
+};
+```
+
+The validator could flag the above policy as an error, as the equality will always be false, and will be typed thusly.
 
 ### Detailed Use Cases
 
