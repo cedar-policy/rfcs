@@ -73,7 +73,7 @@ Access    :=
   '.' QUANTIFIER '(' Predicate ')'
   | '.' IDENT ['(' [ExprList] ')']
   | '[' STR ']'
-Quantifier := 'all' | 'any'
+QUANTIFIER := 'all' | 'any'
 Predicate  := ...
 ```
 
@@ -104,7 +104,9 @@ The `QuantifierError` error may include static information (such as source locat
 
 For example, consider the expression `[1, true].all(it like "foo")`. Regardless of the order in which the predicate is applied, the expression returns the same `QuantifierError`.
 
-This semantics lets us think about `all` and `any` in terms of their expansion to conjunctions and disjunctions. The quantified expression errors if and only if the expansion would error.
+Compare this to the [alternative semantics](#non-deterministic-error-behavior) that just propagates the error discovered, when it is discovered. Then evaluating this expression could lead to the error that "a Long was found where a String was expected" or it could lead to the error "A Boolean was found where a String was expected." Which one depends on evaluation order, but no clear order exists because set elements are specifically unordered.
+
+The proposed semantics lets us think about `all` and `any` in terms of their expansion to conjunctions and disjunctions. The quantified expression errors if _any_ expansion would error.
 
 For example:
 ```
@@ -133,6 +135,27 @@ resource.things.all(
 )
 ```
 
+While the effect prior to a `any` or `all` is clear, what about the effect after one? The recommended solution is the simplest one: ignore the effects of `any` and `all` . But we could be more precise if needed.
+
+For example, consider the following expression:
+
+```
+resource.things.all(context has limit && it.has size && it.size < context.limit) &&
+context.limit > 5
+```
+
+Here, the redundant use of `context.limit` in the `all` could carry an effect outside to the `>` expression.
+
+This extra precision isn't necessary in the sense that we can always rewrite expressions to avoid relying on it. For example, we can rewrite the above expression as follows:
+
+```
+context has limit &&
+resource.things.all(it has size && it.size < context.limit) &&
+context.limit > 5
+```
+
+
+
 ## Drawbacks
 
 - This proposal requires significant development effort. We'll need to modify the parser, the CST to AST conversion, CST/AST/EST, evaluator, validator, models, proofs, and DRT.
@@ -145,9 +168,9 @@ We considered two alternative semantics for these operators.
 
 ### Non-deterministic error behavior
 
-Given `E.any(P)` or `E.all(P)`, we apply `P` to elements of `E` in arbitrary order, terminating on the first error and returning that error as the result.
+Given `E.any(P)` or `E.all(P)`, we apply `P` to elements of `E` in arbitrary order, terminating on the first error and returning that error as the result. This alternative provides more precise error messages than the proposed approach.
 
-Under this semantics, the same policy could produce different errors depending on iteration order. For example, `[1, true].all(it like "foo")` may result in a type error that says `like` cannot be applied to an integer or a boolean. In other words, Cedar semantics would become non-determinstic.
+But the downside is that the same policy could produce different errors depending on iteration order. For example, `[1, true].all(it like "foo")` may result in a type error that says `like` cannot be applied to an integer or a boolean. In other words, Cedar semantics would become non-determinstic.
 
 We decided against this semantics for three reasons:
 * Violates Cedar's design as a deterministic language. Error non-determinism would be visible to `is_authorized` callers.
@@ -158,8 +181,10 @@ Keeping deterministic semantics is important for Cedar as an authorization langu
 
 ### Treating errors as `false`
 
-Given `E.any(P)` or `E.all(P)`, we apply `P` to elements of `E` in any order, treating errors as false and continuing evaluation on the remaining elements.
+Given `E.any(P)` or `E.all(P)`, we apply `P` to elements of `E` in any order, treating errors as false and continuing evaluation on the remaining elements. Note that this is how `is_authorized` handles policy evaluation errors: they are turned into false and ignored.
 
 With this approach, `any` and `all` become total functions: they never error. For example, `["one", 1].any(it < 2)` evaluates to true because there is one element for which the predicate holds. And `["one", 1].all(it < 2)` is simply false, because `"one" < 2` is treated as false.
 
-We decided against this semantics because it breaks the interpretation of `all` and `any` as shorthands for conjunctions and disjunctions. If we expand `["one", 1].all(it < 2)` to a conjunction, the result always errors rather than evaluating to false. This discrepancy between the quantified and expanded forms might be confusing and undesirable.
+The key advantage of this semantics is that it is more amenable to SMT-based analysis than either of the above alternatives.  Both  error-propagating alternatives need more complex and larger encodings.
+
+We decided against this semantics because it breaks the interpretation of `all` and `any` as shorthands for conjunctions and disjunctions. If we expand `["one", true].all(it < 2)` to a conjunction, the result always errors rather than evaluating to false. This discrepancy between the quantified and expanded forms might be confusing and undesirable.
