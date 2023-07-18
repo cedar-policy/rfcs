@@ -7,10 +7,10 @@
 
 ## Timeline
 
-- Start Date: 2023-06-19 
+- Start Date: 2023-06-19
 - Date Entered FCP: 2023-06-21
 - Date Accepted: 2023-06-26
-- Date Landed:
+- Date Landed: 2023-06-29 (included in `cedar-policy` v2.3.0)
 
 ## Summary
 
