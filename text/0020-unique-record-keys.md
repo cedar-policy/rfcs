@@ -57,7 +57,9 @@ The proofs are required to reason about "well-formed" records as a pre- and post
 The status quo also requires reasoning about the order keys appear in a record literal, meaning that the keys can't be naively sorted without preserving information about their original order.
 If duplicate keys were prohibited, the order of keys wouldn't matter (but see "Unresolved questions" below).
 
-A tertiary motivation for this proposal is that it would bring the Cedar language in line with our desired behavior on duplicate keys in other Cedar API surfaces. See [cedar#159](https://github.com/cedar-policy/cedar/issues/159).
+Two secondary, more minor motivations for this proposal are:
+- It would bring the Cedar language in line with our desired behavior on duplicate keys in other Cedar API surfaces. See [cedar#159](https://github.com/cedar-policy/cedar/issues/159).
+- Cedar records resemble other languages' struct types more than they resemble map types. The current behavior would be unexpected for struct types, and the proposed behavior would be intuitive.
 
 ## Detailed design
 
@@ -65,7 +67,11 @@ We'd do something very like [cedar#169](https://github.com/cedar-policy/cedar/pu
 
 In the case of record literals, the error could be caught in the CST->AST step, resulting in the user seeing a parse error rather than an evaluation error.
 In the case of `context`, the error would need to be caught when constructing the `Context` object.
-In other cases, e.g. if evaluating a Cedar subexpression produces a record with duplicate keys, the user would see an evaluation error. (But see "Unresolved questions" below.)
+In the case of records in entity attributes, the error could be caught when constructing an `Entity` object.
+There are no other cases, because currently, Cedar has no other way to construct a record value:
+there are only record literals, and records preexisting in `context` or entity attribute values.
+
+All of these cases would be caught prior to `is_authorized()` in Core, so we would not need a new category of evaluation error. No new evaluation errors would happen due to this proposal.
 
 I don't believe this change would have a significant effect on validation or width/depth subtyping of records, but please correct me if I'm wrong.
 
@@ -75,6 +81,7 @@ This is a breaking change, not just to the Cedar API surface, but to the Cedar l
 That's a significant drawback not to be taken lightly.
 In this case, it's mitigated somewhat by the fact that we're turning previously-valid policies into errors, not changing them into a silently different behavior.
 It's also mitigated by the fact that most Cedar users are probably (citation needed) not writing policies in the class that will have a behavior change -- i.e., policies with duplicate keys in record literals.
+And finally, it's mitigated by the fact that Cedar's current behavior on duplicate keys was not documented in the public docs (e.g., in [this section](https://docs.cedarpolicy.com/syntax-datatypes.html#record)), so if any policies are relying on this behavior, it's probably by accident.
 
 ## Alternatives
 
@@ -86,14 +93,9 @@ I believe this would require a breaking change to the EST format, and record lit
 
 ## Unresolved questions
 
-### Evaluation errors for duplicate keys
-Is it actually possible in today's Cedar, to have duplicate keys in a record value other than a record literal or `context`? I.e., to have duplicate keys in a record value produced by evaluating some subexpression (other than a record literal or the `context` variable)?
-Cedar has no way to augment or union record values, and does not allow computed keys in record literals, so off the top of my head the only way to do this would be via `GetAttr`, which would imply duplicate keys in the entity store, and we can/should disallow that as well.
-If I'm not missing something and there actually is no other way, then we can catch all duplicate-keys errors prior to calling `is_authorized()`, and we don't need a new category of evaluation error.
-
 ### Order-independence for record keys
 At first glance, one would hope that this change would be sufficient to ensure that the order of keys in a record literal (or more generally, any record value) does not matter.
-However, I don't think that's quite true -- if keys are mapped to expressions with errors, the order does matter, because only the first error encountered will be returned.
+However, that's not quite true -- if keys are mapped to expressions with errors, the order does matter, because only the first error encountered will be returned.
 While we're making this change, should we also make a change so that we have true order-independence for Cedar record keys?
 I could think of at least three ways to do that:
 1. Always evaluate all values in a record, and return potentially multiple evaluation errors rather than just the first
