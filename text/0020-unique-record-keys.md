@@ -73,6 +73,8 @@ there are only record literals, and records preexisting in `context` or entity a
 
 All of these cases would be caught prior to `is_authorized()` in Core, so we would not need a new category of evaluation error. No new evaluation errors would happen due to this proposal.
 
+Another consequence of the above choices is that duplicate-key errors "take precedence" over (other) evaluation errors. The expression `{ one: 1 - "three", one: 1 }` will throw a duplicate key error and not a type error.
+
 I don't believe this change would have a significant effect on validation or width/depth subtyping of records, but please correct me if I'm wrong.
 
 ## Drawbacks
