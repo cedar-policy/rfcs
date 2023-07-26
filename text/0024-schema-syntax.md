@@ -270,9 +270,31 @@ namespace "" {
 
 ## Drawbacks
 
-Here are two reasons not to create a custom schema syntax:
-- Adding another schema format means another format for customers to potentially need to learn. Mitigating this problem would be tooling that allows the custom syntax to be easily converted to the JSON syntax, which is easily achieved by parsing in the new format and pretty-printing in JSON.
-- Supporting a new syntax is an extra implementation cost, now and going forward, and an added potential for bugs. Mitigating this problem: The Rust internals already parse the JSON to a schema data structure, so adding a new format only involves adding a parser to this data structure and not, for example, making changes to the validator. We can use property-based testing to ensure that both formats are interconvertible, and correctly round-trip, i.e., that *parse(pretty-print(AST)) == AST*.
+There are several reasons not to develop a custom syntax:
+
+### Multiple formats can raise cognitive burden
+
+Adding another schema format raises the bar for what customers need to know. They may ignore one format at first, but eventually they may need to learn both. For example, if one team uses the JSON format and another uses the custom format, but then the teams merge, they will each end up having to read/update the other's format. They may also fight about which format to move to.
+
+Mitigating this problem is that it's easy and predictable to convert between the two formats, since the syntactic concepts line up very closely. The features you lose when converting from the new format to the JSON one would be 1/ any comments, and 2/ any use of intermingling of `action`, `entity`, and `type` declarations, since they must all be in their own sections in the JSON. Otherwise the features line up very closely and the only difference is syntax. We would expect to write conversion tools as part of implementing the new syntax (which are easily achieved by parsing in the new format and pretty-printing in JSON).
+
+Another mitigating point is that it's early days for Cedar, and we can promote the custom syntax as the preferred choice. JSON should be used when writing tooling to auto-author or manipulate schemas, e.g., as part of a GUI. We have a [JSON syntax for Cedar policies](https://docs.cedarpolicy.com/json-format.html) for similar reasons, but it's the custom syntax that is front and center.
+
+### Requirement of good tooling
+
+As a practical matter, having a custom schema syntax will require that we develop high-quality tools to help authors write correct schemas. 
+
+Parse error messages need to be of good quality, and report common issues such as missing curly braces, missing semi-colons, incorrect keywords, etc. A formatting tool can help ensure standardized presentation. An IDE plugin can put these things together to provide interactive feedback. For the JSON syntax, IDE plugins already exist to flag parse errors and to format documents uniformly. 
+
+However, JSON plugins do not understand the semantics of Cedar schemas, so they cannot provide hints about semantic errors (e.g., that setting `principalTypes` to `[]` for an `action` effectively means the `action` cannot be used in a request). We could develop a linting tool that flags these issues, and it could be applied to both syntaxes. 
+
+Note that the problem of matching up curly braces in JSON-formatted schemas is more acute than in the custom syntax, since it's common to have deep nesting levels where matching is hard to eyeball. For example, in the `TinyTodo` JSON schema, we have up to seven levels of direct nesting of curly braces, whereas the custom syntax has only three, and these levels are more visually isolated because of the other syntax in between them.
+
+### Greater implementation cost
+
+Supporting a new syntax is an extra implementation cost, including the new tools mentioned above, now and going forward. More code/tools means more potential for bugs. 
+
+Mitigating this problem: The Rust internals already parse the JSON schema to a data structure, so adding a new format only involves adding a parser to this data structure and not, for example, making changes to the validator. We can use property-based testing to ensure that both formats are interconvertible, and correctly round-trip, i.e., that *parse(pretty-print(AST)) == AST*.
 
 ## Unresolved questions
 
