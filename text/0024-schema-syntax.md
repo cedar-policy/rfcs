@@ -57,6 +57,8 @@ We believe that a custom syntax for Cedar schemas can help. It can be more infor
 
 ## Detailed Design
 
+In what follows we first present the syntax by example. A full grammar is given at the end.
+
 ### Comments
 
 Cedar schemas can use line-ending comments in the same style as Cedar, e.g., `// this is a comment`.
@@ -138,6 +140,7 @@ The `appliesTo` specificiation uses record syntax, where the "attributes" of the
 + If a `principal` or `resource` element is not given, that means that any entity can be used for that element in a request (and is equivalent, therefore, to it having type `[*]`).
 + If the type given with `principal` or `resource` is `[]`, that means that _no_ entity is permitted in a request with this action, which essentially means that the action can only be used as a group
 + If `context` is given, the accompanying type must be a record type. If it is not given, the type `{}` is assumed.
++ At least one of `principal`, `resource`, or `context` must be included if `appliesTo` is present; i.e., writing `appliesTo { }` is not allowed.
 
 Here are two additional examples that follow these rules:
 
@@ -146,8 +149,8 @@ action ViewDocument in ReadActions appliesTo {
     resource: Document,
     context: {}
 };
-action CreateDocument appliesTo {
-    principal: [User],
+action Ping appliesTo {
+    principal: [*],
     resource: [*]
 };
 ```
@@ -266,6 +269,44 @@ namespace "" {
     action delete_issue, edit_issue, assign_issue 
         appliesTo { principal: [User], resource: [Issue] };
 }
+```
+
+### Grammar
+
+Here is a grammar for the proposed schema syntax.
+
+The grammar applies the following the conventions. Capitalized words stand for grammar productions, and lexical tokens are given in all-caps. When productions or tokens match those in the Cedar policy grammar, we use the same names (e.g., `IDENT` and `Path`).
+
+For grammar productions it uses `|` for alternatives, `[]` for optional productions, `()` for grouping, and `{}` for repetition of a form zero or more times. 
+
+Tokens are defined using regular expressions, where `[]` stands for character ranges; `|` stands for alternation; `*` , `+` , and `?` stand for zero or more, one or more, and zero or one occurrences, respectively; `~` stands for complement; and `-` stands for difference. The grammar ignores whitespace and comments.
+
+```
+Schema    := {Namespace}
+Namespace := 'namespace' '"' Path '"' '{' {Decl} '}'
+Decl      := Entity | Action | TypeDecl
+Entity    := 'entity' IDENT ['in' (EntType | '[' [EntTypes] ']')] [['='] RecType] ';'
+Action    := 'action' Name ['in' (Name | '[' [Names] ']')] [AppliesTo] ';'
+TypeDecl  := 'type' IDENT '=' Type ';'
+Type      := PRIMTYPE | IDENT | SetType | RecType
+EntType   := Path
+SetType   := 'Set' '<' Type '>'
+RecType   := '{' [AttrDecls] '}'
+AttrDecls := Name ':' Type [',' | ',' AttrDecls]
+AppliesTo := 'appliesTo' '{' AppDecls '}'
+AppDecls  := VAR ':' Type [',' | ',' AppDecls]
+Path      := IDENT {'::' IDENT}
+EntTypes  := Path {',' Path}
+Name      := IDENT | STR
+Names     := Name {',' Name}
+
+IDENT     := ['_''a'-'z''A'-'Z']['_''a'-'z''A'-'Z''0'-'9']* - PRIMTYPE
+STR       := Fully-escaped Unicode surrounded by '"'s
+PRIMTYPE  := 'Long' | 'String' | 'Bool'
+VAR       := 'principal' | 'action' | 'resource' | 'context'
+
+WHITESPC  := Unicode whitespace
+COMMENT   := '//' ~NEWLINE* NEWLINE           
 ```
 
 ## Drawbacks
