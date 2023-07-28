@@ -9,7 +9,7 @@
 
 - Start Date: 2023-06-16
 - Date Entered FCP: 2023-07-21
-- Date Accepted:
+- Date Accepted: 2023-07-28
 - Date Landed:
 
 ## Summary
