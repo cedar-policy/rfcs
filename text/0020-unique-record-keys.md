@@ -8,7 +8,7 @@
 ## Timeline
 
 - Start Date: 2023-07-14
-- Date Entered FCP:
+- Date Entered FCP: 2023-07-28
 - Date Accepted:
 - Date Landed:
 
@@ -96,6 +96,9 @@ I believe this would require a breaking change to the EST format, and record lit
 ## Unresolved questions
 
 ### Order-independence for record keys
+
+[Resolved: we won't make any further changes as part of this RFC, but may address some of this in a different RFC]
+
 At first glance, one would hope that this change would be sufficient to ensure that the order of keys in a record literal (or more generally, any record value) does not matter.
 However, that's not quite true -- if keys are mapped to expressions with errors, the order does matter, because only the first error encountered will be returned.
 While we're making this change, should we also make a change so that we have true order-independence for Cedar record keys?
