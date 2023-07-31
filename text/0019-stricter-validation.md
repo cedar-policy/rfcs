@@ -117,8 +117,9 @@ If some attribute exists for every declared entity type, then an access to that 
 We would need to further extend set of type environments to include an entity representing this case,
 but, other than `AnyEntity`, we do not have a type that can represent the type of an unspecified entity.
 
-Instead, we observe that the existence of `AnyEntity` on it's own is not a problem for strict validation.
-It is only a problem when it allows for construction of a union type representing multiple entity types.
+Instead, we observe that the existence of `AnyEntity` on it's own is not a problem for strict validation,
+so we _can_ in fact use it as the type of an unspecified entity in strict mode validation.
+The `AnyEntity` type is only a problem when it allows for construction of a union type representing multiple entity types.
 We want to typecheck the policy with a distinct type environment for every entity type and for an unspecified entity.
 For each query environment, we can over-approximate by instead using `AnyEntity` as the type of the query variable.
 In each query environment, `AnyEntity` represents exactly one entity type,
