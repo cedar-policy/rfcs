@@ -14,37 +14,35 @@
 
 ## Summary
 
-This document proposes a custom syntax for Cedar schemas, as an alternative to its JSON-based syntax. 
-
-The syntax was developed with the following goals in mind:
+This document proposes a custom syntax for Cedar schemas. The syntax was developed with the following goals in mind:
 
 * Use the same concepts in both the JSON-based and custom syntax, allowing them to be naturally inter-converted
 * Reuse Cedar policy syntax as much as possible, to help with intuition
 * When no Cedar policy syntax analogue exists, leverage ideas from other programming languages that favor readability
 * Use as few syntactic concepts as possible; similar ideas in the schema should look similar syntactically
 
+This is _not_ a proposal to _replace_ the JSON-based syntax; the aim is to provide an additional syntax that better satisfies the goals above. The JSON syntax is appropriate in many circumstances, such as when constructing schemas systematically. Adopting this proposal would put schemas on the same footing as Cedar policies, which have a custom and a JSON syntax.
+
 ## Basic example
 
 Here is the proposed syntax for the [TinyTodo schema](https://github.com/cedar-policy/cedar-examples/blob/main/tinytodo/tinytodo.cedarschema.json), whose auto-formatted JSON version is 160 lines long.
 ```
-namespace "" {
-    entity Application;
-    entity User in [Team,Application] { name: String };
-    entity Team in [Team,Application];
-    entity List in [Application] {
-        owner: User,
-        name: String,
-        readers: Team,
-        editors: Team,
-        tasks: Set<{name: String, id: Long, state: String}>
-    };
+entity Application;
+entity User in [Team,Application] { name: String };
+entity Team in [Team,Application];
+entity List in [Application] {
+    owner: User,
+    name: String,
+    readers: Team,
+    editors: Team,
+    tasks: Set<{name: String, id: Long, state: String}>
+};
 
-    action CreateList, GetLists 
-        appliesTo { principal: [User], resource: [Application] };
+action CreateList, GetLists
+    appliesTo { principal: [User], resource: [Application] };
 
-    action GetList, UpdateList, DeleteList, CreateTask, UpdateTask, DeleteTask, EditShares 
-        appliesTo { principal: [User], resource:[List] };
-}
+action GetList, UpdateList, DeleteList, CreateTask, UpdateTask, DeleteTask, EditShares
+    appliesTo { principal: [User], resource:[List] };
 ```
 ## Motivation
 
@@ -66,12 +64,14 @@ Cedar schemas can use line-ending comments in the same style as Cedar, e.g., `//
 ### Namespace format
 
 ```
-namespace "My::Namespace" {
+namespace My::Namespace {
   ...
 }
 ```
 
-A Schema can have multiple namespace declarations. The contents of each (`...` above) comprise entity, action, and common-type declarations, all of which are unordered; i.e., they are all allowed to mutually refer to one another (but see discussion on common types below). The recommended style is to put entity declarations first, followed by action declarations, with common type declarations interspersed as needed. Entity, action, and common types referenced in the same namespace in which they are defined need not be prefixed by that namespace.
+A Schema can have zero or more namespace declarations. The contents of each (`...` above) comprise entity, action, and common-type declarations, all of which are unordered; i.e., they are all allowed to mutually refer to one another (but see discussion on common types below). The recommended style is to put entity declarations first, followed by action declarations, with common type declarations interspersed as needed. Entity, action, and common types referenced in the same namespace in which they are defined need not be prefixed by that namespace.
+
+Entity, action, and common-type declarations can appear on their own, outside of any namespace; in that case they are implicitly within the empty namespace.
 
 ### Entity declarations
 
@@ -80,7 +80,8 @@ Here is an example illustrating the entity declaration syntax.
 ```
 entity User in [Group] {
     personalGroup: Group,
-    blocked: Set<User>
+    delegate?: User,
+    blocked: Set<User>,
 };
 entity Document {
     owner: User,
@@ -98,7 +99,7 @@ The first declaration indicates that `User` is an entity type, can be a member o
 
 To allow syntactic parity with common `type` declarations, discussed below, we can optionally add `=` just before the `{ ... }` defining an entity's attributes, e.g., `entity Dog = { name: String }` rather than `entity Dog { name: String }`. Allowing `=` also supports a future extension in which an entity's shape is a type other than a record.
 
-Entity declarations may or may not have the `in ...` component, and they may or may not have attributes. A singleton list can be expressed without brackets, e.g., `entity User in Group = ...` The last element of an the attribute list can optionally include a comma; e.g., we could have written `blocked: Set<User>,` for `User`'s  `blocked` attribute declaration. 
+Entity declarations may or may not have the `in ...` component, and they may or may not have attributes. A singleton list can be expressed without brackets, e.g., `entity User in Group = ...` Optional attributes are specified in the style of Typescript, with a `?` after their name. The last element of an the attribute list can optionally include a comma.
 
 Entity types that share a definition can be declared together. For example, the following declares two entity types `User` and `Team`, both of which can be members of `Team` and both of which have a `name` attribute.
 ```
@@ -127,10 +128,10 @@ action ViewDocument in [ReadActions] appliesTo {
 
 A declared action indicates either none, one, or both of the following:
 
-1. What action groups it may be a member of, using `in`
+1. What action groups it is a member of, using `in`
 2. What principal, resource, and context types it may be coupled with in a request (if any), using `appliesTo`
 
-Specifying `[]` for the `in` component is equivalent to omitting `in` entirely. An action that has no `appliesTo` component essentially names an action group: having no possible principal and/or resource types means there’s no way to submit a legal request with the action. 
+Specifying `[]` for the `in` component is equivalent to omitting `in` entirely. An action that has no `appliesTo` component essentially names an action group: having no possible principal and/or resource types means there’s no way to submit a legal request with the action.
 
 The `appliesTo` specificiation uses record syntax, where the "attributes" of the record may be any combination of `principal`, `resource`, and `context`, with the following constraints.
 + If `principal` and/or `resource` is given, the accompanying type must be either
@@ -155,7 +156,7 @@ action Ping appliesTo {
 };
 ```
 
-Since actions are entities, action names are entity IDs, which can be arbitrary strings. Thus we admit the following more general syntax as well. 
+Since actions are entities, action names are entity IDs, which can be arbitrary strings. Thus we admit the following more general syntax as well.
 
 ```
 action "Delete Document $$" in ["Write Actions"] appliesTo {
@@ -200,7 +201,7 @@ action upload appliesTo { context: authcontext };
 ```
 Note the use of `=` for `type` declarations, but the lack of (required) `=` for `entity` declarations; the `=` is needed because the definining type may not be a record, e.g., `type time = Long`.
 
-As with `entity` and `action` declarations, the name implicitly includes the surrounding namespace as a prefix. 
+As with `entity` and `action` declarations, the name implicitly includes the surrounding namespace as a prefix.
 
 While common types can be declared anywhere within a namespace and safely referenced by entity and action declarations, they cannot refer to one another, to avoid introducing definitional cycles. (To allow mutual reference, we could make declaration order matter: `entity`, `action`, and other `type` declarations cannot refer to a common type before it is defined.)
 
@@ -209,7 +210,7 @@ While common types can be declared anywhere within a namespace and safely refere
 Here is a version of the [Document Cloud](https://github.com/cedar-policy/cedar-examples/blob/main/cedar-example-use-cases/document_cloud/schema.json) schema.
 
 ```
-namespace "" {
+namespace DocCloud {
     entity User in [Group] {
         personalGroup: Group,
         blocked: Set<User>
@@ -245,7 +246,7 @@ namespace "" {
 Here is a version of the [GitHub](https://github.com/cedar-policy/cedar-examples/blob/main/cedar-example-use-cases/github_example/schema.json) schema.
 
 ```
-namespace "" {
+namespace GitHub {
     entity User in [UserGroup,Team];
     entity UserGroup in [UserGroup];
     entity Repository {
@@ -277,28 +278,30 @@ Here is a grammar for the proposed schema syntax.
 
 The grammar applies the following the conventions. Capitalized words stand for grammar productions, and lexical tokens are given in all-caps. When productions or tokens match those in the Cedar policy grammar, we use the same names (e.g., `IDENT` and `Path`).
 
-For grammar productions it uses `|` for alternatives, `[]` for optional productions, `()` for grouping, and `{}` for repetition of a form zero or more times. 
+For grammar productions it uses `|` for alternatives, `[]` for optional productions, `()` for grouping, and `{}` for repetition of a form zero or more times.
 
 Tokens are defined using regular expressions, where `[]` stands for character ranges; `|` stands for alternation; `*` , `+` , and `?` stand for zero or more, one or more, and zero or one occurrences, respectively; `~` stands for complement; and `-` stands for difference. The grammar ignores whitespace and comments.
 
 ```
 Schema    := {Namespace}
-Namespace := 'namespace' '"' Path '"' '{' {Decl} '}'
+Namespace := ('namespace' Path '{' {Decl} '}') | {Decl}
 Decl      := Entity | Action | TypeDecl
-Entity    := 'entity' IDENT ['in' (EntType | '[' [EntTypes] ']')] [['='] RecType] ';'
-Action    := 'action' Name ['in' (Name | '[' [Names] ']')] [AppliesTo] ';'
+Entity    := 'entity' Idents ['in' EntOrTyps] [['='] RecType] ';'
+Action    := 'action' Names ['in' (Name | '[' [Names] ']')] [AppliesTo] ';'
 TypeDecl  := 'type' IDENT '=' Type ';'
 Type      := PRIMTYPE | IDENT | SetType | RecType
 EntType   := Path
 SetType   := 'Set' '<' Type '>'
 RecType   := '{' [AttrDecls] '}'
-AttrDecls := Name ':' Type [',' | ',' AttrDecls]
+AttrDecls := Name ['?'] ':' Type [',' | ',' AttrDecls]
 AppliesTo := 'appliesTo' '{' AppDecls '}'
-AppDecls  := VAR ':' Type [',' | ',' AppDecls]
+AppDecls  := VAR ':' EntOrTyps [',' | ',' AppDecls]
 Path      := IDENT {'::' IDENT}
 EntTypes  := Path {',' Path}
+EntOrTyps := EntType | '[' [EntTypes] ']'
 Name      := IDENT | STR
 Names     := Name {',' Name}
+Idents    := IDENT {',' IDENT}
 
 IDENT     := ['_''a'-'z''A'-'Z']['_''a'-'z''A'-'Z''0'-'9']* - PRIMTYPE
 STR       := Fully-escaped Unicode surrounded by '"'s
@@ -306,7 +309,7 @@ PRIMTYPE  := 'Long' | 'String' | 'Bool'
 VAR       := 'principal' | 'action' | 'resource' | 'context'
 
 WHITESPC  := Unicode whitespace
-COMMENT   := '//' ~NEWLINE* NEWLINE           
+COMMENT   := '//' ~NEWLINE* NEWLINE
 ```
 
 ## Drawbacks
@@ -336,6 +339,12 @@ Note that the problem of matching up curly braces in JSON-formatted schemas is m
 Supporting a new syntax is an extra implementation cost, including the new tools mentioned above, now and going forward. More code/tools means more potential for bugs. 
 
 Mitigating this problem: The Rust internals already parse the JSON schema to a data structure, so adding a new format only involves adding a parser to this data structure and not, for example, making changes to the validator. We can use property-based testing to ensure that both formats are interconvertible, and correctly round-trip, i.e., that *parse(pretty-print(AST)) == AST*.
+
+## Alternatives
+
+One alternative would be to _replace_ the current JSON-based sytnax with the one in this proposal. This proposal would avoid the "cognitive burden" drawback mentioned above, but would be a disruptive, backward-incompatible change, and would lose the JSON format's benefits of existing tooling and easier programmatic schema construction.
+
+Another alternative would be to adopt a [Yaml](https://en.wikipedia.org/wiki/YAML)-based syntax. This approach would meet our goals of greater information density and support for comments, and it would come with some existing tooling (such as IDE extensions). A downside of Yaml is that it provides _more_ than we need, with a lack of conciseness leading to confusing. We could make our own parser for a subset of Yaml we wish to support for schemas, but that may lead to a confusing user experience. Yaml's indentation-sensitive parsing also means that an indentation mistake will be silently accepted, leading to a confusing user experience. Our custom syntax is whitespace-insensitive, and having total control over the grammar means better context for error messages.
 
 ## Unresolved questions
 
