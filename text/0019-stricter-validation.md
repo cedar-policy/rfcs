@@ -106,31 +106,10 @@ This change to template typechecking does not introduce any new type errors and 
 
 The validator has a concept of an unspecified principal or resource entity type in an action `appliesTo` specification.
 When `principalTypes` or `resourceTypes` is omitted, we interpret the schema as declaring that the action does not apply to any particular principal/resource entity type.
-It instead applies to the "unspecified" principal or resource, which allows a users to make authorization requests using that action without providing the principal or resource,
-or when providing an entity with any of the defined entity types as the principal or resource.
+It instead applies to the "unspecified" principal or resource, which allows a users to make authorization requests using that action without providing the principal or resource.
 This is implemented by assigning the `AnyEntity` type to a variable when it is unspecified,
 but this depends on width subtyping between entity types which we want to eliminate from strict validation.
-
-It is not possible to extend the set of type environments to handle this case in a way that does not use `AnyEntity`.
-Constructing one type environment for each declared entity type does not soundly handle the case where an entity is _not_ provided in the query.
-If some attribute exists for every declared entity type, then an access to that attribute would be permitted, but that attribute cannot be safely accessed if an entity is not used in the query.
-We would need to further extend set of type environments to include an entity representing this case,
-but, other than `AnyEntity`, we do not have a type that can represent the type of an unspecified entity.
-
-Instead, we observe that the existence of `AnyEntity` on it's own is not a problem for strict validation,
-so we _can_ in fact use it as the type of an unspecified entity in strict mode validation.
-The `AnyEntity` type is only a problem when it allows for construction of a union type representing multiple entity types.
-We want to typecheck the policy with a distinct type environment for every entity type and for an unspecified entity.
-For each query environment, we can over-approximate by instead using `AnyEntity` as the type of the query variable.
-In each query environment, `AnyEntity` represents exactly one entity type,
-and will always represent exactly one entity type as long as the least upper bound of `AnyEntity` with every type is not defined.
-
-If we approximate every type environment with `AnyEntity`, the different type environments are now identical, so we only need to typecheck once with this approximate type environment.
-Using the `AnyEntity` types will cause the strict-mode validator to reject some expressions which might otherwise be well typed.
-For example, `principal == User::"alice"` is well typed when `principal` is `User`, and for any other entity type for `principal`, including the unspecified entity type, the expression could have type `False`, but we will not accept it.
-This is an acceptable for unspecified entities because we do not believe policies should in general be doing comparison with unspecified entities.
-Of course, these comparisons are still supported by the permissive mode validator.
-This same tradeoff is not acceptable for template slots: `principal == ?principal` must be accepted by the strict mode validator.
+Instead of treating it as `AnyEntity`, we will instead treat it more precisely as some specific entity type that is not equal to any other entity type.
 
 ## Drawbacks
 
