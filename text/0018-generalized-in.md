@@ -109,8 +109,7 @@ One final note -- this RFC does not propose any changes to what syntax is legal 
 
 ## Drawbacks
 
-- The new semantics is more complicated than Cedar's current semantics for `in`. This could lead to additional confusion.
-    - Response: The current semantics also leads to confusion, which this proposal at least partially addresses.
+- The new semantics is more complicated than Cedar's current semantics for `in`. This could lead to additional confusion. The current semantics may lead to some confusion as well, but that is much more easily remedied with better error messages (see [cedar#177](https://github.com/cedar-policy/cedar/issues/177)).
 - The new semantics doesn't provide a way to do shallow set membership with entity references; you will still need `.contains()` for that.
     - Response: Is there a real-world use case that needs shallow set membership with entity references?
 - The new `in` is nearly redundant with `.contains()`. For ordinary set-membership with non-entities (as in both of the basic examples at the top), users would now have two different ways to do the same thing -- something we have previously said we want to generally avoid if possible.
@@ -122,6 +121,7 @@ One final note -- this RFC does not propose any changes to what syntax is legal 
 ### Alternative 1: Do nothing (status quo)
 
 The Motivation section above explains why this is undesirable.
+Point (2) in the motivation section could be partially addressed with better error messages (see [cedar#177](https://github.com/cedar-policy/cedar/issues/177)).
 
 ### Alternative 2: remove `.contains()`
 
