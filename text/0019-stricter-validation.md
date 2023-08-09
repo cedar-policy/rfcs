@@ -47,7 +47,7 @@ In sum: To see why the second case is acceptable, we have to understand the inte
 
 We propose to change strict-mode validation so that it has the following features taken from permissive mode:
 * Singleton boolean `True`/`False` types (which have 1/ special consideration of them with `&&`, `||`, and conditionals, and 2/ subtyping between them and `Boolean`, as is done now for permissive mode).
-* Depth subtyping, but not width subtyping, to support examples like `{ foo: True } <: { foo: bool }`.
+* Depth subtyping, but not width subtyping, to support examples like `{ foo: True } <: { foo: Boolean }`.
 
 Strict-mode validation will continue to apply the restriction it currently applies:
 * Arguments to `==` must have the compatibles types (i.e., an upper bound exists according to the strict - depth only - definitions of subtyping) _unless_ we know that comparison will always be false, in which case we can give the `==` type `False`. The same goes for `contains`, `containsAll`, and `containsAny`.
@@ -58,23 +58,28 @@ Strict-mode validation will continue to apply the restriction it currently appli
 * Empty set literals may not exist in a policy because we do not currently infer the type of the elements of an empty set.
 * Extension type constructors may only be applied to literals.
 
-The current way we implement strict mode will change to accommodate these additions. We propose the following:
-
-1. Change the Rust code to implement strict mode by reusing the logic of permissive mode​ and using a flag to perform more restrictive checks. For example, when given `User` and `Admin` entity types, the code performing the least-upper-bound computation will return union type `User|Admin` in permissive mode, and will fail in strict mode. And, the code for conditionals would force branches' types to match in strict mode, but not in permissive mode. Etc.
-2. When checking in strict mode, we construct a new AST that performs the needed transformations, as in step 2 today.
-3. Either way, we can add type annotations. For strict mode, they could be added during the transformation; for permissive mode, no transformation is needed. No checking is done after annotations are added, since the checking is always done, regardless of mode, prior to the transformation.
+Validating `Action` entities, template slots `?principal` and `?resource`, and unspecified `principal` and `resource` types must be done differently so as not to rely on the "top" entity type _AnyEntity_, which is essentially an infinite-width union type, used internally.
+Next, we describe how we propose to handle these situations, in both permissive and strict validation.
+Importantly, these changes all retain or even _improve_ precision compared to the status quo -- they will _not_ be the reason that policies that typechecked under the old strict mode no longer do.
 
 ### Actions
 
-Permissive mode validation considers different `Action`s to have distinct types, e.g., `Action::"view"` and `Action::"update"` don't have the same type. This is in anticipation of supporting distinct actions having distinct attribute sets. Today, the least upper bound of any two actions is the type _AnyEntity_, which is a general supertype of all entities, used internally. Such a type supports expressions that are found in the policy scope such as `action in [Action::"view", Action::"edit"]`. This expression typechecks because the least upper bound of `Action::"view"` and `Action::"edit"` is _AnyEntity_ so the expression is type `Set<`_AnyEntity_`>`.
-However, these are different types which may have different attributes, so we need width subtyping to define an upper bound, but width subtyping is not supported by strict validation.
+Permissive mode validation considers different `Action`s to have distinct types, e.g., `Action::"view"` and `Action::"update"` don't have the same type.
+This is in anticipation of supporting distinct actions having distinct attribute sets.
+The least upper bound of any two actions is the type _AnyEntity_.
+Such a type supports expressions that are found in the policy scope such as `action in [Action::"view", Action::"edit"]`.
+This expression typechecks because the least upper bound of `Action::"view"` and `Action::"edit"` is _AnyEntity_ so the expression is type `Set<`_AnyEntity_`>`.
+Since _AnyEntity_ cannot be used in strict validation, the current code special-cases the above expression, treating it as equivalent to `action in Action::"view" || action in Action::"edit"`.
+However, this approach is unsatisfying as it only supports literal sets of `Action` entities.
 
-We will resolve this issue by making all `Action` entities have one type -- `Action` -- in both strict and permissive validation.
-Doing so means that expressions like `[Action::"view", Action::"edit"]` have type `Set<Action>` and thus do not need width subtyping to be well-typed.
-Moreover, expressions like `if principal.isAdmin then Action::"edit" else Action::"editLimited"` will now typecheck in strict mode, since both branches have the same type (`Action`).
+It turns out we can resolve this issue by making all `Action` entities have one type -- `Action` -- in both strict and permissive validation.
+This change strictly _adds_ precision to validation, compared to the status quo.
+Expressions like `[Action::"view", Action::"edit"]` have type `Set<Action>` and thus do not need _AnyEntity_ to be well-typed.
+Expressions like `if principal.isAdmin then Action::"edit" else Action::"editLimited"` will typecheck in strict validation, since both branches have the same type (`Action`).
 
-A drawback of this change is that if we allow action entities to have attributes in the future, all of them must be typeable with the same record type.
-For action entities that have an attribute that others do not, the attribute can be made optional.
+A possible drawback of this change is that it will not allow distinct actions to have distinct attribute sets (if indeed we add attributes to actions in the future).
+Rather, all actions must be typeable with the same record type.
+As a mitigation, for action entities that have an attribute that others do not, the attribute can be made optional.
 However, two entities would not be able to have the same attribute at _different_ types, e.g., `{ foo: String }` vs. `{ foo: Long }`.
 Arguably, this restriction is clearer and more intuitive than what would have been allowed before.
 
@@ -82,9 +87,12 @@ Arguably, this restriction is clearer and more intuitive than what would have be
 
 There are no restrictions on what entity type can be used to instantiate a slot in a template, so the permissive typechecker also uses _AnyEntity_ here.
 The only restriction on the type of a slot is that it must be instantiated with an entity type that exists in the schema.
+The strict validator today does not properly support validating templates, which is something we want to allow.
 
 Because _AnyEntity_ cannot be used in strict validation, we will modify both permissive and strict validation to precisely typecheck a template by extending the query type environment to include a type environment for template slots.
+Doing so will strictly _improve_ precision for permissive validation; all templates that validated before will still do so after this change.
 
+Here is how the change will work.
 In the same way that we typecheck a policy once for each possible binding for the types of `principal` and `resource` for a given action, we will also typecheck a template once for every possible binding for the type of any slots in that template.
 
 Typechecking for every entity type may seem excessive,
@@ -105,22 +113,39 @@ The `principal` is always a `User` while `?principal` is one of the possible slo
 In every environment where `?principal` is not `User`, the equality has type `False`, causing the `&&` to short-circuit to type `False`.
 The rest of the policy is typechecked as usual when `?principal` is `User`.
 
-This change to template typechecking does not introduce any new type errors and in fact will enable more precise typechecking if we expand where in a policy template slots may be used.
+This change will match the precision of the validator today, and will enable more precise typechecking if we expand where in a policy template slots may be used.
+In particular, if we allowed expressions like `?principal.foo == 2` in the condition of a policy, the above approach would allow us to know precisely that `?principal` will always have a `foo` attribute, whereas the current approach using _AnyEntity_ would not be able to.
 
 ### Unspecified principal/resource entity types
 
 The validator has a concept of an unspecified principal or resource entity type in an action `appliesTo` specification.
 When `principalTypes` or `resourceTypes` is omitted from the schema for a given action, we interpret the schema as declaring that the action does not apply to any particular principal/resource entity type.
-It instead applies to the _unspecified_ principal or resource, which allows users to make authorization requests for that action without providing a specific principal or resource entity. This is implemented now by assigning the _AnyEntity_ type to a variable when it is unspecified, but doing so is not possible in strict validation due to its lack of width subtyping.
+It instead applies to the _unspecified_ principal or resource, which allows users to make authorization requests for that action without providing a specific principal or resource entity. This is implemented now for permissive validation by assigning the _AnyEntity_ type to a variable when it is unspecified.
+The strict validator currently handles the unspecified principal/resource types in an ad hoc manner.
 
-To resolve this issue, both permissive and strict validation will no longer type an unspecified principal/resource as _AnyEntity_, and instead treat it more precisely as some _specific but not named_ entity type that is _not equal to any other entity type_.
-This change essentially matches what was the intended semantics of the unspecified entity all along: It shouldn't matter which entity you pass in, policy evaluation will always behave the same.
+To resolve this issue, both permissive and strict validation will no longer type an unspecified principal/resource as _AnyEntity_, and instead treat it more precisely as some specific entity type that is _not equal to any other entity type_.
+This change closely matches these semantics of authorization request processing using the unspecified entity type.
+It also is more precise than using _AnyEntity_.
+In particular, for an expression like `principal == User::"Alice"` in a policy, using _AnyEntity_ for the type of `principal` would give this expression the type `Boolean`.
+But we know better: This expression will always evaluate to `false` when `principal` is unspecified in the request.
+Giving `principal` an entity type not equal to any other type would allow us to type the expression as `False`, and therefore uncover that the policy containing this expression might never properly apply.
+
+### Implementation details
+
+The current way we implement strict mode will change to accommodate these additions. We propose the following:
+
+1. Change the Rust code to implement strict mode by reusing the logic of permissive mode​ and using a flag to perform more restrictive checks. For example, when given `User` and `Admin` entity types, the code performing the least-upper-bound computation will return union type `User|Admin` in permissive mode, and will fail in strict mode. And, the code for conditionals would force branches' types to match in strict mode, but not in permissive mode. Etc.
+2. When checking in strict mode, we construct a new AST that performs the needed transformations, as in step 2 today.
+3. Either way, we can add type annotations. For strict mode, they could be added during the transformation; for permissive mode, no transformation is needed. No checking is done after annotations are added, since the checking is always done, regardless of mode, prior to the transformation.
 
 ## Drawbacks
 
-The main drawback of this approach is that strict-mode validation will be more restrictive. This is by design: Policies like the one in the motivating example will be rejected where before they were accepted. Accepting this RFC means we are prioritizing understandability over precision under the assumption that the lost precision will not be missed (e.g., since users wouldn't have expected to get it anyway).
+The main drawback of this approach is that strict-mode validation will be more restrictive. This is by design: Policies like the one in the motivating example will be rejected where before they were accepted. Accepting this RFC means we are prioritizing understandability over precision under the assumption that the lost precision will not be missed.
 
-A secondary drawback is that this will result in a non-trivial, and backwards-incompatible code change.
+Policies that validated before but will not validate now are quite odd -- they would rely on the use of width subtyping, unions, etc. to determine that an expression will always evaluate to `true` (or `false`) and thus can be transformed away. But policies like these will be like those in the motivating example at the start of this RFC, and are probably not what the user intended in the first place. Ultimately, flagging them as erroneous is safer.
+
+A secondary drawback is that this change will result in a non-trivial, and backwards-incompatible code change.
+Mitigating this issue is that the backward incompatibility will be minimal in practice (per the above), and we will use verification-guided development to prove that the change is sound (i.e., will not introduce design or implementation mistakes).
 
 ## Alternatives
 
