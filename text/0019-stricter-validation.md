@@ -69,18 +69,23 @@ The current way we implement strict mode will change to accommodate these additi
 Permissive mode validation considers different `Action`s to have distinct types, e.g., `Action::"view"` and `Action::"update"` don't have the same type. This is in anticipation of supporting distinct actions having distinct attribute sets. Today, the least upper bound of any two actions is the type _AnyEntity_, which is a general supertype of all entities, used internally. Such a type supports expressions that are found in the policy scope such as `action in [Action::"view", Action::"edit"]`. This expression typechecks because the least upper bound of `Action::"view"` and `Action::"edit"` is _AnyEntity_ so the expression is type `Set<`_AnyEntity_`>`.
 However, these are different types which may have different attributes, so we need width subtyping to define an upper bound, but width subtyping is not supported by strict validation.
 
-We will resolve this issue by making all `Action` entities of a particular action entity type have the same type in both strict and permissive validation.
-Actions having the same type would need to have the same attributes record type.
-If the actions have the same type, then strict mode validation can let different actions occur in the same set.
-Since actions do not _currently_ have attributes, this does not effect permissive policy typechecking today.
-The restriction is that it would not be possible to declare one action with an attribute `{"foo": 1}` while another action has an attribute `{"foo": false}`
+We will resolve this issue by making all `Action` entities have one type -- `Action` -- in both strict and permissive validation.
+Doing so means that expressions like `[Action::"view", Action::"edit"]` have type `Set<Action>` and thus do not need width subtyping to be well-typed.
+Moreover, expressions like `if principal.isAdmin then Action::"edit" else Action::"editLimited"` will now typecheck in strict mode, since both branches have the same type (`Action`).
+
+A drawback of this change is that if we allow action entities to have attributes in the future, all of them must be typeable with the same record type.
+For action entities that have an attribute that others do not, the attribute can be made optional.
+However, two entities would not be able to have the same attribute at _different_ types, e.g., `{ foo: String }` vs. `{ foo: Long }`.
+Arguably, this restriction is clearer and more intuitive than what would have been allowed before.
 
 ### Template slots
 
-There are no restrictions on what entity type can be used to instantiate a slot in a template, so the permissive typechecker also uses `AnyEntity` here.
+There are no restrictions on what entity type can be used to instantiate a slot in a template, so the permissive typechecker also uses _AnyEntity_ here.
 The only restriction on the type of a slot is that it must be instantiated with an entity type that exists in the schema.
-Based on this, we will modify both permissive and strict validation to precisely typecheck a template by extending the query type environment to include a type environment for template slots.
-In the same way that we typecheck a policy once for each possible binding for the types of `principal`, `action`, and `resource`, we will also typecheck a template once for every possible binding for the type of any slots in that template.
+
+Because _AnyEntity_ cannot be used in strict validation, we will modify both permissive and strict validation to precisely typecheck a template by extending the query type environment to include a type environment for template slots.
+
+In the same way that we typecheck a policy once for each possible binding for the types of `principal` and `resource` for a given action, we will also typecheck a template once for every possible binding for the type of any slots in that template.
 
 Typechecking for every entity type may seem excessive,
 but we know that a template slot can only occur in an `==` or `in` expression in the policy scope where the `principal` or `resource` is compared to the slot.
@@ -97,7 +102,7 @@ Using the usual request type environment construction, there is one environment 
 Because this is a template containing `?principal`, we extend the environment with each possible type for the slot: `User`, `Org`, `Admin` and `Object`.
 When typechecking, the validator sees `principal == ?principal && ...` first in every environment which is always an equality between two entity types.
 The `principal` is always a `User` while `?principal` is one of the possible slot types depending on the type environment.
-In every environment where `?principal` is not `User`, the equality has type `False`, causing the `&&` to short-circuit to type `False`,
+In every environment where `?principal` is not `User`, the equality has type `False`, causing the `&&` to short-circuit to type `False`.
 The rest of the policy is typechecked as usual when `?principal` is `User`.
 
 This change to template typechecking does not introduce any new type errors and in fact will enable more precise typechecking if we expand where in a policy template slots may be used.
@@ -105,11 +110,11 @@ This change to template typechecking does not introduce any new type errors and 
 ### Unspecified principal/resource entity types
 
 The validator has a concept of an unspecified principal or resource entity type in an action `appliesTo` specification.
-When `principalTypes` or `resourceTypes` is omitted, we interpret the schema as declaring that the action does not apply to any particular principal/resource entity type.
-It instead applies to the "unspecified" principal or resource, which allows a users to make authorization requests using that action without providing the principal or resource.
-This is implemented by assigning the `AnyEntity` type to a variable when it is unspecified,
-but this depends on width subtyping between entity types which we want to eliminate from strict validation.
-Instead of treating it as `AnyEntity`, we will instead treat it more precisely as some specific entity type that is not equal to any other entity type.
+When `principalTypes` or `resourceTypes` is omitted from the schema for a given action, we interpret the schema as declaring that the action does not apply to any particular principal/resource entity type.
+It instead applies to the _unspecified_ principal or resource, which allows users to make authorization requests for that action without providing a specific principal or resource entity. This is implemented now by assigning the _AnyEntity_ type to a variable when it is unspecified, but doing so is not possible in strict validation due to its lack of width subtyping.
+
+To resolve this issue, both permissive and strict validation will no longer type an unspecified principal/resource as _AnyEntity_, and instead treat it more precisely as some _specific but not named_ entity type that is _not equal to any other entity type_.
+This change essentially matches what was the intended semantics of the unspecified entity all along: It shouldn't matter which entity you pass in, policy evaluation will always behave the same.
 
 ## Drawbacks
 
