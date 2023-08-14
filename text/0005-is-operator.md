@@ -152,6 +152,15 @@ For each entity type (e.g., `File`), a user could create a group (e.g., `Type::"
 Then to check whether an entity has a particular type, users could use `in` (e.g., `resource in Type::"File"`).
 Like alternative (2), this requires some extra work on the part of the user (setting up the memberOf relation), and does not prevent entities from being added as members of the wrong group.
 
+3. a dummy static identifier can be used to emphasize that in our policies we care only about access to a given kind of resources and not to particular resource "instances". this however requires that resource entities provided to authorizer also have this same dummy id. example:
+```
+permit(
+  principal in Group::"admin",
+  action in [Action::"create_assessment"],
+  resource == Assessment::"any"
+);
+```
+
 ## Resolved questions
 
 - Should we allow `is` in the policy scope?
