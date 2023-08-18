@@ -3,12 +3,12 @@
 ## Related issues and PRs
 
 - Reference Issues:
-- Implementation PR(s):
+- Implementation PR(s): https://github.com/cedar-policy/cedar/pull/282 and https://github.com/cedar-policy/cedar-spec/pull/111
 
 ## Timeline
 
 - Start Date: 11-07-2023
-- Date Entered FCP:
+- Date Entered FCP: 18-08-2023
 - Date Accepted:
 - Date Landed:
 
