@@ -8,7 +8,7 @@
 ## Timeline
 
 - Start Date: 2023-07-24
-- Date Entered FCP:
+- Date Entered FCP: 2023-08-22
 - Date Accepted:
 - Date Landed:
 
@@ -244,11 +244,10 @@ The custom syntax does not require such designators, for readability, so we need
 4. Reserve `__cedar` as a namespace to disambiguate extension/primitive types from others
 5. Handle entity/common typename overlaps in translation
 
-These rules aim to address several tenets
+These rules aim to address several (additional) tenets
 
 * Conflicting type names are an exception to be discouraged, rather than a norm, for readability and clarity
 * Schemas should not break when new extension types are added to Cedar
-* Conversion should be possible from the JSON to custom format, and vice versa, as much as possible
 * Backward-incompatible changes should be minimized
 
 #### Rule 1: Issue a warning (for both syntaxes) when a schema defines the same typename twice
@@ -293,11 +292,12 @@ If a schema defines an entity type and a common type with the same name, the ref
 
 Custom syntax users can rectify the situation by changing either the common type or entity type to a different name (or placing them in different namespaces). JSON syntax users can refer to both types distinctly, but will be warned that translation to the custom syntax will not be possible without changing the name. Translation tools can easily make this name change automatically.
 
-Evaluating these rules against our tenets above, we can see:
+Note that translation from JSON to custom syntax is only problematic when a schema defines both a common and entity type of the same name. Translation tools can easily address this issue by renaming the common type (and offering to change the type name in the original JSON)
+
+Evaluating these rules against our added tenets above, we can see:
 
 * Conflicting type names are discouraged by issuing a warning when there is overlap
 * Due to the choice in priority order, schemas will not break when new extension types are added
-* Translation from JSON to custom syntax is only problematic when a schema defines both a common and entity type of the same name. Translation tools can easily address this issue by renaming the common type (and offering to change the type name in the original JSON)
 * Only rule 4 (introducing the `__cedar` reserved namespace) is backward incompatible, and it is very unlikely to affect existing schemas.
 
 #### Rejected alternative designs for disambiguation
