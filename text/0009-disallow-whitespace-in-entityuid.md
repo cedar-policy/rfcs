@@ -7,10 +7,10 @@
 
 ## Timeline
 
-- Start Date: 2023-06-19
-- Date Entered FCP: 2023-06-21
-- Date Accepted: 2023-06-26
-- Date Landed: 2023-06-29 (included in `cedar-policy` v2.3.0)
+- Started: 2023-06-19
+- Entered FCP (intent to accept): 2023-06-21
+- Accepted: 2023-06-26
+- Landed: 2023-06-29 (included in `cedar-policy` v2.3.0)
 
 ## Summary
 
@@ -31,14 +31,14 @@ Similar to other programming languages such as Rust, Cedar is currently whitespa
 
 For example, the following syntax is valid:
 ```
-permit( 
+permit(
   principal == ExampleCo :: Photoflash  ::  //This is a comment
        :: User::"alice",
   action,
   resource
 );
 
-permit( 
+permit(
   principal == ExampleCo::Photoflash::User:://comment
 
   "alice",
@@ -52,7 +52,7 @@ This capability was little known, even amongst many Cedar team members, and was 
 Examples:
 1. The Cedar Schema format models the schema configuration under a JSON key for the namespace. Policy stores which index schemas by namespace are unlikely to recognize the need to normalize the value, leading to the possibility of storing duplicate schema definitions for "ExampleCo::Photoflash" and "ExampleCo  ::  Photoflash" and indeterminate behavior regarding which schema takes effect at runtime.
 2. Policy Stores can implement logic that relies on string comparisons against the EntityTypeName. In a real issue, an application using Cedar sought to preclude callers from passing Actions in the inline slice of entity definitions. It did so by checking if an EntityTypeName matched `.*::Action`. It presumed that `:: Action` was invalid syntax and would be rejected by the Cedar evalator, the same as any other syntatically invalid input. This resulted in a bug, as it allowed callers to bypass the extra validation that the application sought to enforce.
-3. Customers are anticipated to build meta-permissions layers that restrict callers to manipulating policy store contents for only certain namespaces. This may lead to policies such as `forbid(...) when {context.namespace = "ExampleCo::Photoflash"};`. There is a risk that an unauthorized actor could bypass this restriction by using a namespace with embedded spaces. 
+3. Customers are anticipated to build meta-permissions layers that restrict callers to manipulating policy store contents for only certain namespaces. This may lead to policies such as `forbid(...) when {context.namespace = "ExampleCo::Photoflash"};`. There is a risk that an unauthorized actor could bypass this restriction by using a namespace with embedded spaces.
 
 While it is technically possible for applications to mitigate this risk by diligently using Cedar tooling to normalize the values, the little-known nature of this Cedar behavior implies that few will know they *should* normalize the value. As a point of reference, application developers who have worked with Cedar extensively for over a year were bitten by this bug in production. Hence, this is likely to result in bugs in many other Cedar-based implementation with similar logic, risking a perception that Cedar is fragile or unsafe.
 
@@ -93,6 +93,6 @@ forbid(
   action == ExampleCo:: Photoflash::Action::"write",
   resource
 );
-``` 
+```
 
 This risk is too great. Therefore, the suggested approach is a compromise that mitigates the known production bugs with fewer risks. Any concerns about pentesters and malicious actors crafting obfuscated policies will need to be addressed by other non-breaking means, such as linter warnings and syntax highlighting.

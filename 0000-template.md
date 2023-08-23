@@ -7,10 +7,7 @@
 
 ## Timeline
 
-- Start Date: (fill in with today's date, YYYY-MM-DD)
-- Date Entered FCP: (leave this empty, update when the PR enters FCP)
-- Date Accepted: (leave this empty, update when the PR is merged)
-- Date Landed: (leave this empty, update when the implementation is in a stable release)
+- Started: (fill in with today's date, YYYY-MM-DD)
 
 ## Summary
 
