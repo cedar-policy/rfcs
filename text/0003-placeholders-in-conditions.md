@@ -7,10 +7,12 @@
 
 ## Timeline
 
-- Start Date: 2023-06-15
-- Date Entered FCP: 2023-06-28
-- Date Accepted:
-- Date Landed:
+- Started 2023-06-15
+- Entered FCP (intent to accept) 2023-06-28
+- FCP aborted 2023-07-03
+- Closed by RFC author 2023-07-12
+
+See comments on [the PR thread](https://github.com/cedar-policy/rfcs/pull/3) for more on the rationale for these decisions.
 
 # Summary
 
