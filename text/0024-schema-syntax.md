@@ -397,7 +397,8 @@ RecType   := '{' [AttrDecls] '}'
 AttrDecls := Name ['?'] ':' Type [',' | ',' AttrDecls]
 AppliesTo := 'appliesTo' '{' AppDecls '}'
 ActAttrs  := 'attributes' '{' AttrDecls '}'
-AppDecls  := VAR ':' EntOrTyps [',' | ',' AppDecls]
+AppDecls  := ('principal' | 'resource') ':' EntOrTyps [',' | ',' AppDecls]
+           | 'context' ':' RecType [',' | ',' AppDecls]
 Path      := IDENT {'::' IDENT}
 EntTypes  := Path {',' Path}
 EntOrTyps := EntType | '[' [EntTypes] ']'
@@ -408,8 +409,6 @@ Idents    := IDENT {',' IDENT}
 IDENT     := ['_''a'-'z''A'-'Z']['_''a'-'z''A'-'Z''0'-'9']* - PRIMTYPE
 STR       := Fully-escaped Unicode surrounded by '"'s
 PRIMTYPE  := 'Long' | 'String' | 'Bool'
-VAR       := 'principal' | 'action' | 'resource' | 'context'
-
 WHITESPC  := Unicode whitespace
 COMMENT   := '//' ~NEWLINE* NEWLINE
 ```
