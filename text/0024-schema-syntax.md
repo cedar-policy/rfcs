@@ -138,11 +138,9 @@ Specifying `[]` for the `in` component is equivalent to omitting `in` entirely. 
 
 The `appliesTo` specificiation uses record syntax, where the "attributes" of the record may be any combination of `principal`, `resource`, and `context`, with the following constraints.
 + If `principal` and/or `resource` is given, the accompanying type must be either
-  - a single entity type,
-  - a list of entity types, or
-  - the syntax `[*]`, which is interpreted as allowing _any_ entity type (equivalently, the "unspecified" entity).
-+ If a `principal` or `resource` element is not given, that means that any entity can be used for that element in a request (and is equivalent, therefore, to it having type `[*]`).
-+ If the type given with `principal` or `resource` is `[]`, that means that _no_ entity is permitted in a request with this action, which essentially means that the action can only be used as a group
+  - a single entity type, or
+  - a _non-empty_ list of entity types
++ If a `principal` or `resource` element is not given, that means that this request component is _unspecified_, i.e., corresponding to the `None` option in the `principal` or `resource` component of a [`Request`](https://docs.rs/cedar-policy/2.4.0/cedar_policy/struct.Request.html).
 + If `context` is given, the accompanying type must be a record type. If it is not given, the type `{}` is assumed.
 + At least one of `principal`, `resource`, or `context` must be included if `appliesTo` is present; i.e., writing `appliesTo { }` is not allowed.
 
@@ -154,8 +152,10 @@ action ViewDocument in ReadActions appliesTo {
     context: {}
 };
 action Ping appliesTo {
-    principal: [*],
-    resource: [*]
+    context: {
+        source: ipaddr,
+        dest: ipaddr
+    }
 };
 ```
 
