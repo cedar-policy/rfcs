@@ -77,9 +77,7 @@ for this down the line.
 
 ## Detailed design
 
-### Main proposal
-
-Our main proposal has four components:
+This RFC has four components:
 
 First, we generalize `is_authorized()` to accept any `EntityDataSource`, not
 just `Entities`:
@@ -244,8 +242,8 @@ the context of these constructors.
 
 This RFC currently proposes we take the third option.
 
-Finally, we remove `Entities::evaluate()`, as all `Entities` are now stored in
-their evaluated form by default.
+Fourth and finally, we remove `Entities::evaluate()`, as all `Entities` are now
+stored in their evaluated form by default.
 This is not a breaking change because `Entities::evaluate()` has not yet been
 released in any Cedar release.
 
@@ -328,9 +326,8 @@ constructors sometime in the future.
 
 ### Alternative C
 
-We could eliminate the `EntityDataSource` interface in the main proposal, and
-have only the `WholeEntityDataSource` interface, which we would rename
-`EntityDataSource`.
+We could eliminate the `EntityDataSource` interface in the RFC, and have only
+the `WholeEntityDataSource` interface, which we would rename `EntityDataSource`.
 
 This means that users would be stuck implementing the `WholeEntityDataSource`
 interface, which might have significant inefficiencies for some applications.
@@ -357,13 +354,13 @@ way, at least not completely trivially.
 
 ### Alternative D
 
-In addition to everything proposed in the main body of the RFC, we could
-provide the status-quo definitions of `Entities`, `Entity`, and
-`is_authorized()` under new names: e.g., `UnevaluatedEntities`,
-`UnevaluatedEntity`, and `is_authorized_unevaluated()` (naming of course TBD).
+In addition to everything proposed in the current RFC, we could provide the
+status-quo definitions of `Entities`, `Entity`, and `is_authorized()` under new
+names: e.g., `UnevaluatedEntities`, `UnevaluatedEntity`, and
+`is_authorized_unevaluated()` (naming of course TBD).
 This is very unlikely to be of any use to new users, but existing users really
 wanting the old error behavior could use these types and functions instead of
-the main `Entities`, `Entity`, and `is_authorized()`.
+`Entities`, `Entity`, and `is_authorized()`.
 
 To me, this provides little benefit, at the expense of more confusion and more
 APIs to maintain. It also doesn't make any of the changes more back-compatible;
@@ -373,10 +370,9 @@ just as much work as adopting the actual breaking changes proposed in this RFC.
 ### Alternative E
 
 Instead of changing `Entities`, `Entity`, and `is_authorized()` as suggested in
-the main body of this RFC, we could provide new versions of these types and
-functions -- say, `EvaluatedEntities`, `EvaluatedEntity`, and
-`is_authorized_generic()` -- which have the behaviors proposed in the main body
-of the RFC.
+the current RFC, we could provide new versions of these types and functions --
+say, `EvaluatedEntities`, `EvaluatedEntity`, and `is_authorized_generic()` --
+which have the behaviors proposed in the current RFC.
 This avoids making any breaking changes to existing types and functions.
 
 The downsides of this alternative include:
