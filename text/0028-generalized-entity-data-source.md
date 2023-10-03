@@ -137,9 +137,9 @@ trait EntityDataSource {
 }
 ```
 
-For convenience, to support the common case where users want to load entity data
-in units of entire entities, we also provide a trait `WholeEntityDataSource`
-(open to other name suggestions):
+For convenience, to support the presumably common case where users want to load
+entity data in units of entire entities, we also provide a trait
+`WholeEntityDataSource` (open to other name suggestions):
 
 ```rust
 pub trait WholeEntityDataSource {
