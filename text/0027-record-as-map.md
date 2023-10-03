@@ -1,4 +1,4 @@
-# RFC Template (Fill in your title here)
+# Support to treat records as maps
 
 ## Related issues and PRs
 
@@ -14,7 +14,7 @@
 
 ## Summary
 
-Cedar records are fundamentally static. They force a user to specifically enumerate all possible record attributes in the schema, and they require an attribute to be mentioned as a literal in the policy. 
+Cedar records are fundamentally static. They force a user to specifically enumerate all possible record attributes in the schema, and they require an attribute to be mentioned as a literal when used in a policy.
 
 This RFC proposes to support a limited form of maps in Cedar, adding greater dynamism, by slightly extending current support for records. In the extension, not all attribute names need to be known in advance, and can be taken from run-time data. There are two changes:
 - Add a new type `map<T>` which represents records that optionally have _any_ attribute, where if an attribute is present it will have type `T`.
@@ -34,13 +34,13 @@ or
 ```
 when { resource.tags["projects"].contains(principal.tags["project"])}
 ```
-This would be difficult to do when trying to encode tags as sets (see discussion at the end of this RFC). `map`-based tags are most valuable when you don't know the tag names when writing policies, else you could extend the schema to name the tags explicitly.
+This would be difficult to do when trying to encode tags as sets. `map`-based tags are most valuable when you don't know the tag names when writing policies, else you could extend the schema to name the tags explicitly. See the [Workarounds](#workarounds) section below for discussion.
 
 #### Timeboxes
 
 A second example is the extension of [`TinyTodo`](https://github.com/cedar-policy/cedar-examples/tree/main/tinytodo) to include `TimeBox`es, which are fixed periods during which a principal is granted read-only access to a todo `List`. [Right now](https://github.com/cedar-policy/cedar-examples/blob/features/timebox/tinytodo/src/timebox.rs), this feature is implemented by generating a fresh policy whenever timed access is requested. This approach is unsatisfying because part of the application's authorization model thus lives in the application code, rather than in the policy file (i.e., the part that is generating the `TimeBox`-based policies). It also results in stale policies, since they remain in the store even after the timebox range has expired.
 
-With `map` types, `TimeBox`es for individual `User`s can be maintained separately from the policies. Each `List` could have a `timeboxes` map from a `User`'s name to time range that the `List` is readable.
+With `map` types, `TimeBox`es for individual `User`s can be maintained separately from the policies. Each `List` could have a `timeboxes` map from a `User`'s name to a time range that the `List` is readable.
 ```
 permit(
     principal,
@@ -52,7 +52,7 @@ permit(
     resource.timeboxes[principal.name].end < context.now
 }
 ```
-This approach adds just the above policy to the store at the outset, for all users and lists. The application manages timebox ranges -- adding and updating them in the relevant `List` entity -- the same as it was doing in the old approach.
+This approach adds just the above policy to the store at the outset, and it applies to all users and lists. The application manages timebox ranges -- adding and updating them in the relevant `List` entity -- the same as it was doing in the old approach.
 
 ## Detailed design
 
@@ -91,14 +91,14 @@ The JSON entity format does not change to support maps: We use the same format a
 
 ### Schema
 
-We extend schemas to support a new type `map` which is parameterized by the type of its values. In the JSON format of Cedar schema, a map to strings would be written
+We extend schemas to support a new type `map` which is parameterized by the type of its values. In the JSON format of Cedar schema, the type of a map to strings would be written
 ```
     "type": "Map",
     "element": {
         "type": "String"
     }
 ```
-In the proposed [custom schema syntax](https://github.com/cedar-policy/rfcs/pull/24), we would add the type `map<T>` where `T` is any type (e.g., `map<String>`), analogous to the existing type `set<T>`.
+In the proposed [custom schema syntax](https://github.com/cedar-policy/rfcs/pull/24), we would add the type `map<T>` where `T` is any type (e.g., `map<String>` or `map<map<Long>>`), analogous to the existing type `set<T>`.
 
 ### Validation
 
@@ -120,11 +120,11 @@ The validator can handle `map<T>` types similarly to how it handles records with
 
 Normally when the validator sees an expression _e_ `has` _f_, it will check that the type _T_ of _e_ is either a record or entity, and if so, it will check that _T_ has _f_ as an attribute. If not, the expression is given type `False`. If _f_ is unconditionally present, the expression is given type `True`. If _f_ is optional, the expression is given type `Boolean`.
 
-This validation logic is extended so that that if _e_ has type `map<`_U_`>` for some type _U_, the expression _e_ `has` _f_ will be given type `Boolean`, and _e_`[`_f_`]` is added to the current capability set. Similarly, the expression _e_`[`_f_`]` will only validate if _e_`[`_f_`]` is in the current capability set.
+This validation logic is extended so that that if _e_ has type `map<`_U_`>` for some type _U_, the expression _e_ `has` _f_ will be given type `Boolean`, and _e_`[`_f_`]` is added to the current capability set. Similarly, the expression _e_`[`_f_`]` will only validate if _e_`[`_f_`]` is in the current capability set. If it does validate, the expression is given type _U_ (the type parameter in the `map` type).
 
 #### Subtyping
 
-For permissive validation, which supports width subtyping, we can add a rule
+For permissive validation, which supports width subtyping, we can add a subtyping rule
 ```
 { f1*: T, ..., fn*: T } <: map<T>
 ```
@@ -132,9 +132,17 @@ Here, we write `*` to indicate the "optionality" of an attribute, where the opti
 
 Thus, this rule says that any record whose attributes, whether optional or not, all have the same type `T` can be given a `map<T>` type.
 
+But we must take care: This rule is only sound if the record type is not _open_ -- i.e., it must enumerate _all_ of the fields of the object it represents. Otherwise, this rule could be used as follows:
+```
+{ f1: Long, f2: String } <:   // by width subtyping
+{ f1: Long }             <:   // by bogus application of above rule
+map<Long>
+```
+Suppose `principal.tags` contains value `{ f1: 3, f2: "foo" }`. The derivation above would permit `principal.tags` to be given type `map<Long>`. As a result, the expression `principal.tags has f2 && principal.tags.f2 < 5` would validate, but then error when evaluated.
+
 #### Literals
 
-We propose that a literal such as `{ tag1: "foo", tag2: "bar" }` should be given type `{ tag1: String, tag2: String }`.
+A literal such as `{ tag1: "foo", tag2: "bar" }` should be given type `{ tag1: String, tag2: String }`.
 
 With permissive validation, there is no loss in flexibility. The literal above can be treated as having type `map<String>`, thanks to subtyping. Suppose that `principal.map` has type `map<String>` and `principal.rec` has type `{ tag1: String }`. Then we can permissively validate expressions such as 
 ```
@@ -146,7 +154,7 @@ if principal.isAdmin then principal.rec else { tag1: "foo", tag2: "bar" }
 ```
 (will have type `{ tag1: String }`).
 
-Strict validation does not support width subtyping. This means there is no way to create `map` literals in a policy, only record literals. For strictly valid policies, maps can only exist in entity or record attributes passed in to the Cedar evaluator.
+Strict validation does not support width subtyping. This means there is no way to create `map` literals in a policy, only record literals. For strictly valid policies, maps can only exist in entity or record attributes passed in to the Cedar evaluator. We might consider extending the language syntax to include casts, to allow constructing maps directly, e.g., `(map<String>){ tag1: "foo", tag2: "bar" }`.
 
 ## Alternatives
 
@@ -154,9 +162,13 @@ We could avoid adding maps entirely, and work around their absence. A simpler fo
 
 ### Workarounds
 
-A `map` is only needed when the keys are truly unknown statically. If the list of keys can be known, one can also create a record type that enumerates every key as optional. Changing the schema to constantly extend the list of valid keys may be tedious, however.
+#### Records wtih optional attributes
 
-The lack of a `map` type can be worked around using `set` in some cases. For example, to encode tags and you only care about whether a tag exists (and the value it maps to) then `set<{key:String, value:String}` is sufficient. With this type you can write 
+A `map` is only needed when the keys are truly unknown statically. If the list of keys is known, one can also create a record type that enumerates every key as optional. In sum: Every time you create a policy that writes a map key as a literal, the validator will complain if that key is not in the schema. Just add the key to the schema, and the new policy will validate, along with the old ones. Changing the schema to constantly extend the list of valid keys may be tedious, however. If policies are being constructed on the fly, e.g., by a service's users, a schema update on each policy addition may not be feasible.
+
+#### Sets of records as key-value pairs
+
+The lack of a `map` type can sometimes be worked around using a `set` of records which contain key-value pairs. For example, to encode tags and you only care about whether a tag exists (and the value it maps to) then `set<{key:String, value:String}` is sufficient. With this type you can write
 ```
 permit(...) 
 when {
@@ -174,7 +186,7 @@ But this approach is insufficient to model a policy that says "the `project` tag
 
 ### Non-dynamic attributes
 
-We considered adding a `map` type, but not generalizing the syntax for `has` and for attribute projection, i.e., still requiring them to be string literals or identifiers. But doing so does not add any expressive power, as it means that you can use records and enumerate all of the possible keys as optional attributes.
+We considered adding a `map` type, but not generalizing the syntax for `has` and for attribute projection to allow member expressions; i.e., we would still require them to be string literals or identifiers. Doing so does not add any expressive power, as it means that you can use records and enumerate all of the possible keys as optional attributes. However, it might still be useful for applications that are creating policies on the fly as part of the business logic, in which case updating the schema may be impractical.
 
 ### Combined records/maps
 
@@ -185,6 +197,10 @@ This generalization would result in a more general subtyping rule, and an additi
 { foo?: String, bar: Long, *: String } <: { bar: Long, *: String }
 ```
 It's a two-way door to not add this generalization now. If we add `map<T>` now and add the generalization later, then `map<T>` can remain as a synonym for type `{ *: T }`.
+
+### Map literals
+
+As mentioned above, strict validation provides no way to define a map literal in a policy. We could add casts to support this; they would also be useful for other values that can have multiple types, e.g., the empty set `[]`.
 
 ## Drawbacks and Unresolved questions
 
