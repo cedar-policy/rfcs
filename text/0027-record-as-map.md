@@ -182,7 +182,30 @@ when {
     ])
 };
 ```
-But this approach is insufficient to model a policy that says "the `project` tag for `principal` is the same as the `project` tag for the `resource`", which we could write with maps as `project.tags["project"] == resource.tags["project"]`.
+With current Cedar, this approach is insufficient to model a policy that says "the `project` tag for `principal` is the same as the `project` tag for the `resource`", which we could write with maps as `project.tags["project"] == resource.tags["project"]`. However, with the addition of the `any` operator from [RFC 21](https://github.com/cedar-policy/rfcs/blob/any-and-all-operators/text/0021-any-and-all-operators.md#add-all-and-any-operators), we could encode this logic as follows:
+```
+when {
+  resource.tags.any(
+    it.key == "project" &&
+    principal.tags.contains({key: "project", value: it.value}))
+}
+```
+Here, `any` iterates over the `tags` set, binding `it` to each value it reaches in the contained expression. This expression returns `true` when the value's key is `"project"` and when `principal.tags` contains the same key and value (notated as `it.value`). We effectively find `it.value` for one set and then use that value to perform the membership test in the second set.
+
+We could use a similar encoding for the `Timebox` example. Each `List` resource would have an attribute `timeboxes` of type `set<{ user: User, start: Long, end: Long }>`. Then we add a policy:
+```
+permit(
+    principal,
+    action == Action::"GetList",
+    resource in Application::"TinyTodo"
+) when {
+    resource.timeboxes.any(
+        it.user == principal &&
+        it.start >= context.now &&
+        it.end < context.now
+    )
+}
+```
 
 ### Non-dynamic attributes
 
@@ -204,8 +227,8 @@ As mentioned above, strict validation provides no way to define a map literal in
 
 ## Drawbacks and Unresolved questions
 
-It may be that the utility of a `map` is sufficiently limited that it's not worth adding. Adding it now might complicate the addition of a better feature later. I'd be more comfortable if we know of more use-cases where this would help.
+It may be that the utility of a `map` is sufficiently limited that it's not worth adding, especially if we accept [RFC 21](https://github.com/cedar-policy/rfcs/blob/any-and-all-operators/text/0021-any-and-all-operators.md#add-all-and-any-operators).
 
-The main question I have is how the dynamic construction of attribute names would affect a logical encoding of policies for the purposes of analysis.
+About this proposal, should it be accepted, the main question I have is how the dynamic construction of attribute names would affect a logical encoding of policies for the purposes of analysis.
 
 A related question is how dynamic to make attribute construction. In the proposal, we suggest using the `Member` non-terminal to express this, but we may need to simplify that.
