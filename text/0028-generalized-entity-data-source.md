@@ -307,6 +307,12 @@ entity data in unevaluated (that is, `RestrictedExpression`) form.
 
 Taking this alternative doesn't close off the door towards making the other
 proposed changes sometime in the future.
+However, if we took this alternative and users began writing `EntityDataSource`
+implementations without the other components, and then later we wanted to make
+the changes proposed in the other components of this RFC, we couldn't
+_automatically_ or _by default_ provide existing `EntityDataSource`
+implementations with those performance or ergonomic improvements; they would
+have to make some code changes.
 
 ### Alternative B
 
