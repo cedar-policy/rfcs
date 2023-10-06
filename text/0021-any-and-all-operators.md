@@ -38,7 +38,7 @@ unless {
 };
 ```
 
-The two operators behave analogously to `&&` and `||`. Given negation, each can be written in terms of the other. We include both for ergonomics.
+The two operators behave analogously (though [not equivalently](#extending-the-semantics)) to `&&` and `||`. Given negation, each can be written in terms of the other. We include both for ergonomics.
 
 ## Motivation
 
