@@ -79,6 +79,8 @@ for this down the line.
 
 This RFC has four components:
 
+### Component 1: `is_authorized()` changes
+
 First, we generalize `is_authorized()` to accept any `EntityDataSource`, not
 just `Entities`:
 
@@ -187,6 +189,8 @@ returns a reference to an existing `Entity` already stored in-memory.
 In summary, this first component of our proposal allows users to pass any
 `EntityDataSource` or `WholeEntityDataSource` to `is_authorized()`.
 
+### Component 2: Store attributes as precomputed `Value`s
+
 Second, we redefine `Entities` and `Entity` to hold attributes as `Value`s
 instead of as `RestrictedExpression`s.
 This particularly addresses Challenge 3.
@@ -207,6 +211,8 @@ Currently, this RFC is proposing we change the signature to not contain
 Accepting these breaking changes allows us to give users the best-performing
 behavior by default.
 For alternatives that are less breaking, see [Alternatives](#alternatives).
+
+### Component 3: Construct entities using precomputed `Value`s
 
 Third, we add new constructors for `Entities` and `Entity` which take `Value`s
 instead of `RestrictedExpression`s.
@@ -241,6 +247,8 @@ generate a different kind of confusion as `EvalResult` is an awkward name in
 the context of these constructors.
 
 This RFC currently proposes we take the third option.
+
+### Component 4: Remove no-longer-necessary interface to precompute `Value`s
 
 Fourth and finally, we remove `Entities::evaluate()`, as all `Entities` are now
 stored in their evaluated form by default.
