@@ -283,11 +283,6 @@ get the wrong authorization results.
 (This is also true of implementation errors such as loading the wrong attribute
 values, etc; but errors with TC may feel more insidious somehow.)
 
-- A user could write an `EntityDataSource` implementation which represents an
-infinitely large entity data store -- e.g., which always responds `true` to
-every possible UID in `entity_exists()`. This may be a theoretical issue for
-validation?
-
 ## Alternatives
 
 There are a lot of branching alternatives to all or parts of this RFC; this is
