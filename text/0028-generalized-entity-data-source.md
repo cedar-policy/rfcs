@@ -22,17 +22,17 @@ implementation which looks up entities on-demand using DB queries.
 
 ## Basic example
 
-_Note: slightly simplified for exposition; see [Detailed Design](#detailed-design) for details._
-
 ```rust
 struct MyOwnDatabase {
     // ...
 }
 
 impl EntityDataSource for MyOwnDatabase {
-    fn get(&self, uid: &EntityUid) -> Result<Option<Entity>> {
-        // custom implementation which could e.g. make a request to a database
+    fn entity_attr(&self, uid: &EntityUid, attr: &str) -> Result<Option<Value>> {
+        // custom implementation which could e.g. look up the attribute by
+        // making a request to a database
     }
+    // other methods ...
 }
 ```
 
@@ -139,55 +139,11 @@ trait EntityDataSource {
 }
 ```
 
-For convenience, to support the presumably common case where users want to load
-entity data in units of entire entities, we also provide a trait
-`WholeEntityDataSource` (open to other name suggestions):
-
-```rust
-pub trait WholeEntityDataSource {
-    /// Given a uid, get the corresponding entity if it exists.
-    /// The entity should already have `ancestors` data which represents all
-    /// transitive closure ancestors, not just the direct parents.
-    fn get(&self, uid: &EntityUid) -> Result<Option<Entity>>;
-}
-```
-
-_Note: we could have `get()` return a `Result<Option<Arc<Entity>>>` or `Result<Option<Cow<Entity>>>` in order to avoid unnecessary copying of `Entity` in some implementations. We consider details like this to be implementation details that can be handled at the implementation stage and don't need to be discussed or decided in this RFC._
-
-Then, we provide a blanket implementation of `EntityDataSource` for every type
-`T` that implements `WholeEntityDataSource`: (pseudocode shown)
-```rust
-impl<T: WholeEntityDataSource> EntityDataSource for T {
-    fn entity_exists(&self, uid: &EntityUid) -> Result<bool> {
-        // computes the entire entity with `.get()`, only to throw it away,
-        // which is inefficient in implementations where `.get()` is expensive.
-        Ok(self.get(uid)?.is_some())
-    }
-    fn entity_attr(&self, uid: &EntityUid, attr: &str) -> Result<Option<Value>> {
-        // computes the entire entity with `.get()`, only to throw it away,
-        // which is inefficient in implementations where `.get()` is expensive.
-        Ok(self.get(uid)?.attr(attr))
-    }
-    fn entity_in(&self, child: &EntityUid, parent: &EntityUid) -> Result<bool> {
-        // computes the entire entity with `.get()`, only to throw it away,
-        // which is inefficient in implementations where `.get()` is expensive.
-        Ok(self.get(child)?.in(parent))
-    }
-}
-```
-
-We also provide the trivial implementation of `WholeEntityDataSource` for
-`Entities`.
-This allows users to continue passing an `Entities` to provide
-entity data to `is_authorized()`, and makes the change to `is_authorized()`
+We will provide the implementation of `EntityDataSource` for `Entities`.
+This allows users to continue passing an `Entities` to provide entity data to
+`is_authorized()`, and makes the change to `is_authorized()`
 backwards-compatible: it still accepts an `Entities`, but now also accepts
 additional types, namely any other `EntityDataSource`.
-Note that the implementation for `Entities` doesn't suffer from the potential
-inefficiencies noted in the code comments above: `.get()` is `O(1)` and just
-returns a reference to an existing `Entity` already stored in-memory.
-
-In summary, this first component of our proposal allows users to pass any
-`EntityDataSource` or `WholeEntityDataSource` to `is_authorized()`.
 
 ### Component 2: Store attributes as precomputed `Value`s
 
@@ -324,8 +280,6 @@ to the level of requiring an RFC.)
 
 Users would have to still construct `Entity` and `Entities` via restricted
 expressions, using constructors which can throw errors.
-This includes users implementing `WholeEntityDataSource`, who need to
-construct `Entity` objects to return from `get()`.
 
 With this alternative, we may avoid having to expose `Value` or make changes to
 `EvalResult`, at least for now.
@@ -335,30 +289,38 @@ constructors sometime in the future.
 
 ### Alternative C
 
-We could eliminate the `EntityDataSource` interface in the RFC, and have only
-the `WholeEntityDataSource` interface, which we would rename `EntityDataSource`.
+Instead of the proposed `EntityDataSource` definition, we could have a definition
+something like this:
+```rust
+pub trait EntityDataSource {
+    /// Given a uid, get the corresponding entity if it exists.
+    /// The entity should already have `ancestors` data which represents all
+    /// transitive closure ancestors, not just the direct parents.
+    fn get(&self, uid: &EntityUid) -> Result<Option<Entity>>;
+}
+```
 
-This means that users would be stuck implementing the `WholeEntityDataSource`
-interface, which might have significant inefficiencies for some applications.
-The definition of `WholeEntityDataSource` requires the implementation of `get()`
-to return the entire `Entity` object, including all of its attributes and the
-UIDs of all of its (transitive) ancestors.
+However, this interface might have significant inefficiencies for some
+applications.
+It requires the implementation of `get()` to return the entire `Entity` object,
+including all of its attributes and the UIDs of all of its (transitive)
+ancestors.
 But often, Cedar doesn't need the entire `Entity` object, and constructing the
 entire `Entity` object may be expensive for some trait implementations.
-For instance, determining all ancestors may, in some `WholeEntityDataSource`
+For instance, determining all ancestors may, in some `EntityDataSource`
 implementations, require computing a graph reachability problem; or, some
 attributes of an entity may be expensive to compute or slow to fetch.
-But the Cedar evaluator would be required to call `get()` every time, even if
-it only needed, say a single attribute of the entity.
-If `get()` is expensive, the evaluator would be effectively throwing away all
-of the entity information it didn't need for that particular query, only to
+But the Cedar evaluator would be required to call `get()` every time, even if it
+only needed, say a single attribute of the entity.
+If `get()` is expensive, the evaluator would be effectively throwing away all of
+the entity information it didn't need for that particular query, only to
 recompute it the next time it needs an attribute or ancestor check.
 The proposed `EntityDataSource` interface provides a way for Cedar to ask for
 much more granular information, and this RFC contends that it's worth the
 complexity.
 
 Unlike the above alternatives, if we took this alternative we couldn't come back
-and add the `EntityDataSource` interface in the future in a backwards-compatible
+and add the proposed granular interface in the future in a backwards-compatible
 way, at least not completely trivially.
 
 ### Alternative D
@@ -403,12 +365,20 @@ nonsensical API from a naming standpoint -- not aesthetically pleasing.
 
 ### Alternative F
 
-Instead of `WholeEntityDataSource::get()` returning an `Entity` object itself,
-it could return a generic that implements some other trait -- for lack of a
-better name let's call it `SingleEntityDataSource` for now.
-That trait would look something like
+Much like Alternative C, we could define the `EntityDataSource` trait using a
+single `.get()` method; but unlike Alternative C, we could have `get()` return
+not an `Entity` object itself, but rather a generic that implements some other
+trait.
+For lack of a better name let's call it `SingleEntityDataSource` for now.
+That would like something like this:
 ```rust
-trait SingleEntityDataSource {
+pub trait EntityDataSource {
+    type Entity: SingleEntityDataSource;
+    /// Given a uid, get data about the corresponding entity if it exists.
+    fn get(&self, uid: &EntityUid) -> Result<Option<Self::Entity>>;
+}
+
+pub trait SingleEntityDataSource {
     fn attr(&self, attr: &str) -> Result<Option<Value>>;
     fn has_attr(&self, attr: &str) -> Result<bool> {
         // default implementation in terms of `attr()`
@@ -417,52 +387,29 @@ trait SingleEntityDataSource {
     fn in(&self, parent: &EntityUid) -> Result<bool>;
 }
 ```
-and the signature of `WholeEntityDataSource::get()` would look something like
-```rust
-trait WholeEntityDataSource {
-    type Entity: SingleEntityDataSource;
-    fn get(&self, uid: &EntityUid) -> Result<Option<Self::Entity>>;
-}
-```
 
 This would provide some (maybe all?) of the benefits of implementing the full
 `EntityDataSource` trait.
 
-We could either do this and make no other changes (call this Alternative F1), or
-(call this Alternative F2) we could combine this with Alternative C and have
-this revised `WholeEntityDataSource` trait replace the currently proposed
-`EntityDataSource` entirely.
+I'm not immediately sure if this Alternative F would be equivalent in power and
+flexibility to the current proposal; but I do find the current proposal to be
+more straightforward and think users would too (although it may be arguable).
 
-I'm not immediately sure if F2 would be equivalent in power and flexibility to
-the current proposal; but I do find the current proposal to be more
-straightforward and think users would too (although it may be arguable).
-
-### Alternative G
-
-The current proposal is oriented towards a system where entities know about
-their own ancestors, and not their descendants.
+Note that this definition of `SingleEntityDataSource` is perhaps oriented
+towards a system where entities know about their own ancestors, and not their
+descendants.
 In some implementations, entities might know about their own descendants, but
 not their ancestors.
 (See, for instance, [cedar#313](https://github.com/cedar-policy/cedar/issues/313).)
-These implementations would prefer that `EntityDataSource::get()` would return
-information about the entity's attributes and descendants, rather than its
-attributes and ancestors.
+For those implementations, it might make sense for `in()` to be a method on the
+_parent_ entity that takes the potential _child_'s uid.
+Perhaps there's some way we could support both, at the implementation's choice.
 
-`WholeEntityDataSource` could have two versions of `get()`, one which returns
-attributes-and-ancestors and one which returns attributes-and-descendants.
-Since Cedar's internal representation of an `Entity` currently assumes the
-ancestors orientation, adapting to support the descendants orientation would be
-significant implementation work, but it could be done, and would result in
-better supporting more kinds of data formats.
+One advantage of the current proposal, as opposed to Alternative F, is that it's
+agnostic to whether the system is ancestors-oriented or descendants-oriented;
+`entity_in()` works equally well with both.
 
-One advantage of `EntityDataSource` instead of `WholeEntityDataSource` is that
-it's actually agnostic to whether the system is ancestors-oriented or
-descendants-oriented; `entity_in()` works equally well with both.
-This might be sufficient to support users with descendants-oriented entity data:
-they just need to use the more flexible `EntityDataSource` instead of
-`WholeEntityDataSource`.
-
-### Alternative H
+### Alternative G
 
 As proposed, `EntityDataSource` methods do not generally allow the
 implementation to assume that input entities exist.
@@ -486,7 +433,7 @@ existence assumptions -- would be a backwards-compatible change, while the
 reverse would not, so in that sense, the current proposal is the safest
 proposal.
 
-### Alternative J
+### Alternative H
 
 As proposed, `EntityDataSource::entity_in()` requires the implementation to
 consider all the transitive ancestors of the entity, which might be a burden for
@@ -510,8 +457,7 @@ Some use-cases will even use both in conjunction.
 The easiest way to handle the interaction between this RFC and partial
 evaluation would be to leave `EntityDataSource` as currently proposed in this
 RFC, and simply have the Cedar evaluator return a residual as appropriate when
-`EntityDataSource::entity_exists()` returns `false` or
-`WholeEntityDataSource::get()` returns `None`.
+`EntityDataSource::entity_exists()` returns `false`.
 That is, the concrete/partial switch for entity data sources would be handled in
 the Cedar evaluator, opaquely to `EntityDataSource` implementations with no
 opportunity for customization.
