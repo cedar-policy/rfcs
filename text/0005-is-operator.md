@@ -94,8 +94,9 @@ Namespaces are considered "part of" the entity type. So:
 
 ### Changes required to validator
 
-`e is et` will be typed as `True` if the validator can guarantee that expression `e` is an entity of type `et`, or `False` if the validator can guarantee that `e` is a non-entity type or an entity not of type `et`.
-Otherwise, the validator gives `e is et` type `Bool`.
+`e is et` will be typed as `True` if the validator can guarantee that expression `e` is an entity of type `et`, or `False` if the validator can guarantee that `e` is an entity not of type `et`.
+If the validator can guarantee that `e` is an entity, but not determine the exact type, then `e is et` is given type `Bool`.
+Otherwise, the validator produces a type error.
 
 To improve typing precision, we can extend the current notion of "effects" to track information about entity types.
 Currently, the validator uses effects to know whether an expression is guaranteed to have an attribute.
