@@ -11,7 +11,7 @@
 
 ## Summary
 
-This RFC proposes to port our current Cedar models and proofs (written in [Dafny](https://dafny.org/)) to an alternative verification tool ([Lean](https://leanprover-community.github.io/)) that is better suited for meta-theory proofs, like Cedar’s validation soundness proof.
+This RFC proposes to port our current Cedar models and proofs (written in [Dafny](https://dafny.org/)) to an alternative verification tool ([Lean](https://lean-lang.org/)) that is better suited for meta-theory proofs, like Cedar’s validation soundness proof.
 
 **Note**: The changes proposed in this RFC do not impact the [`cedar-policy/cedar`](https://github.com/cedar-policy/cedar) repository or any of its associated Rust crates. The proposed changes are restricted to the formalization available in [`cedar-policy/cedar-spec`](https://github.com/cedar-policy/cedar-spec).
 
