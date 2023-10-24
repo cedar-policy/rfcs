@@ -9,6 +9,8 @@
 
 - Started: 2023-10-12
 - Entered FCP (intent to accept): 2023-10-16
+- Accepted: 2023-20-24
+- Landed:
 
 ## Summary
 
