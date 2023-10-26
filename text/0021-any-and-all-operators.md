@@ -100,7 +100,7 @@ The semantics of `all` and `any` are straightforward when there are no errors:
 
 But what happens if evaluating `P` errors on some element `e`? In this case, the evaluation of `all` or `any` terminates abruptly with a distinguished `QuantifierError`.
 
-The `QuantifierError` error may include static information (such as source location), but no dynamic information (such as the value that caused the error to be thrown). This error handling approach ensures that evaluating  `all` and `any` is _deterministic_: the result is the same regardless of iteration order.
+The `QuantifierError` error may include additional diagnostic information, as long as this information is bounded in size and computed deterministically. For example, the `QuantifierError` error could specify the source location, or a fixed-length description of the smallest erroring value in the underlying set, according to some fixed total order on Cedar values. This error handling approach ensures that evaluating  `all` and `any` _deterministic_: the result is the same regardless of iteration order. It also ensures that evaluation is _space efficient_: the size of the evaluator output remains constant in policy and input size.
 
 For example, consider the expression `[1, true].all(it like "foo")`. Regardless of the order in which the predicate is applied, the expression returns the same `QuantifierError`.
 
