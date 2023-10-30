@@ -62,7 +62,7 @@ The new operators provide a built-in way to concisely express these universal an
 
 ## Detailed design
 
-The Cedar syntax, semantics, and type system are all extended to support the new operators. These extensions are backward compatible, and existing policies won't be affected.
+The Cedar syntax, semantics, and type system are all extended to support the new operators. These extensions are backward compatible, and existing policies won't be affected. In particular, we will keep the `.containsAny` and `.containsAll` operators on sets, even though they can be expressed in terms of `any` and `all`.
 
 ### Extending the syntax
 
