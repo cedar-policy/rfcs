@@ -33,7 +33,7 @@ Discussion on [RFC 24](https://github.com/cedar-policy/rfcs/pull/24) highlighted
 
 We can mitigate the challenges listed above by making following changes:
 
-1. Specified `appliesTo` but omitted `appliesTo.principalTypes` / `appliesTo.resourceTypes` means that the request component is unspecified, i.e., corresponding to the `None` option in the principal and/or resource component of a [`Request`](https://docs.rs/cedar-policy/X.0/cedar_policy/struct.Request.html). Omitted `appliesTo.context` means that the context is an empty record (same as the status quo).
+1. Specified `appliesTo` but omitted `appliesTo.principalTypes` / `appliesTo.resourceTypes` means that the request component is unspecified, i.e., corresponding to the `None` option in the principal and/or resource component of a [`Request`](https://docs.rs/cedar-policy/latest/cedar_policy/struct.Request.html). Omitted `appliesTo.context` means that the context is an empty record (same as the status quo).
 2. Omitted `appliesTo` means that the action cannot be used in a request. It is used exclusively as an action group.
 3. Disallow empty arrays for `appliesTo.principalTypes` / `appliesTo.resourceTypes`.
 4. Disallow an empty `appliesTo` attribute thus requiring at least one of `principalTypes`, `resourceTypes` or `context` to be specified if `appliesTo` is specified.
