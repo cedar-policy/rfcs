@@ -73,8 +73,8 @@ There is _no way_ to write a schema so that validation behavior will be the same
 In **case 2**, you should update your schema to use the following syntax instead.
 
 ```json
-appliesTo: {
-    context: {}
+"appliesTo": {
+    "context": {}
 }
 ```
 
