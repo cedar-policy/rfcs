@@ -9,7 +9,7 @@
 
 - Started: 2023-07-11
 - Entered FCP: 2023-08-18
-- Accepted: 2023-08-18
+- Accepted: 2023-09-05
 - Landed: 2023-09-08 on `main`
 
 ## Summary
