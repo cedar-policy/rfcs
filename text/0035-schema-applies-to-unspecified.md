@@ -13,28 +13,24 @@
 
 | Scenario | Status Quo | Proposal |
 | --------- | -------- | ------- |
-| Specified `appliesTo` but omitted `principalTypes`/`resourceTypes` | Authz request with this action can only have unspecified entity as principal/resource | Same as status quo |
-| Omitted `appliesTo` | Authz request with this action can only have unspecified entity as principal/resource | Action cannot be used in authz request |
+| Specified `appliesTo` but omitted `principalTypes`/`resourceTypes` | Authz request with this action can only have an unspecified entity as the principal/resource | Same as status quo |
+| Omitted `appliesTo` | Authz request with this action can only have unspecified entities as the principal and resource | Action cannot be used in authz request |
 | `appliesTo.principalTypes: []` / `appliesTo.resourceTypes: []` | Action cannot be used in authz request | ❌ Not allowed |
-| `appliesTo` is defined but all sub-elements are omitted | Authz request with this action can only have unspecified entity as principal/resource; context is an empty record | ❌ Not allowed |
+| `appliesTo` is defined but all sub-elements are omitted | Authz request with this action can only have unspecified entities as the principal and resource; context is an empty record | ❌ Not allowed |
 
 ## Motivation
 
-### Current behavior
-
-In Cedar 2.x, if an action's `appliesTo.principalTypes` or `appliesTo.resourceTypes` is not given (or if the entire `appliesTo` element is not given), then it's interpreted as an action that applies to only unspecified principals and resources.
+In Cedar 2.x, if an action's `appliesTo.principalTypes` (or `appliesTo.resourceTypes`) is not given, then it's interpreted as an action that applies to only unspecified principals (or resources).
+If an action's `appliesTo` is not given, then it's interpreted as an action that applies only to unspecified principals _and_ resources.
 An _unspecified_ entity has a type that is distinct from any defined type.
 It is created by passing the `None` option in the principal and/or resource component of a [`Request`](https://docs.rs/cedar-policy/latest/cedar_policy/struct.Request.html).
-If an action's `appliesTo.principalTypes` or `appliesTo.resourceTypes` fields are set to the empty list, then the action is not expected to be used with any request; it should only be used as a way to group other actions.
 
-### Challenges
+If an action's `appliesTo.principalTypes` or `appliesTo.resourceTypes` are the empty list, then the action is not expected to be used with any request; it should only be used to group other actions.
+This takes precedent over any other information in the `appliesTo`.
+For example: if `appliesTo.principalTypes` is the empty list, then the validator expects the action to never apply, regardless of whether `appliesTo.resourceTypes` is omitted or set to a particular list of entity types.
 
-The difference between using an empty list vs. omitting `appliesTo.principalTypes` or `appliesTo.resourceTypes` vs. omitting `appliesTo` entirely can be unclear.
-It also allows for confusing combinations: if `appliesTo.principalTypes` is the empty list, then the validator expects the action to never apply, regardless of whether `appliesTo.resourceTypes` is omitted or set to a list of entity types.
-
-### Feature request
-
-We can mitigate the challenges by making following changes:
+The difference between omitting a field vs. setting it to the empty list has caused confusion for users.
+This RFC proposes to:
 
 1. Change an omitted `appliesTo` to mean that the action cannot be used in a request.
 2. Disallow empty arrays for `appliesTo.principalTypes` / `appliesTo.resourceTypes`.
@@ -60,7 +56,7 @@ The changes proposed in this RFC will _only_ affect you use the following in you
 - `appliesTo.principalTypes: []`
 - `appliesTo.resourceTypes: []`
 
-2. You intend for an action to apply to _unspecified_ principals or resources, i.e.,
+2. You intend for an action to apply to _unspecified_ principals and resources, i.e.,
 
 - omitted `appliesTo` field
 - `appliesTo: {}`
