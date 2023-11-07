@@ -10,7 +10,7 @@
 ## Timeline
 
 - Started: 2023-10-24 (predecessor [#28](https://github.com/cedar-policy/rfcs/pull/28) started on 2023-10-03, and predecessor [#23](https://github.com/cedar-policy/rfcs/pull/23) started on 2023-07-18)
-- Entered FCP:
+- Entered FCP: 2023-11-07
 - Accepted:
 - Landed:
 
