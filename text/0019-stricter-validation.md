@@ -139,4 +139,4 @@ The proposal is, we believe, the minimal change to make strict mode self-contain
 
 ## Updates
 
-* 2023-11-07: The original text said that `AnyEntity` was used to type unspecified entities. This is not the case in any released version of Cedar -- instead unspecified entities are given a special `Unspecified` type. Updated text to reflect this.
+* 2023-11-07: The original text said that the handling of unspecified entities needed to be adjusted. However, although released implementations of Cedar type unspecified entities as `AnyEntity`, `==` and `in` expressions involving unspecified entities are typed as `False` (rather than `Bool`). This provides the same behavior as using a special `Unspecified` type, as originally proposed in this RFC.
