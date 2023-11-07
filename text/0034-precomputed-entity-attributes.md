@@ -35,19 +35,15 @@ behavior.
 Notably, as of this writing, `Entities::evaluate()` is not released yet, so we
 can make changes in this area without breaking our users.
 
-3. Today, `Entity::new()` requires callers to pass in attribute values as
-`RestrictedExpression`.
-For some callers, evaluating these `RestrictedExpression`s is an unnecessary
-source of runtime evaluation errors (and performance overhead).
-
 ## Detailed design
 
-This RFC has three components:
+This RFC has ~three~ two components: (a third component was severed and moved to
+Alternative A after discussion)
 
 ### Component 1: Store attributes as precomputed `Value`s
 
-First, we redefine `Entities` and `Entity` to hold attributes as `Value`s
-instead of as restricted expressions.
+We redefine `Entities` and `Entity` to hold attributes as `Value`s instead of as
+restricted expressions.
 This addresses the first point in [Motivation](#motivation).
 
 This change is breaking for the public API in two (small) ways:
@@ -68,13 +64,44 @@ Accepting these breaking changes allows us to give users the best-performing
 behavior by default.
 For alternatives that are less breaking, see [Alternatives](#alternatives).
 
-### Component 2: Construct entities using precomputed `Value`s
+### Component 2: Remove no-longer-necessary interface to precompute `Value`s
 
-Second, we add new constructors for `Entities` and `Entity` which take `Value`s
+We remove `Entities::evaluate()`, as all `Entities` are now stored in their
+evaluated form by default.
+This addresses the second point in [Motivation](#motivation).
+
+This is not a breaking change because `Entities::evaluate()` has not yet been
+released in any Cedar release.
+
+## Drawbacks
+
+- This RFC represents some breaking changes for users upgrading to a new major
+version of Cedar. All breaking changes come with some cost in terms of user
+experience for existing users. This RFC contends that the benefit outweighs the
+cost in this case.
+
+## Alternatives
+
+### Alternative A
+
+In addition to what is currently proposed in this RFC, we could add the
+following change, allowing users to construct entities using precomputed
+`Value`s.
+
+__Motivation__
+
+Today, `Entity::new()` requires callers to pass in attribute values as
+`RestrictedExpression`.
+For some callers, evaluating these `RestrictedExpression`s is an unnecessary
+source of runtime evaluation errors (and performance overhead).
+
+__Detailed design__
+
+We add new constructors for `Entities` and `Entity` which take `Value`s
 instead of `RestrictedExpression`s.
-These constructors would work without throwing evaluation errors, in contrast
-to the existing constructors after the changes described above.
-This addresses the third point in [Motivation](#motivation).
+These constructors would work without throwing evaluation errors, in contrast to
+the existing constructors after the changes described in the main part of this
+RFC.
 
 This change requires that we expose `Value` in our public API in some manner
 (probably via a wrapper around the Core implementation, as we do for many other
@@ -104,53 +131,28 @@ at a notable performance cost (due to the inefficient
 generate a different kind of confusion as `EvalResult` is an awkward name in
 the context of these constructors.
 
-This RFC currently proposes we take the third option.
+__Commentary__
 
-### Component 3: Remove no-longer-necessary interface to precompute `Value`s
+The sub-proposal in this alternative is severable and could be its own RFC, or
+perhaps a change that doesn't rise to the level of requiring an RFC.
+We have the freedom to do it any time in the future (after the rest of the RFC
+is accepted and implemented) if we don't want to do it now.
 
-Third and finally, we remove `Entities::evaluate()`, as all `Entities` are now
-stored in their evaluated form by default.
-This addresses the second point in [Motivation](#motivation).
+@mwhicks1 opinion, which I tend to agree with, is that this alternative is
+probably more trouble than it's worth -- that it provides only marginal benefit
+to users at the cost of cluttering our API, both with additional constructors,
+and with the public `Value` type.
 
-This is not a breaking change because `Entities::evaluate()` has not yet been
-released in any Cedar release.
-
-## Drawbacks
-
-- This RFC represents some breaking changes for users upgrading to a new major
-version of Cedar. All breaking changes come with some cost in terms of user
-experience for existing users. This RFC contends that the benefit outweighs the
-cost in this case.
-
-## Alternatives
-
-### Alternative A
-
-We could do only first and third components of this RFC, and not the second
-component, at least for now.
-(The second component -- adding the new constructors for `Entities` and `Entity`
--- is severable and could be its own RFC, or perhaps a change that doesn't rise
-to the level of requiring an RFC.)
-
-In essence, we could decide that the second component is more trouble than it's
-worth -- that it provides only marginal benefit to users at the cost of
-cluttering our API, both with additional constructors, and with the public
-`Value` type.
-
-Users would have to still construct `Entity` and `Entities` via restricted
-expressions, using constructors which can throw errors.
-
-We would be able to avoid having to expose `Value` or make changes to
+If we don't take this alternative, users will have to still construct `Entity`
+and `Entities` via restricted expressions, using constructors which can throw
+errors.
+But, we would be able to avoid having to expose `Value` or make changes to
 `EvalResult`, at least for now.
-
-Taking this alternative doesn't close off the door towards adopting the second
-component (adding the additional constructors and exposing `Value`) sometime in
-the future.
 
 ### Alternative B
 
-In addition to everything proposed in the current RFC, we could provide the
-status-quo definitions of `Entities` and `Entity` under new names: e.g.,
+In addition to what is currently proposed in the current RFC, we could provide
+the status-quo definitions of `Entities` and `Entity` under new names: e.g.,
 `UnevaluatedEntities` and `UnevaluatedEntity` (naming of course TBD).
 This is very unlikely to be of any use to new users, but existing users really
 wanting the old error behavior could use these types and functions instead of
