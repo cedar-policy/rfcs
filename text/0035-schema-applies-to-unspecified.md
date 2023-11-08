@@ -40,16 +40,16 @@ This feature request is consistent with the semantics for `appliesTo` proposed i
 
 ## Detailed design
 
-This RFC will require updating the schema parser to enforce suggestions 1-3 above.
+This RFC will require updating the schema parser to enforce proposals 1-3 above.
 It requires no changes to the validator itself.
 
 ### Notes on Backwards Compatibility
 
 This RFC proposes a **breaking change** that requires a major version bump to Cedar.
-For the sake of argument, say that the current version of Cedar X and that this RFC will be implemented in Cedar Y (which has no other breaking changes).
+For the sake of argument, say that the current version of Cedar is X and that this RFC will be implemented in Y (which has no other breaking changes).
 The rest of this section is written for users who are upgrading from X to Y.
 
-The changes proposed in this RFC will _only_ affect you use the following in your schema:
+The changes proposed in this RFC will _only_ affect you if you use the following in your schema:
 
 1. You intend for an action to apply to _no_ principals or resources, i.e.,
 
@@ -78,9 +78,45 @@ This will have the same meaning in both X and Y: the action applies to an unspec
 
 ## Drawbacks
 
-This is a breaking change that will alter the meaning of current schemas, see the discussion on backwards compatibility [above](#notes-on-backwards-compatibility).
-Although this change may cause developer pain in the near term, we hope that it will make schemas easier to understand in the long term.
+This is a breaking change that will alter the meaning of current schemas.
+See the discussion on backwards compatibility [above](#notes-on-backwards-compatibility) and discussion on backwards-compatible alternatives [below](#alternatives).
 
 ## Alternatives
 
-- Keep the semantics as is, and improve documentation to reduce confusion.
+### Alternative A
+
+The main downside of the current proposal is that, in some cases (see **case 1** [above](#notes-on-backwards-compatibility)), there will be no way to update your schema before you upgrade to Cedar Y -- you will have to update your schema simultaneously with the upgrade.
+This will be a problem for large applications where updating policies, schemas, and the Cedar SDK cannot be done atomically.
+
+We could mitigate this by instead implementing the following changes.
+
+| Scenario | Status Quo | Proposal |
+| --------- | -------- | ------- |
+| Specified `appliesTo` but omitted `principalTypes`/`resourceTypes` | Authz request with this action can only have an unspecified entity as the principal/resource | Same as status quo |
+| `appliesTo.principalTypes: []` AND `appliesTo.resourceTypes: []` | Action cannot be used in authz request | Same as status quo |
+| `appliesTo.principalTypes: []` OR `appliesTo.resourceTypes: []` | Action cannot be used in authz request | ❌ Not allowed |
+| Omitted `appliesTo` | Authz request with this action can only have unspecified entities as the principal and resource | ❌ Not allowed |
+
+These changes remove some of the confusing behavior of the current implementation (e.g., setting only one of `appliesTo.principalTypes`/`appliesTo.resourceTypes` to be the empty list), while maintaining backwards compatibility.
+Under this alternative, some schemas will produce parse errors after upgrading to Y, but users can fix these error proactively.
+For every valid schema in Y, there is some schema in X that has identical behavior.
+
+The downside of this alternative is that it still allows the empty list to mean that an action applies to no entities, which may be confusing for users.
+Specifying that an action applies to no entities also requires more characters with this alternative, possibly making it more annoying to type out.
+
+This alternative will require updates to [RFC 24](https://github.com/cedar-policy/rfcs/blob/main/text/0024-schema-syntax.md) in order to maintain consistency between the two schema formats.
+
+### Alternative B
+
+Another way to address backwards compatibility concerns is to combine this change with an implementation of schema versioning (see [RFC 33](https://github.com/cedar-policy/rfcs/pull/33)), supporting both the old and new behavior for schema parsing (for some period of time), allowing users to choose which behavior they want by setting a flag.
+
+There are at least two reasonable options here:
+
+- Force Cedar Y schemas to include an explicit version marker saying version Y. Schemas with no version marker will be interpreted using the Cedar X behavior, even if you're using Cedar Y. This gives full backwards-compatibility: no one's schema changes behavior when upgrading from Cedar X to Cedar Y, unless/until you add a version marker saying version Y. However, this means the behavior proposed in this RFC won't be default, which seems undesirable.
+- Same thing, but interpret schemas with no version marker using the Cedar Y behavior. This is still a breaking change, because unmarked schemas will change behavior when upgrading from Cedar X to Cedar Y. But it solves the problem of "no way to write a schema so that validation behavior will be the same between X and Y." Users just add a "version X" marker to their schema, and then they can upgrade from Cedar X to Cedar Y without that schema changing behavior.
+
+The primary arguments against this alternative are that (1) it blocks this RFC on the acceptance of RFC 33, and (2) it commits us to maintaining multiple versions of the schema parser and sets a precedent for supporting deprecated data formats going forward.
+
+## Unresolved questions
+
+- Should we provide an automated transformation for people using the existing schemas? How should we provide this transformation: as a new API in `cedar-policy`, or a standalone executable? How long should we maintain the transformation code? How can we ensure that users run the transformation at upgrade time?
