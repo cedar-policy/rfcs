@@ -7,10 +7,10 @@
 
 ## Timeline
 
-- Start Date: 11-07-2023
-- Date Entered FCP: 18-08-2023
-- Date Accepted: 18-08-2023
-- Date Landed:
+- Started: 2023-07-11
+- Entered FCP: 2023-08-18
+- Accepted: 2023-09-05
+- Landed: 2023-09-08 on `main`
 
 ## Summary
 
@@ -58,7 +58,7 @@ Strict-mode validation will continue to apply the restriction it currently appli
 * Empty set literals may not exist in a policy because we do not currently infer the type of the elements of an empty set.
 * Extension type constructors may only be applied to literals.
 
-Validating `Action` entities, template slots `?principal` and `?resource`, and unspecified `principal` and `resource` types must be done differently so as not to rely on the "top" entity type _AnyEntity_, which is essentially an infinite-width union type, used internally.
+Validating `Action` entities and template slots `?principal` and `?resource` must be done differently so as not to rely on the "top" entity type _AnyEntity_, which is essentially an infinite-width union type, used internally.
 Next, we describe how we propose to handle these situations, in both permissive and strict validation.
 Importantly, these changes all retain or even _improve_ precision compared to the status quo -- they will _not_ be the reason that policies that typechecked under the old strict mode no longer do.
 
@@ -116,20 +116,6 @@ The rest of the policy is typechecked as usual when `?principal` is `User`.
 This change will match the precision of the validator today, and will enable more precise typechecking if we expand where in a policy template slots may be used.
 In particular, if we allowed expressions like `?principal.foo == 2` in the condition of a policy, the above approach would allow us to know precisely that `?principal` will always have a `foo` attribute, whereas the current approach using _AnyEntity_ would not be able to.
 
-### Unspecified principal/resource entity types
-
-The validator has a concept of an unspecified principal or resource entity type in an action `appliesTo` specification.
-When `principalTypes` or `resourceTypes` is omitted from the schema for a given action, we interpret the schema as declaring that the action does not apply to any particular principal/resource entity type.
-It instead applies to the _unspecified_ principal or resource, which allows users to make authorization requests for that action without providing a specific principal or resource entity. This is implemented now for permissive validation by assigning the _AnyEntity_ type to a variable when it is unspecified.
-The strict validator currently handles the unspecified principal/resource types in an ad hoc manner.
-
-To resolve this issue, both permissive and strict validation will no longer type an unspecified principal/resource as _AnyEntity_, and instead treat it more precisely as some specific entity type that is _not equal to any other entity type_.
-This change closely matches these semantics of authorization request processing using the unspecified entity type.
-It also is more precise than using _AnyEntity_.
-In particular, for an expression like `principal == User::"Alice"` in a policy, using _AnyEntity_ for the type of `principal` would give this expression the type `Boolean`.
-But we know better: This expression will always evaluate to `false` when `principal` is unspecified in the request.
-Giving `principal` an entity type not equal to any other type would allow us to type the expression as `False`, and therefore uncover that the policy containing this expression might never properly apply.
-
 ### Implementation details
 
 The current way we implement strict mode will change to accommodate these additions. We propose the following:
@@ -150,3 +136,7 @@ Mitigating this issue is that the backward incompatibility will be minimal in pr
 ## Alternatives
 
 The proposal is, we believe, the minimal change to make strict mode self-contained, but not too different from what was there before. It also should not result in pervasive changes to the existing code. Alternative designs we considered (e.g., allowing more permissive mode features in strict mode) would be more invasive.
+
+## Updates
+
+* 2023-11-07: The original text said that the handling of unspecified entities needed to be adjusted. However, although released implementations of Cedar type unspecified entities as `AnyEntity`, `==` and `in` expressions involving unspecified entities are typed as `False` (rather than `Bool`). This provides the same behavior as using a special `Unspecified` type, as originally proposed in this RFC.
