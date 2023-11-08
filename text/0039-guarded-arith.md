@@ -58,7 +58,20 @@ We assume almost no one uses arithmetic, so we think this is an acceptable trade
 Unclear how these will affect our FFI. We can take this proposal now and switch to unbounded ints later more easily than we can switch now and reverse that decision later.
 
 ### Bounds in the schema.
-It is not clear how to analyze a set with members of an EntityType that has an integer attribute with bounds while keeping analysis sound, complete and decidable.
+It is not clear how to analyze a set with members of an EntityType that has an integer attribute with bounds while keeping analysis sound, complete and decidable. Consider
+
+```
+MyEntityType1: [{i: Long [-10,10]}]
+MyEntityType2: [{set_of_my_entities: Set<MyEntityType1>}]
+```
+and the policy:
+```
+permit(principal is MyEntityType2, action, resource) when {
+    principal.set_of_my_entities.contains(resource.foo) && resource.foo.i > 1000
+};
+```
+Analysis should encode that no entity in `MyEntityType2.set_of_my_entities` has an attribute `i` outside the range `[-10,10]`.
+
 
 ### Status quo
 See the downside in the motivation.
@@ -75,7 +88,7 @@ would require new bounds:
 ```
 principal.a * 1000 + 500 < i64::MAX && (if principal.a < 9,223,372,036,854,774 && principal.a > -9,223,372,036,854,774 then principal.a * 1000 else 0) + 500 > foo
 ```
-This would be easier to implement, but much more annoying to use if anyone uses chained arithmetic operations.
+Requiring bounds for each operation would be easier to implement, but much more annoying to use if anyone uses chained arithmetic operations.
 
 ## Unresolved questions
 
