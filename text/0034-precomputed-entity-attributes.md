@@ -6,12 +6,13 @@
   it splits out the changes from RFC 28 that relate to precomputed entity
   attributes, without the larger changes in RFC 28 regarding `EntityDataSource`.
 - This RFC is also the successor to [RFC 23](https://github.com/cedar-policy/rfcs/pull/23).
+- Implementation PR: [cedar#430](https://github.com/cedar-policy/cedar/pull/430)
 
 ## Timeline
 
 - Started: 2023-10-24 (predecessor [#28](https://github.com/cedar-policy/rfcs/pull/28) started on 2023-10-03, and predecessor [#23](https://github.com/cedar-policy/rfcs/pull/23) started on 2023-07-18)
 - Entered FCP: 2023-11-07
-- Accepted:
+- Accepted: 2023-11-14
 - Landed:
 
 ## Summary
