@@ -7,10 +7,10 @@
 
 ## Timeline
 
-- Start Date: 2023-07-14
-- Date Entered FCP: 2023-10-27
-- Date Accepted: 2023-11-08
-- Date Landed:
+- Started: 2023-07-14
+- Entered FCP (intent to accept): 2023-10-27
+- Accepted: 2023-11-08
+- Landed:
 
 ## Summary
 

@@ -3,14 +3,14 @@
 ## Related issues and PRs
 
 - Reference Issues: <https://github.com/cedar-policy/cedar/issues/94>
-- Implementation PR(s):
+- Implementation PR(s): <https://github.com/cedar-policy/cedar/pull/396>
 
 ## Timeline
 
 - Started: 2023-06-16
 - Entered FCP (intent to accept): 2023-07-21
 - Accepted: 2023-07-28
-- Landed:
+- Landed: 2023-11-08 on `main`
 
 ## Summary
 
