@@ -110,6 +110,7 @@ One final note -- this RFC does not propose any changes to what syntax is legal 
 ## Drawbacks
 
 - The new semantics is more complicated than Cedar's current semantics for `in`. This could lead to additional confusion. The current semantics may lead to some confusion as well, but that is much more easily remedied with better error messages (see [cedar#177](https://github.com/cedar-policy/cedar/issues/177)).
+- As currently proposed (i.e., unless we take alternative 5) `foo in ["Bar", "Baz"]` will have different semantics than `foo in [User::"Bar", User::"Baz"]`. If a user gets used to writing `in` for shallow set membership, they will likely be confused by our current semantics of `in` on sets of entities. For example, `"Foo" in ["Bar", "Baz"]` is trivially false, but `User::"Foo" in [User::"Bar", User::"Baz"]` could be true or false depending on the entity hierarchy.
 - The new semantics doesn't provide a way to do shallow set membership with entity references; you will still need `.contains()` for that.
     - Response: Is there a real-world use case that needs shallow set membership with entity references?
 - The new `in` is nearly redundant with `.contains()`. For ordinary set-membership with non-entities (as in both of the basic examples at the top), users would now have two different ways to do the same thing -- something we have previously said we want to generally avoid if possible.
