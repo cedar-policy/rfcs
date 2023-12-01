@@ -21,13 +21,19 @@ In the JSON object `{"foo": [null]}`, the `null` is not directly an attribute va
 
 ## Motivation
 
-We want to support users passing generic JSON data as a request context with minimal preprocessing requirements.
+A goal when designing entity and context parsing for Cedar was to support users passing generic JSON data as a request context with minimal preprocessing requirements.
 We do this by constructing, for example, Cedar records from JSON objects and Cedar strings from JSON strings.
-Notably, however, we will not construct any request context if there is a `null` JSON value appearing _anywhere_ in the JSON data, requiring that users who may have `null` in their context preprocess their data to remove it.
+Notably, however, we do not construct any request context if there is a `null` JSON value appearing _anywhere_ in the JSON data, requiring that users who may have `null` in their context preprocess their data to remove it.
+This becomes a problem when a users includes `null` in their data, expecting that it will be accepted like most other JSON data, but then encounter an unexpected error.
 
 ## Detailed design
 
-To build the attributes for a context or entity, we accept a generic [JSON value](https://www.json.org/json-en.html) with a few limitation:
+This RFC proposes ignoring `null` values _only_ when they occur as thj value of a record attribute while continuing to error on `null` elsewhere.
+This is based on the observation that, while we can't handle `null` in all situations, a `null` value appearing record attribute can reasonably be treated as explicitly marking the attribute _not_ present in the record.
+
+### JSON Parsing Background
+
+To build the attributes for a context or entity, Cedar currently accept a generic [JSON value](https://www.json.org/json-en.html) with a few limitation:
 
 1. If the value is an object, it must not contain the same attribute twice. If it contains the reserved attributes `__expr`, `__entity`, or `__extn`, then it may also be rejected based on specific rules for these escapes.
 2. If the value is a number, it must be an integer. A JSON value could be a fractional (e.g, `1.0`) or exponential (e.g., `1e0`) value, but these are not permitted.
@@ -36,15 +42,22 @@ To build the attributes for a context or entity, we accept a generic [JSON value
 These limitations ensure that there is an obvious mapping from JSON values to their Cedar equivalents.
 Fractional and exponential numbers encode floating point numbers which do not exist in Cedar, so they are not accepted.
 In the case of `null`, Cedar does not have any `null` value, so there is no single obvious Cedar value that it should map to in all situations.
+The change proposed in this RFC supports `null` where there is an obvious interpretation (record attributes) while continuing to error elsewhere.
 
-In this RFC we observe that when `null` occurs as the value of a record attribute there is a natural interpretation.
-We can treat the `null` value as explicitly marking the attribute as _not_ present in the record, so we can ignore the attribute while continuing to error on `null` anywhere else.
+### Edge Cases
 
 If an object contains an attribute more than once it will still be an error even if the value of some of the attributes are `null`.
+All JSON formats used by Cedar should error when encountering an attribute more than once in any JSON object.
+Even though the `null` value is marking the attribute as as absent, from the Cedar record, the entry is present in the JSON object, so it is still an error.
+Moreover, explicitly marking an attribute as absent and later providing a value for that attribute is very likely to be a mistake.
 
 We use JSON objects with the reserved attributes `__expr`, `__entity`, or `__extn` as escapes for writing Cedar values that don't have JSON equivalents.
 These are JSON objects, so this RFC as written up to this point implies ignoring `null` on attributes appearing here.
 We will instead continue to treat `null` as an error in this context.
+If this were not an error and we instead ignored `null` value, `{"__entity": null}` would be treated the same as `{}`, but the `__entity` escape should parse to an entity while `{}` parses to a record.
+We could alternatively find a way to parse `null` to an entity, perhaps the unspecified entity.
+There is currently no way to specify the unspecified entity in out JSON data format.
+If we want to extend the formats to support it, this may be a reasonable approach, but that extension is beyond the scope of this RFC, and can be added later in a backwards compatible manner if `null` remains an error here.
 
 ### Schema based parsing
 
@@ -92,8 +105,10 @@ If a user first observes that `null` is ignored as an attribute value, they may 
 
 To avoid inconsistent handling of `null`, we could decided that `null` occurring _anywhere_ should be ignored. 
 Aside from objects, the only relevant case is arrays.
-This entails interpreting `{"foo": [null]}` as `{foo: []}`.
+This entails interpreting the JSON object `{"foo": [null]}` as the Cedar value `{foo: []}`.
 
+This behavior is very surprising.
+I cannot think of a programming language with `null` that would not count it as an element of a list.
 This would lead to misleading behavior around  the `any` and `all` operators proposed in [RFC 21](https://github.com/cedar-policy/rfcs/pull/21) (and, to a lesser extent, the existing `containsAll` and `containsAny` operators).
 The following policy would permit access even if `context.portNumbers` contains a `null` value, but `null` is clearly not within this range.
 
@@ -104,7 +119,7 @@ when {
 };
 ```
 
-This behavior is concerning, but, if we accept the misleading behavior around `has` when ignore `null` attributes, I don't think it should be considered unacceptable.
+This behavior is concerning, but, if we accept the misleading behavior around `has` when ignoring `null` attributes, it seems that this could be considered acceptable.
 
 ### Add `null` to Cedar
 
@@ -114,11 +129,15 @@ This could work well for when using Cedar as a dynamic language, but its use wou
 ### Error on `null`
 
 This is our current behavior.
-As stated above, it limits what data can be used to construct a context, forcing users to remove it in their own preprocessing passes. 
-Cedar should be easy and ergonomic to use, so we should hesitate to offload work users without good reason, but, if the correct interpretation of `null` is not always the same, it may be the correct choice here.
+It limits what data can be used to construct an entity or entity, so users with `null` values in their data see an error and can remove it in their own pre-processing pass if that's the behavior they require.
 
-If we take this alternative, we should keep in mind that many users are likely to find themselves writing the same filter to remove `null` from their data, so we should consider providing this filter ourselves, even if it is not an integral part of the Cedar data format.
+If different users tend to want different non-error parsing, then this alternative provides a clear error message to users immediately on attempting to parse a `null` value.
+At this point, are forced to make an explicit decision about how to handle `null` data.
+As the source of the data, users are likely to be in a better position to make this decision than we are.
 
-## Unresolved questions
+This is a good alternative if unless believe that the majority of users want the same non-error parsing of `null`.
+In that case we would be requiring that many users independently re-implement the same preprocessing pass.
+Even in this case, supporting one non-error alternative (e.g., this rfc, or ignore `null` everywhere) would still force users wanting a different option to write their own preprocessing pass while making the behavior when a `null` is included in their data more difficult to diagnose.
+Rather than see an error when parsing, an unexpected parsing of `null` values could result in unexpected authorization decision.
 
-* Unexpected attribute with `null` value in schema based parsing.
+
