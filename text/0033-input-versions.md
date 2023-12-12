@@ -167,6 +167,8 @@ Adding an annotation adds some maintenance burden on customers. When a version a
 
 If an input format changes in a way that older syntax is interpreted differently, such as the `appliesTo` in the JSON schema as per the request in [issue 351](https://github.com/cedar-policy/cedar/issues/351), the fact that a version annotation is optional presents a problem: A newer and older parser could both accept the same input, but interpret it differently. If a version annotation was required, such an ambiguous interpretation would not be possible.
 
+Providing language-version annotations in code files is unusual. Go permits [specifying the language minimum version in a module's metadata file](https://go.dev/ref/mod#go-mod-file-go), but not in the code itself.
+
 ## Alternatives
 
 ### Do nothing to Cedar; version info can appear in application metadata
@@ -183,9 +185,11 @@ Rather than add a version annotation in the Cedar input syntax directly, version
     }
 }
 ```
-Such annotations could then trigger different application actions, e.g., calling different versions of the Cedar evaluator.
+Such annotations could then trigger different application actions, e.g., calling different versions of the Cedar evaluator. As a real-world example, the [`go` directive](https://go.dev/ref/mod#go-mod-file-go) in Go-language module metadata is used to select which toolchain to run.
 
 Versioning is especially useful when the same syntax is interpreted differently in later versions. This situation should be (very) rare, though. When it happens, the newer parser can warn about the change in syntax, especially in the case of errors that would trigger due to the change.
+
+Some comments on earlier versions of this RFC suggested that versioning might be most naturally given within a single configuration file that applies to a group of schemas, entity data, policies, etc. rather than associated with individual files.
 
 ### Change, or drop, the policy annotation format
 
