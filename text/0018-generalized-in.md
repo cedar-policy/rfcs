@@ -7,14 +7,17 @@
 
 ## Timeline
 
-- Start Date: 2023-07-11
-- Date Entered FCP:
-- Date Accepted:
-- Date Landed:
+- Started: 2023-07-11
+- Archived: 2023-12-14
+- Entered FCP:
+- Accepted:
+- Landed:
 
 ## Summary
 
 Allow `in` to be used for set membership, not just hierarchy membership. In particular, allow it to be used with non-entity-typed values on the LHS. The detailed design of this proposal (see below) ensures that back-compatibility is maintained for all existing valid Cedar policies.
+
+Note (2023-12-14): This RFC has been "archived" in the sense that it doesn't currently have much support, but also we're open to resuming the discussion on it at any time. Feel free to leave a comment and resume the discussion. But in absence of any activity or popular demand, the Cedar team does not plan to take any action on this RFC in the near future.
 
 ## Basic examples
 
@@ -109,7 +112,7 @@ One final note -- this RFC does not propose any changes to what syntax is legal 
 
 ## Drawbacks
 
-- The new semantics is more complicated than Cedar's current semantics for `in`. This could lead to additional confusion. The current semantics may lead to some confusion as well, but that is much more easily remedied with better error messages (see [cedar#177](https://github.com/cedar-policy/cedar/issues/177)).
+- The new semantics is more complicated than Cedar's current semantics for `in`. This could lead to additional confusion. The current semantics may lead to some confusion as well, but that has been significantly ameliorated with better error messages (see [cedar#177](https://github.com/cedar-policy/cedar/issues/177)).
 - As currently proposed (i.e., unless we take alternative 5) `foo in ["Bar", "Baz"]` will have different semantics than `foo in [User::"Bar", User::"Baz"]`. If a user gets used to writing `in` for shallow set membership, they will likely be confused by our current semantics of `in` on sets of entities. For example, `"Foo" in ["Bar", "Baz"]` is trivially false, but `User::"Foo" in [User::"Bar", User::"Baz"]` could be true or false depending on the entity hierarchy.
 - The new semantics doesn't provide a way to do shallow set membership with entity references; you will still need `.contains()` for that.
     - Response: Is there a real-world use case that needs shallow set membership with entity references?
@@ -119,10 +122,13 @@ One final note -- this RFC does not propose any changes to what syntax is legal 
 
 ## Alternatives
 
+Several alternatives are listed here, in some cases just to explain why we aren't considering them.
+The only alternatives from this list that have received any support (as of this writing) are Alternative 1 and Alternative 5.
+
 ### Alternative 1: Do nothing (status quo)
 
 The Motivation section above explains why this is undesirable.
-Point (2) in the motivation section could be partially addressed with better error messages (see [cedar#177](https://github.com/cedar-policy/cedar/issues/177)).
+However, point (2) in the motivation section has been partially addressed with better error messages (see [cedar#177](https://github.com/cedar-policy/cedar/issues/177)).
 
 ### Alternative 2: remove `.contains()`
 
@@ -164,13 +170,14 @@ This is basically a variant of Alternative 3 where instead of `a inSet B` we wri
 
 This would be a breaking change that changes the current meaning of `principal.manager in [Group::"A", Group::"B"]`. The resulting semantics would be simpler as a result, and Examples 1 and 2 would still look the same as in the main proposal.
 
-In this alternative, users wouldn't have any way to get the current "deep" semantics. Some ways to address that:
+In this alternative, `in` cannot be used for the current "deep" semantics.
+Users would have a few alternatives if they did want the "deep" semantics:
 * We could add a new keyword that has the current "deep" semantics -- say, `inAny`
-* If we eventually introduce a more general feature to map operators over sets, users could get the "deep" semantics by mapping `in` over a set
+* With [RFC 21], users can get the "deep" semantics with `.any(_ in it)` (although this has the set on the LHS, like `.contains()`)
 * If the RHS is a literal, users could just write out `a in G1 || a in G2 || ...`. This doesn't help for the case where the RHS is not a literal, e.g. today's `User::"Henry" in resource.allowedGroups`
 
 Reasons not to take this alternative:
-* It would be a breaking change for some existing Cedar policies
+* It would be a breaking change for some existing Cedar policies. In fact, it's a particularly insidious kind of breaking change: It's not that previously-valid policies would now produce parse errors, evaluation errors, or even validation errors (like in [RFC 20]), but rather that the behavior simply silently changes out from under you when you upgrade. Still perfectly valid, but a different meaning and behavior.
 * If we add a new keyword like `inAny`, the distinction between `in` and `inAny` could cause confusion
 * At least one user has opined that it's unintuitive that `John in [SalesTeam::"California", SalesTeam::"Oregon"]` would have different semantics than `John in SalesTeam::"WestCoast"` (assuming the natural group memberships there)
 
@@ -184,3 +191,7 @@ Reasons not to take this alternative:
 * Runs against Cedar's tenet about analyzability
 * Might be surprising behavior for users, particularly experienced programmers
 * Might have undesirable runtime performance compared to the other alternatives
+
+
+[RFC 20]: https://github.com/cedar-policy/rfcs/blob/main/text/0020-unique-record-keys.md
+[RFC 21]: https://github.com/cedar-policy/rfcs/blob/main/text/0021-any-and-all-operators.md
