@@ -3,14 +3,14 @@
 ## Related issues and PRs
 
 - Reference Issues: N/A
-- Implementation PR(s):
+- Implementation PR(s): <https://github.com/cedar-policy/cedar-spec/pull/138>
 
 ## Timeline
 
 - Started: 2023-10-12
 - Entered FCP (intent to accept): 2023-10-16
-- Accepted: 2023-20-24
-- Landed:
+- Accepted: 2023-10-24
+- Landed: 2023-10-26 on `main`
 
 ## Summary
 
