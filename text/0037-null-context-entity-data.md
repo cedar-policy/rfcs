@@ -9,6 +9,7 @@
 
 - Started: 2023-11-02
 - Entered FCP (intent to reject): 2023-12-11
+- Rejected: 2023-12-20
 
 ## Summary
 
