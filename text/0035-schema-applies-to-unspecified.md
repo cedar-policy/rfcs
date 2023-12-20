@@ -37,7 +37,7 @@ This RFC proposes to:
 
 These changes remove some of the confusing behavior of the current implementation while maintaining backwards compatibility.
 In particular, with this change there is only _one way_ to define an action group (both `appliesTo.principalTypes` and `appliesTo.resourceTypes` must be empty), and _one way_ to define an action where both the principal and resource are unspecified (omit the `appliesTo.principalTypes` and `appliesTo.resourceTypes` fields).
-Under this proposal, some schemas will produce parse errors when users upgrade to a new version of Cedar, but users can fix these error proactively because for every valid schema under the new proposal, there is some schema in current implementation that has identical behavior.
+Under this proposal, some schemas will produce parse errors when users upgrade to a new version of Cedar, but users can fix these errors proactively because for every valid schema under the new proposal, there is some schema in the current implementation that has identical behavior.
 
 ## Detailed design
 
