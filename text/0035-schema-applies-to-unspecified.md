@@ -41,7 +41,7 @@ Under this proposal, some schemas will produce parse errors when users upgrade 
 
 ## Detailed design
 
-This RFC will requires updating the schema parser.
+This RFC requires updating the schema parser.
 It requires no changes to the validator itself.
 
 ## Drawbacks
