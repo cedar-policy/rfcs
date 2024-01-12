@@ -62,7 +62,7 @@ The new operators provide a built-in way to concisely express these universal an
 
 ## Detailed design
 
-The Cedar syntax, semantics, and type system are all extended to support the new operators. These extensions are backward compatible, and existing policies won't be affected. The design of the operators is inspired by the ForAllValues and ForAnyValue operators in the IAM language.
+The Cedar syntax, semantics, and type system are all extended to support the new operators. These extensions are backward compatible, and existing policies won't be affected. The design of the operators is inspired by the [`ForAllValues` and `ForAnyValue`](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-single-vs-multi-valued-context-keys.html#reference_policies_condition-multi-valued-context-keys) operators in IAM and the [`any-of` and `all-of`](https://docs.oasis-open.org/xacml/3.0/xacml-3.0-core-spec-os-en.html#_Toc325047251) operators in XACML.
 
 ### Extending the syntax
 
@@ -77,11 +77,12 @@ QUANTIFIER := 'all' | 'any'
 Predicate  :=
   INTCMP Expr |
   'like' PAT |
+  'is' Path |
   IDENT '(' [ExprList] ')'
 INTCMP := '<' | '<=' | '>' | '>='
 ```
 
-The extended grammar supports applying functions, integer comparisons, and the `like` operator to sets of values.
+The extended grammar supports applying extension functions, integer comparisons, as well as the `like` and `is` operators to sets of values.
 
 For example:
 
@@ -92,7 +93,7 @@ resource.tags [any like "private*"]
 resource.scores [all greaterThan(principal.preference)]
 ```
 
-The grammar doesn't support ooperating on sets of entities (e.g., using `in`) or sets of records (e.g., using `has`).  It also doesn't support combining multiple operators in a single `any`/`all` expression. Boolean combinations need to be expressed separately, outside of `any`/`all`.
+The grammar doesn't support operating on sets of sets (e.g., using `.containsAll`) or sets of records (e.g., using `has`).  It also doesn't support combining multiple operators in a single `any`/`all` expression. Boolean combinations need to be expressed separately, outside of `any`/`all`.
 
 For example, this expression checks if all port numbers are between 8000 and 8999:
 
@@ -235,7 +236,7 @@ context.limit > 5
 #### Drawbacks
 
 - This alternative requires major development effort compared to the simplified operators. We'll need to implement more extensive modifications to the parser, the CST to AST conversion, CST/AST/EST, evaluator, validator, models, proofs, and DRT.
-- The generalized `any` and `all` operators may encourage writing complex expressions with poor performance. For example, `context.portNumbers [any (it == 8010)]` is $O(n)$ versus $O(1)$ for `context.portNumbers.contains(8010)`.
+- The generalized `any` and `all` operators may encourage writing complex expressions with poor performance. For example, `context.portNumbers [any (it == 8010)]` is $O(n)$ versus $O(1)$ for `context.portNumbers.contains(8010)`.  Note that the basic proposal doesn't suffer from this drawback because it doesn't support using `==` with `any`/`all`.
 - Supporting these operators will likely have a negative impact on analysis performance, especially for complex predicates and predicates that use the `in` operator (which needs special handling).
 
 ### Non-deterministic error behavior
