@@ -62,7 +62,7 @@ The new operators provide a built-in way to concisely express these universal an
 
 ## Detailed design
 
-The Cedar syntax, semantics, and type system are all extended to support the new operators. These extensions are backward compatible, and existing policies won't be affected. The design of the operators is inspired by the [ForAllValues and ForAnyValue operators in the IAM language]().
+The Cedar syntax, semantics, and type system are all extended to support the new operators. These extensions are backward compatible, and existing policies won't be affected. The design of the operators is inspired by the ForAllValues and ForAnyValue operators in the IAM language.
 
 ### Extending the syntax
 
