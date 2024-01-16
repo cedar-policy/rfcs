@@ -71,9 +71,9 @@ This RFC proposes extending the Cedar grammar as follows:
 ```
 Access    :=
   '.' IDENT ['(' [ExprList] ')']
+  | '.' QUANTIFIER Predicate
   | '[' STR ']'
-  | '[' QUANTIFIER Predicate ']'
-QUANTIFIER := 'all' | 'any'
+QUANTIFIER := 'all?' | 'any?'
 Predicate  :=
   BINOP Expr |
   'like' PAT |
@@ -192,9 +192,9 @@ The generalized operators extend the Cedar grammar as follows:
 ```
 Access    :=
   '.' IDENT ['(' [ExprList] ')']
+  | '.' QUANTIFIER Predicate
   | '[' STR ']'
-  | '[' QUANTIFIER Predicate ']'
-QUANTIFIER := 'all' | 'any'
+QUANTIFIER := 'all?' | 'any?'
 Predicate  := ...
 ```
 
