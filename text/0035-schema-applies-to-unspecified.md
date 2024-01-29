@@ -37,7 +37,7 @@ This RFC proposes to:
 
 These changes remove some of the confusing behavior of the current implementation while maintaining backwards compatibility.
 In particular, with this change there is only _one way_ to define an action group (both `appliesTo.principalTypes` and `appliesTo.resourceTypes` must be empty), and _one way_ to define an action where both the principal and resource are unspecified (omit the `appliesTo.principalTypes` and `appliesTo.resourceTypes` fields).
-Under this proposal, some schemas will produce parse errors when users upgrade to a new version of Cedar, but users can fix these errors proactively because for every valid schema under the new proposal, there is some schema in the current implementation that has identical behavior.
+Under this proposal, some schemas will produce parse errors when users upgrade to a new version of Cedar, but users can fix these errors proactively because _every schema that is valid under the new proposal will have identical behavior before and after the proposed change_.
 
 ## Detailed design
 
@@ -51,7 +51,7 @@ It requires no changes to the validator itself.
 This RFC originally proposed Alternative A [below](#alternative-a).
 That alternative completely disallows empty lists in the `appliesTo` field, which have been a source of confusion.
 The current proposal still allows empty lists, but at least removes some cases where the behavior is confusing (e.g., when one of the `appliesTo` fields is an empty list, but not the other).
-Unfortunately, that alternative causes problems for users upgrading between versions of Cedar -- see discussion in the section on Alternative A.
+The benefit of the current proposal is that it avoids many of the backwards compatibility issues of Alternative A.
 
 ### This proposal is inconsistent with RFC24
 
@@ -94,7 +94,10 @@ action action
   appliesTo { context: {} };
 ```
 
-(Note that in the natural syntax, `context: {}` is required.)
+(In the natural syntax, `context: {}` is required.)
+
+This inconsistency may be confusing for users dealing with both the JSON and natural syntax formats.
+But "inconsistent" does not mean "incompatible": we can still translate between the two formats even if they do not use precisely the same syntax for some edge cases.
 
 ## Alternatives
 
