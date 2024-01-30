@@ -101,6 +101,8 @@ since all apply statements need to be checked to be added to the diagnostics
 
 ## Alternatives
 
+### Use `@apply` annotations
+
 I have considered using an annotation `@apply("after")` as a way of implementing
 this.  This works for the `apply on permit` case, although it changes the
 outcome of the authorization event.  By taking into consideration the
@@ -113,6 +115,19 @@ the principal should be permitted.
 
 This alternative does not support the general case of applying regardless of
 permit / forbid.
+
+### Other possible names
+
+A variety of names could work in place of `apply` for this feature.  Here are
+a few possibilities:
+
+- apply
+- log
+- info
+- inform
+- advise
+- annotate
+- decorate
 
 ## Unresolved questions
 
