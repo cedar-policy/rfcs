@@ -101,7 +101,7 @@ since all apply statements need to be checked to be added to the diagnostics
 
 ## Alternatives
 
-### Use `@apply` annotations
+### Use `@apply` annotations - one pass
 
 I have considered using an annotation `@apply("after")` as a way of implementing
 this.  This works for the `apply on permit` case, although it changes the
@@ -115,6 +115,33 @@ the principal should be permitted.
 
 This alternative does not support the general case of applying regardless of
 permit / forbid.
+
+This alternative requires no changes to the cedar engine, as it is implemented
+outside of the engine.
+
+### Use `@apply` annotations - two pass
+
+Similar to the previous alternative, but in this one, the first call to
+is_authorized would only include the policy statements that do not have an
+`@apply` annotation.  This would result in the correct allow/deny decision.
+
+The second call to is_authorized would include only the relevant `@apply`
+policies.  In the case of an `allow` decision, only the `permit` policies would
+be run.  In the case of a `deny` decision, only the `forbid` policies would be
+run.  This would result in a list of matching policies, while not affecting the
+original decision in any way.
+
+This alternative would work correctly for both the `apply on permit` and
+`apply on forbid` case.
+
+This alternative does not support the general case of applying regardless of
+permit / forbid.
+
+A drawback in this case would be the alteration of the policy numbers in the
+diagnostics, but further post-processing could correct that.
+
+This alternative requires no changes to the cedar engine, as it is implemented
+outside of the engine.
 
 ### Other possible names
 
