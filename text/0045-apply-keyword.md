@@ -155,6 +155,10 @@ a few possibilities:
 - advise
 - annotate
 - decorate
+- observe
+- watch
+- trigger
+- notify
 
 ## Unresolved questions
 
