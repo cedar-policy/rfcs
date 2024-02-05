@@ -47,7 +47,7 @@ There are three cases that are added to the language syntax:
 1. Apply on permit
 
 ```cedar
-@mfa("true")
+@mfa("mfa prompt text")
 apply on permit (
     principal,
     action == Postgres::Action::"select",
@@ -139,6 +139,70 @@ permit / forbid.
 
 A drawback in this case would be the alteration of the policy numbers in the
 diagnostics, but further post-processing could correct that.
+
+This alternative requires no changes to the cedar engine, as it is implemented
+outside of the engine.
+
+### Use the partial evaluation extension
+
+Using partial evaluation, a policy itself could contain the requirement.  If
+the requirement was unknown, then the caller could trigger an external event
+to get the result.  Then the policy could be evaluated again once the value is 
+known.  In the example below, `context.mfa` is the unknown.  The annotation
+serves as meta-data used by the caller.
+
+```cedar
+@mfa("mfa prompt text")
+permit (
+    principal, 
+    action == Postgres::Action::"select", 
+    resource == Postgres::Table::"example.com:5432/db" 
+) when { 
+    context.mfa == true 
+};
+```
+
+In more complicated cases, such as:
+```cedar
+when { context.mfa == false && context.other == "value" }
+```
+it may be that an MFA would be triggered, and even if the user approves the
+request the end result would be `deny` due to other constraints in the when
+clause.
+
+This alternative requires no changes to the cedar engine, as it is implemented
+outside of the engine.  It does depend on the partial evaluation extension.
+
+### Use more explicit policies
+
+Instead of depending on a single statement to define this behaviour, it is
+possible to accomplish this with a more explicit set of policy:
+
+```cedar
+@mfa("mfa prompt text")
+forbid ( 
+    principal, 
+    action == Postgres::Action::"select", 
+    resource == Postgres::Table::"example.com:5432/db" 
+) when { 
+    context.mfa == false 
+};
+
+permit (
+    principal, 
+    action == Postgres::Action::"select", 
+    resource == Postgres::Table::"example.com:5432/db" 
+);
+```
+
+In this case, the first decision would be `deny` due to `context.mfa` being
+false.  However, the annotation would hint to the caller that an MFA should
+be triggered.  A second call could be made after the context is updated
+to get the final decision.
+
+It's worth noting that if the `permit` clause is omitted, an end user would be
+required to mfa, but they would still be denied during the second authorization
+attempt.
 
 This alternative requires no changes to the cedar engine, as it is implemented
 outside of the engine.
