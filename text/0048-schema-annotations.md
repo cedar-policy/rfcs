@@ -124,7 +124,6 @@ This probably can't happen unless we also do this for policies, which we've said
 Instead of annotations, we could add "doc-strings" as a first class feature.
 Could look like this:
 ```
-@doc("Stop users from accessing a high security documents unless they are in the same building")
 /# Stop users from accessing a high security document unless:
 /#  A) The principal and user are at the same location
 /#  B) The principal has a job level greater than  4
