@@ -34,10 +34,11 @@ entity in the hierarchy.
 `principal in principal`, those expressions currently (Cedar 2.x and 3.x)
 evaluate to `true` (even when `principal` is unspecified in the request).
 Unspecified entities are defined to be equal to themselves.
-4. If some policy contains the expression `principal has foo`, that expression
-currently (Cedar 2.x and 3.x) evaluates to `false` -- unspecified entities are
-defined to have no attributes.
-4. If some policy contains the expression `principal.foo`, that expression
+4. If some policy contains the expression `principal has foo` or
+`principal is Foo`, that expression currently (Cedar 2.x and 3.x) evaluates to
+`false` -- unspecified entities are defined to have no attributes, and their
+entity type cannot be written in a policy.
+5. If some policy contains the expression `principal.foo`, that expression
 currently throws an error.
 
 With this RFC, we change the behavior to be consistent: _All_ of the above
@@ -75,7 +76,7 @@ expression in the policy.
 (The scope constraints `principal,` `action,` and `resource,` are always still
 allowed of course.)
 
-From the evalautor perspective, we must still allow unspecified variables to
+From the evaluator perspective, we must still allow unspecified variables to
 appear in unevaluated/dead code, because the evaluator simply does not evaluate
 those expressions due to short-circuiting; but despite this, validator can still
 soundly prohibit these variables in all expressions in the policy.
