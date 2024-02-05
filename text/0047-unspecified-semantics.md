@@ -11,9 +11,10 @@
 
 ## Summary
 
-The `==` and `in` operations will always produce errors when applied to
-`Unspecified` entities. This replaces the current behavior, which produces
-errors in some cases, `true` in other cases, and `false` in other cases.
+The `==`, `in`, `has`, and `is` operations will always produce errors when
+applied to `Unspecified` entities. This replaces the current behavior, which
+produces errors in some cases, `true` in other cases, and `false` in other
+cases.
 
 ## Basic example
 
@@ -122,10 +123,10 @@ Why should we *not* do this?
   However, this change can probably be ignored by most Cedar users.
   We assume that most users who actually use `Unspecified` (which is probably a
   small minority already?) use it for its originally intended use-case (see
-  Motivation), and thus do not rely on `==`, `in`, or `has` operations on those
-  unspecified entities. This means that changing the behavior of `==`, `in`, and
-  `has` on unspecified entities has no effect on these users. However, see the
-  next bullet.
+  Motivation), and thus do not rely on `==`, `in`, `has`, or `is` operations on
+  those unspecified entities. This means that changing the behavior of `==`,
+  `in`, `has`, and `is` on unspecified entities has no effect on these users.
+  However, see the next bullet.
 - Some users might be currently using unspecified-principal to mean something
   like "unauthenticated user" rather than for its originally intended meaning,
   which is that `principal` doesn't matter to the policy evaluation.
