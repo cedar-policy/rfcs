@@ -46,7 +46,7 @@ action CreateList, GetLists {
 
 action GetList, UpdateList, DeleteList, CreateTask, UpdateTask, DeleteTask, EditShares { 
     principal: [User], 
-    resource:[List] 
+    resource: [List] 
 };
 ```
 ## Motivation
