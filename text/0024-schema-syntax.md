@@ -191,7 +191,7 @@ action ViewDocument in [ReadActions]
   attributes {
     version: 1,
     group: "meta"
-  }
+  };
 ```
 
 As with `entity` declarations, since the JSON-based format does not support groups, we can add an optional `groupid` attribute to an action declaration in the JSON. Those actions that are in the same group will be put together when translating to the custom syntax (after confirming that they indeed have the same type), and when translating to JSON such a group ID will be automatically generated.
