@@ -39,11 +39,15 @@ entity List in [Application] {
     tasks: Set<{name: String, id: Long, state: String}>
 };
 
-action CreateList, GetLists
-    appliesTo { principal: [User], resource: [Application] };
+action CreateList, GetLists { 
+    principal: [User], 
+    resource: [Application] 
+};
 
-action GetList, UpdateList, DeleteList, CreateTask, UpdateTask, DeleteTask, EditShares
-    appliesTo { principal: [User], resource:[List] };
+action GetList, UpdateList, DeleteList, CreateTask, UpdateTask, DeleteTask, EditShares { 
+    principal: [User], 
+    resource:[List] 
+};
 ```
 ## Motivation
 
@@ -115,11 +119,15 @@ Here is an example illustrating the action declaration syntax.
 ```
 action ReadActions;
 action WriteActions;
-action CreateDocument 
-    appliesTo { principal: [User], resource: [Drive] };
-action DeleteDocument in [WriteActions] 
-    appliesTo { principal: [User], resource: [Document] };
-action ViewDocument in [ReadActions] appliesTo {
+action CreateDocument { 
+    principal: [User], 
+    resource: [Drive] 
+};
+action DeleteDocument in [WriteActions] { 
+    principal: [User], 
+    resource: [Document] 
+};
+action ViewDocument in [ReadActions] {
     principal: [User,Public],
     resource: Document,
     context: {
@@ -132,26 +140,26 @@ action ViewDocument in [ReadActions] appliesTo {
 A declared action indicates either none, one, or both of the following:
 
 1. What action groups it is a member of, using `in`
-2. What principal, resource, and context types it may be coupled with in a request (if any), using `appliesTo`
+2. What principal, resource, and context types it may be coupled with in a request (if any), in the body
 
-Specifying `[]` for the `in` component is equivalent to omitting `in` entirely. An action that has no `appliesTo` component essentially names an action group: having no possible principal and/or resource types means there’s no way to submit a legal request with the action.
+Specifying `[]` for the `in` component is equivalent to omitting `in` entirely. An action that has an empty body component essentially names an action group: having no possible principal and/or resource types means there’s no way to submit a legal request with the action.
 
-The `appliesTo` specificiation uses record syntax, where the "attributes" of the record may be any combination of `principal`, `resource`, and `context`, with the following constraints.
+The body specification specificiation uses record syntax, where the "attributes" of the record may be any combination of `principal`, `resource`, and `context`, with the following constraints.
 + If `principal` and/or `resource` is given, the accompanying type must be either
   - a single entity type, or
   - a _non-empty_ list of entity types
 + If a `principal` or `resource` element is not given, that means that this request component is _unspecified_, i.e., corresponding to the `None` option in the `principal` or `resource` component of a [`Request`](https://docs.rs/cedar-policy/2.4.0/cedar_policy/struct.Request.html).
 + If `context` is given, the accompanying type must be a record type. If it is not given, the type `{}` is assumed.
-+ At least one of `principal`, `resource`, or `context` must be included if `appliesTo` is present; i.e., writing `appliesTo { }` is not allowed.
++ At least one of `principal`, `resource`, or `context` must be included if the body is present; i.e., writing `action ViewDocument { };` is not allowed.
 
 Here are two additional examples that follow these rules:
 
 ```
-action ViewDocument in ReadActions appliesTo {
+action ViewDocument in ReadActions {
     resource: Document,
     context: {}
 };
-action Ping appliesTo {
+action Ping {
     context: {
         source: ipaddr,
         dest: ipaddr
@@ -162,7 +170,7 @@ action Ping appliesTo {
 Since actions are entities, action names are entity IDs, which can be arbitrary strings. Thus we admit the following more general syntax as well.
 
 ```
-action "Delete Document $$" in ["Write Actions"] appliesTo {
+action "Delete Document $$" in ["Write Actions"] {
     principal: [User],
     resource: [Document]
 };
@@ -172,7 +180,7 @@ We anticipate future support for attributes as part of action entities. If/when 
 
 ```
 action ViewDocument in [ReadActions] 
-  appliesTo {
+  {
     principal: [User,Public],
     resource: Document,
     context: {
@@ -183,7 +191,7 @@ action ViewDocument in [ReadActions]
   attributes {
     version: 1,
     group: "meta"
-  };
+  }
 ```
 
 As with `entity` declarations, since the JSON-based format does not support groups, we can add an optional `groupid` attribute to an action declaration in the JSON. Those actions that are in the same group will be put together when translating to the custom syntax (after confirming that they indeed have the same type), and when translating to JSON such a group ID will be automatically generated.
@@ -203,8 +211,8 @@ entity Ticket {
   operation: Long,
   request: authcontext
 };
-action view appliesTo { context: authcontext };
-action upload appliesTo { context: authcontext };
+action view { context: authcontext };
+action upload { context: authcontext };
 ```
 Note the use of `=` for `type` declarations, but the lack of (required) `=` for `entity` declarations; the `=` is needed because the definining type may not be a record, e.g., `type time = Long`.
 
@@ -332,13 +340,13 @@ namespace DocCloud {
     entity Drive;
 
     action CreateDocument, CreateGroup 
-        appliesTo { principal: [User], resource: [Drive] };
+        { principal: [User], resource: [Drive] };
     action ViewDocument 
-        appliesTo { principal: [User,Public], resource: [Document] };
+        { principal: [User,Public], resource: [Document] };
     action DeleteDocument, ModifyDocument, EditIsPrivate, AddToShareACL, EditPublicAccess 
-        appliesTo { principal: [User], resource: [Document] };
+        { principal: [User], resource: [Document] };
     action ModifyGroup, DeleteGroup 
-        appliesTo { principal: [User], resource: [Group] };
+        { principal: [User], resource: [Group] };
 }
 ```
 
@@ -367,9 +375,9 @@ namespace GitHub {
         memberOfTypes: UserGroup
     };
     action pull, fork, push, add_reader, add_triager, add_writer, add_maintainer, add_admin 
-        appliesTo { principal: [User], resource: [Repository] };
+        { principal: [User], resource: [Repository] };
     action delete_issue, edit_issue, assign_issue 
-        appliesTo { principal: [User], resource: [Issue] };
+        { principal: [User], resource: [Issue] };
 }
 ```
 
@@ -388,14 +396,14 @@ Schema    := {Namespace}
 Namespace := ('namespace' Path '{' {Decl} '}') | {Decl}
 Decl      := Entity | Action | TypeDecl
 Entity    := 'entity' Idents ['in' EntOrTyps] [['='] RecType] ';'
-Action    := 'action' Names ['in' (Name | '[' [Names] ']')] [AppliesTo] [ActAttrs]';'
+Action    := 'action' Names ['in' (Name | '[' [Names] ']')] [ActionBody] [ActAttrs] ';'
 TypeDecl  := 'type' IDENT '=' Type ';'
 Type      := PRIMTYPE | IDENT | SetType | RecType
 EntType   := Path
 SetType   := 'Set' '<' Type '>'
 RecType   := '{' [AttrDecls] '}'
 AttrDecls := Name ['?'] ':' Type [',' | ',' AttrDecls]
-AppliesTo := 'appliesTo' '{' AppDecls '}'
+ActionBody:= '{' AppDecls '}'
 ActAttrs  := 'attributes' '{' AttrDecls '}'
 AppDecls  := ('principal' | 'resource') ':' EntOrTyps [',' | ',' AppDecls]
            | 'context' ':' RecType [',' | ',' AppDecls]
@@ -445,4 +453,6 @@ Mitigating this problem: The Rust internals already parse the JSON schema to a d
 
 One alternative would be to _replace_ the current JSON-based sytnax with the one in this proposal. This proposal would avoid the "cognitive burden" drawback mentioned above, but would be a disruptive, backward-incompatible change, and would lose the JSON format's benefits of existing tooling and easier programmatic schema construction.
 
-Another alternative would be to adopt a [Yaml](https://en.wikipedia.org/wiki/YAML)-based syntax. This approach would meet our goals of greater information density and support for comments, and it would come with some existing tooling (such as IDE extensions). A downside of Yaml is that it provides _more_ than we need, with a lack of conciseness leading to confusing. We could make our own parser for a subset of Yaml we wish to support for schemas, but that may lead to a confusing user experience. Yaml's indentation-sensitive parsing also means that an indentation mistake will be silently accepted, leading to a confusing user experience. Our custom syntax is whitespace-insensitive, and having total control over the grammar means better context for error messages.
+Another alternative would be to adopt a [Yaml](https://en.wikipedia.org/wpub fn custom_schema_to_json_schema(
+    schema: Schema,
+) -> Result<(SchemaFragment, TypeNameCollisions), ToJsonSchemaError> {iki/YAML)-based syntax. This approach would meet our goals of greater information density and support for comments, and it would come with some existing tooling (such as IDE extensions). A downside of Yaml is that it provides _more_ than we need, with a lack of conciseness leading to confusing. We could make our own parser for a subset of Yaml we wish to support for schemas, but that may lead to a confusing user experience. Yaml's indentation-sensitive parsing also means that an indentation mistake will be silently accepted, leading to a confusing user experience. Our custom syntax is whitespace-insensitive, and having total control over the grammar means better context for error messages.
