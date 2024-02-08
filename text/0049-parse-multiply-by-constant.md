@@ -15,7 +15,7 @@ This PR proposes that the parser checks validity of multiplication operations af
 
 ## Basic example
 
-`2*1*context.value` should be conceptually converted into `((2*1)*context.value)` before determining if it's a valid multiply-by-constant operation. And the resulting AST should be `(mul (mul 2 1) context.value)`.
+`2*1*context.value` should be conceptually converted into `((2*1)*context.value)` before checking if it's a valid multiply-by-constant operation. The checking should pass and the resulting AST should be `(mul (mul 2 1) context.value)`.
 
 ## Motivation
 
@@ -29,16 +29,16 @@ The parser's rule to determine if multiplication operations are valid is also co
 
 To resolve the issues, this PR proposes a design to explicitly apply Cedar's left-associativity rule on the CST level and determine validity afterwards. The CSTs, if deemed valid, should be converted to ASTs that have the same order. Note that there will be only two operands for the CST representation of a multiplication operation, as opposed to a list of operands per status quo.
 
-The validity checking algorithm is simple: Count the non-constant-integer operands of a CST representing a multiplication operation recursively and error if it's greater than 1. An example algorithm is as follows.
+The validity checking algorithm is simple: Try converting CST operands to ASTs, and count non-constant-integer operands recursively on the resulting ASTs. Raise an error if it's greater than 1. An example algorithm is as follows.
 
 ```Rust
 fn count_non_constant_operands(lhs, rhs) -> bool {
     match (lhs, rhs) {
-        (cst::Mul(ll, lr), cst::Mul(rl, rr)) => count_non_constant_operands(ll, lr) + count_non_constant_operands(rl, rr),
-        (cst::Mul(ll, lr), Lit(Int(_))) => count_non_constant_operands(ll, lr),
-        (cst::Mul(ll, lr), _) => count_non_constant_operands(ll, lr) + 1,
-        (Lit(Int(_)), cst::Mul(rl, rr)) => count_non_constant_operands(rl, rr),
-        (_, cst::Mul(rl, rr)) => count_non_constant_operands(rl, rr) + 1,
+        (ast::Mul(ll, lr), ast::Mul(rl, rr)) => count_non_constant_operands(ll, lr) + count_non_constant_operands(rl, rr),
+        (ast::Mul(ll, lr), Lit(Int(_))) => count_non_constant_operands(ll, lr),
+        (ast::Mul(ll, lr), _) => count_non_constant_operands(ll, lr) + 1,
+        (Lit(Int(_)), ast::Mul(rl, rr)) => count_non_constant_operands(rl, rr),
+        (_, ast::Mul(rl, rr)) => count_non_constant_operands(rl, rr) + 1,
         (Lit(Int(_)), Lit(Int(_))) => 0,
         (Lit(Int(_)), _) => 1,
         (_, Lit(Int(_))) => 1,
@@ -49,12 +49,15 @@ fn count_non_constant_operands(lhs, rhs) -> bool {
 
 This recursive algorithm validates expressions derived from arbitrary operand associations of a chained multiplication operation. For instance, expressions `1*2*context*3`, `1*(2*context*3)`, and `1*(2*context)*3` are all accepted.
 
+
 ## Drawbacks
 
-The major drawback of this approach is that it induces a breaking change.
+The major drawback of this approach is that it induces a recursive algorithm, potentially slowing down parsing.
 
 ## Alternatives
 
-An alternative is to let the ESTs representing multiplication operations to a list of operands, just like what CSTs do.
+An alternative is to let the ESTs representing multiplication operations to a list of operands, just like what CSTs do. Note that this alternative is a breaking change.
 
 ## Unresolved questions
+
+One design decision is whether we need to propagate errs on invalid multiplication operations all the way to the top-level multiplication expression. For instance, the source span of the error message on parsing `(true*true)*2` could be over the entire expression or the sub-expression `(true*true)`, since both of them are invalid.
