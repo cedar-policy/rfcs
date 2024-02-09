@@ -390,7 +390,7 @@ Decl      := Entity | Action | TypeDecl
 Entity    := 'entity' Idents ['in' EntOrTyps] [['='] RecType] ';'
 Action    := 'action' Names ['in' (Name | '[' [Names] ']')] [AppliesTo] [ActAttrs]';'
 TypeDecl  := 'type' IDENT '=' Type ';'
-Type      := PRIMTYPE | IDENT | SetType | RecType
+Type      := PRIMTYPE | Path | SetType | RecType
 EntType   := Path
 SetType   := 'Set' '<' Type '>'
 RecType   := '{' [AttrDecls] '}'
