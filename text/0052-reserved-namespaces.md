@@ -73,18 +73,30 @@ For example, an entity attribute could still start with `__`.
 ## Drawbacks
 
 This is a significant breaking change.
-Any user with one of these namespaces will need to update their policies, schema, and entity data to use an unreserved namespace. 
+A user with namespaces starting with `__` will need to update their policies, schema, and entity data to use an unreserved namespace.
 The nature of this breaking change fortunately allows for migration away from reserved namespaces before the change is released,
 and the break will manifest immediately on attempting to parse an affected policy, schema, or entity.
 
 ## Alternatives
 
-* Make a larger breaking change by reserving identifier starting with `__` on all identifier,
-  including inner namespace elements and standalone identifiers.
-  This would additionally forbid `namespace::__User` and `namespace::__inner::User`. 
-* Make a smaller breaking change by reserving only the `__cedar` namespace.
-  Only identifiers whose path starts with `__cedar` would become invalid identifiers,
-  leaving users free to use an identifier like `__namespace::User`, but not `__cedar::User` or `__cedar::inner::User`.
-* Reserve a namespace containing a currently invalid identifier.
-  For example, we could reserve `$cedar` or `cedar$` (other options for characters include `%` or `!`).
-  `cedar$::User` is already not a valid identifier, so this would not be a breaking change.
+
+### A larger breaking change
+
+We could make a larger breaking change by reserving all _identifiers_ starting with `__` instead of just namespaces.
+This would include inner namespace elements and attribute names on entities and records.
+For example, we would additional forbid referencing an entity `namespace::__User` or writing a record literal `{__attr: 1}`.
+We don't currently see an immediate need for this more aggressive change, but making it now provides even more flexibility in future changes at the cost of the breaking change affecting more users.
+
+## A smaller breaking change
+
+We can make a smaller breaking change by reserving only the `__cedar` namespace.
+Only identifiers whose path starts with `__cedar` would become invalid identifiers, leaving users free to use an identifier like `__namespace::User`, but not `__cedar::User` or `__cedar::inner::User`.
+This still provides names we can use in future features while only affecting users who specifically use this exact namespace.
+
+## No breaking change
+
+We can avoid a breaking change to Cedar by updating the Grammar to allow for a new identifier that is currently invalid, and then reserve that identifier.
+For example, we could reserve `$cedar` or `cedar$` (other options for characters include `%` or `!`).
+It would would be an error to use this identifier in any way that isn't explicitly permitted by the Cedar spec.
+
+Taking this option would require an update to the schema grammar in [RFC24](https://github.com/cedar-policy/rfcs/blob/main/text/0024-schema-syntax.md).
