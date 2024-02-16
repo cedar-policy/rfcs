@@ -236,9 +236,21 @@ If we _also_ had defined a common type `ipaddr` we would reference it by writing
 ```
 Common types may also overlap with entity types, for similar reasons: To reference an entity type you must write `{ "type": "Entity", "name": "Foo" }` while to reference a common type you'd just write `{ "type": "Foo" }`.
 
-The custom syntax does not require such designators, for readability, so we need a way to disambiguate when necessary. We propose the following five rules:
+The custom syntax does not require such designators, for readability, so we need a way to **disambiguate type name references** when necessary. 
 
-1. Issue a warning (for both syntaxes) when a schema defines the same typename twice
+When two different kinds of type definitions are in separate namespaces, we rely on the namespace resolution rules to disambiguate. For example, suppose we defined the following schema:
+```
+type email_address = String; // (1)
+namespace Foo {
+    entity email_address { addr: String }; // (2)
+    entity User { email: email_address }; // (3)
+}
+```
+Here, in the definition of `User`, the unqualified type `email_address` at (3) resolves to the _entity_ definition at (2), because it is in the closest enclosing scope.
+
+When two different kinds of type definitions are in the _same_ namespace, we propose the following five rules:
+
+1. Issue a warning (for both syntaxes) when a schema defines the same typename twice (within a namespace)
 2. Disallow overlap of extension and primitive type names
 3. Resolve name references in a priority order
 4. Reserve `__cedar` as a namespace to disambiguate extension/primitive types from others
