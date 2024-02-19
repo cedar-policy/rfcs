@@ -38,12 +38,18 @@ and in entity data
 ```json
 [
     {
-        "uid": { "__entity": { "type": "__cedar::User", "id": "alice"} },
+        "uid": { "__entity": {
+            "type": "__cedar::User",
+            "id": "alice"
+        }},
         "attrs": {},
         "parents": []
     }
 ]
 ```
+
+In this entity data example, the `__entity` JSON key does not demonstrate the new reserved namespace mechanism.
+It is a place were we already assign special significance to some identifiers starting with `__` in entity data.
 
 ## Motivation
 
