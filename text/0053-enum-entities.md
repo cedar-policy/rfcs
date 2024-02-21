@@ -46,9 +46,20 @@ Enumerated types are useful when you have a fixed set of possible values, and th
 
 An enumerated entity `Foo` is declared by writing
 ```
-entity Foo enum [ ... ];
+entity Foo enum [ … ];
 ```
-where `...` is the list of allowed values. These values can be strings or identifiers.
+where `[` … `]` is the list of allowed values. These values can be strings or identifiers.
+
+In the JSON format for schemas, you would write
+```
+"entityTypes": {
+    ...
+    "Foo": {
+        "enum": [ … ]
+    },
+    ...
+}
+```
 
 You can use an enumerated entity type anywhere you can use a normal entity type. Since an enumerated entity cannot have attributes, nor can it have ancestors in the entity hierarchy, all you can do with it is test it for equality (e.g., with `==` or `contains`).
 
