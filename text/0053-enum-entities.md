@@ -134,13 +134,13 @@ action GetLists
                 resource: [Application]};
 ```
 This differs from some earlier examples in the following ways:
-1. Enumerated entities can have parents in the entity hierarchy, e.g., as with `RequestEntity`, and can be parents themselves, e.g., as with `Application`
+1. Enumerated entities can have parents in the entity hierarchy, and can be parents of other enumerated entity values; both cases are shown in the definition of `RequestEntity`
 2. Enumerated entities can appear as _singleton types_, e.g., as `RequestEntity::"principal"` in the definition of action `GetLists`.
 
-Both of these extensions are similar to what's available for `Action`s right now, but generalized to arbitrary entity types. We know that difference (1) would be directly useful in the [TinyTodo example application](https://github.com/cedar-policy/cedar-examples/tree/main/tinytodo), in particular.
+Both of these extensions are similar to what's available for `Action`s right now, but generalized to arbitrary entity types. You could also imagine enumerated entity types having attributes, as has been anticipated for `Action`s.
 
-You could also imagine allowing enumerated entity types to have attributes assigned to particular values.
+One drawback of this Alternative is that it creates added complication for both the validator (e.g., to handle singleton types) and the analyzer (e.g., to deal with the more general hierarchy constraints).
 
-One drawback of this approach is that it creates added complication for both the validator (e.g., to handle singleton types) and the analyzer (e.g., to deal with the more general hierarchy constraints). 
+Another drawback is that it adds complication to the entity store: Once you add hierarchy constraints and attributes, you need to create actual entities to include with policy requests (or extract them from the schema at request-time). The RFC as proposed does not require that.
 
-Another drawback is that it adds complication to the entity store: Once you add hierarchy constraints and attributes, you need to create actual entities to include with policy requests (or extract them from the schema at request-time). The current proposal does not require that.
+The good news is that this Alternative is a strict generalization of the RFC as proposed, which means if we agree to the current proposal we can later upgrade to some or all of this Alternative without incurring a breaking change.
