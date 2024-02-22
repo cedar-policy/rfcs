@@ -48,7 +48,7 @@ An enumerated entity `Foo` is declared by writing
 ```
 entity Foo enum [ … ];
 ```
-where `[` … `]` is the list of allowed values. These values can be strings or identifiers.
+where `[` … `]` is the list of allowed values, expressed as strings.
 
 In the JSON format for schemas, you would write
 ```
