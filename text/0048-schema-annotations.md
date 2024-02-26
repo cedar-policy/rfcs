@@ -105,7 +105,6 @@ This means a new key can be safely added while preserving backwards compatibilit
 This proposal reserves the `annotations` key at the top level of each of those constructs, which contains an Object, containing each annotation key as an Object key, associated with the annotation value.
 The only oddness here is Common Types, whose toplevel is a regular type. While this should still be backwards compatible, it will look a little odd to have annotations in some types and not in others.
 
-### Human Readable Syntax
 
 ## Drawbacks
 
