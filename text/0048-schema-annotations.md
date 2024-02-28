@@ -18,23 +18,15 @@ This could be extended to Cedar Schemas, allowing users to attach attributes an 
 
 ## Basic example
 
-1. Doc comments
+Here is a basic example for doc comments.
 ```
 @doc("This entity defines our central user type")
 entity User { 
-    owner : User,
+    manager : User,
     team : String
-}
-```
-
-```
-@doc("Stop users from accessing a high security documents unless they are in the same building")
-forbid(principal, action, resource) when {
-    resource.security_level == "HIGH"
-unless {
-    resource.location == principal.location
 };
 ```
+The `@id("...")` notation is similar to the notation used for policy annotations.
 
 ## Motivation
 
