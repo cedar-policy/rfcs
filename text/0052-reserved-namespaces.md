@@ -93,13 +93,13 @@ This would include inner namespace elements and attribute names on entities and 
 For example, we would additional forbid referencing an entity `namespace::__User` or writing a record literal `{__attr: 1}`.
 We don't currently see an immediate need for this more aggressive change, but making it now provides even more flexibility in future changes at the cost of the breaking change affecting more users.
 
-## A smaller breaking change
+### A smaller breaking change
 
 We can make a smaller breaking change by reserving only the `__cedar` namespace.
 Only identifiers whose path starts with `__cedar` would become invalid identifiers, leaving users free to use an identifier like `__namespace::User`, but not `__cedar::User` or `__cedar::inner::User`.
 This still provides names we can use in future features while only affecting users who specifically use this exact namespace.
 
-## No breaking change
+### No breaking change
 
 We can avoid a breaking change to Cedar by updating the Grammar to allow for a new identifier that is currently invalid, and then reserve that identifier.
 For example, we could reserve `$cedar` or `cedar$` (other options for characters include `%` or `!`).
