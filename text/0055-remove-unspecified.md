@@ -21,30 +21,35 @@ This RFC proposes to drop Cedar support for unspecified entities, instead recomm
 
 Cedar uses a Principal, Action, Resource, Context \<P,A,R,C\> model for requests.
 This model can feel awkward in cases where there is not a clear principal and/or resource for an action.
-For example, consider a "getFile" action.
-The principal here should be a `User`, and the context can store information about the file to get, but it is unclear what the resource should be.
-In this case, a user may want to make the authorization request with a “dummy” resource.
-This is what Cedar’s unspecified entities are for.
+For example, consider a "createFile" action that can be used by any `User`, as encoded in the following policy:
+
+```
+permit(principal is User, action == Action::"createFile", resource);
+```
+
+When making an authorization request for this action, the principal should be a `User`, and the context can store information about the file to create, but it is unclear what the resource should be.
+In fact, given the policy above, the resource _doesn't matter_.
+In this case, a Cedar user may want to make the authorization request with a “dummy” resource; this is what Cedar’s unspecified entities are for.
 
 As of Cedar v3.1, the only way to “construct” an unspecified entity is by passing `None` as a component when building a [`Request`](https://docs.rs/cedar-policy/3.0.1/cedar_policy/struct.Request.html).
-So a request for this action might look like \<`Some(User::"alice")`, `Some(Action::"getFile")`, `None`, ...\> (using pseudo-syntax).
+So a request for this action might look like \<`Some(User::"alice")`, `Some(Action::"createFile")`, `None`, ...\> (using pseudo-syntax).
 
 In the schema, omitting the relevant `appliesTo` field says that an action applies to an unspecified entity.
-For example, the following schemas specify that the "getFile" action applies (only) to an unspecified resource.
+For example, the following schemas specify that the "createFile" action applies (only) to an unspecified resource.
 
 Cedar schema syntax ([RFC 24](https://github.com/cedar-policy/rfcs/blob/main/text/0024-schema-syntax.md)):
 
 ```
-action getFile
+action createFile
   appliesTo { principal: [User] };
 ```
 
 Cedar schema JSON syntax:
 
 ```json
-"getFile": {
+"createFile": {
     "appliesTo": {
-        "principal": [User]
+        "principal": ["User"]
     }
 }
 ```
@@ -56,9 +61,10 @@ But now "unspecified" entities are being used to represent multiple distinct con
 
 This RFC proposes that users should instead explicitly create these "dummy" entities in an application-specific manner.
 For this example, the user should create entities of three types: `FileSystem`, `UnauthenticatedUser`, and `AccountManager`.
-The first will act as the principal for a "getFile" request, and the second and third will act as the principal and resource for a "createAccount" request.
+The first will act as the principal for a "createFile" request, and the second and third will act as the principal and resource for a "createAccount" request.
 
-This is in line with [our previous suggestion](https://cedar-policy.slack.com/archives/C0547KH7R19/p1706656288284189) to use an application-specific `Unauthenticated` type to represent "unauthenticated" users, rather than using unspecified entities.
+This is exactly the approach we used in the [TinyTodo application](https://github.com/cedar-policy/cedar-examples/tree/release/3.0.x/tinytodo): we made a special `Application::“TinyTodo”` entity to act as the resource for the “CreateList” and “GetLists” actions.
+This proposal is also in line with [our previous suggestion](https://cedar-policy.slack.com/archives/C0547KH7R19/p1706656288284189) to use an application-specific `Unauthenticated` type to represent "unauthenticated" users, rather than using unspecified entities.
 
 ## Motivation
 
@@ -105,9 +111,8 @@ pub fn new(
 And schemas will no longer support missing `appliesTo` fields.
 Omitting a field will result in a parse error.
 
-This will force users to create their own “unspecified” entity type(s) per application.
-This is the approach used in the [TinyTodo application](https://github.com/cedar-policy/cedar-examples/tree/release/3.0.x/tinytodo): we made a special `Application::“TinyTodo”` entity to act as the resource for the “CreateList” and “GetLists” actions.
-Services that build on top of Cedar (e.g., [Amazon Verified Permissions](https://aws.amazon.com/verified-permissions/)) can still maintain their current API (supporting optional fields in the request) by manually adding a special "unspecified" entity type, as described in Alternative A.
+This will force users to create their own “unspecified” entity type(s) per application, like how we do for the [TinyTodo application](https://github.com/cedar-policy/cedar-examples/tree/release/3.0.x/tinytodo).
+Services that build on top of Cedar (e.g., [Amazon Verified Permissions](https://aws.amazon.com/verified-permissions/)) can still maintain their current API (supporting optional fields in the request) by manually adding a catch-all "unspecified" entity type, as described in Alternative A.
 
 _Note:_ this approach will benefit from [RFC53 (Enumerated Entity Types)](https://github.com/cedar-policy/rfcs/pull/53), if accepted.
 That RFC would allow users to fix the instances for a particular entity type (e.g., it would allow specifying that only `Application::"TinyTodo"` is valid, and no other `Application::"eid"`).
@@ -141,17 +146,17 @@ For example, the schemas from the example above would need to be modified as fol
 Cedar schema syntax (RFC 24):
 
 ```
-action getFile
+action createFile
   appliesTo { principal: [User], resource: [__cedar::Ghost] };
 ```
 
 Cedar schema JSON syntax:
 
 ```json
-"getFile": {
+"createFile": {
     "appliesTo": {
-        "principal": [User],
-        "resource": [__cedar::Ghost]
+        "principal": ["User"],
+        "resource": ["__cedar::Ghost"]
     }
 }
 ```
