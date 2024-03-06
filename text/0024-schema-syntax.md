@@ -465,10 +465,9 @@ Another alternative would be to adopt a [Yaml](https://en.wikipedia.org/wiki/YAM
 
 ## Appendix A - AppliesTo Conversion Table
 
-The relationship of `appliesTo` clauses between JSON schemas and this new syntax are non-obvious when unspecified entities or actions with no targets are involved. This appendix details a conversion table for the purposes of specification.
+The relationship of `appliesTo` clauses between JSON schemas and this new syntax are non-obvious when unspecified entities or actions with no targets are involved.
+This appendix details a conversion table for the purposes of specification.
 
-
-## JSON → Schema Syntax
 
 ### Both Unspecified
 
@@ -691,7 +690,4 @@ All of the above map to the following:
 ```
 action read;
 ```
-
-
-
 
