@@ -400,7 +400,7 @@ Schema    := {Namespace}
 Namespace := ('namespace' Path '{' {Decl} '}') | {Decl}
 Decl      := Entity | Action | TypeDecl
 Entity    := 'entity' Idents ['in' EntOrTyps] [['='] RecType] ';'
-Action    := 'action' Names ['in' (Name | '[' [Names] ']')] [AppliesTo] [ActAttrs]';'
+Action    := 'action' Names ['in' (QualName | '[' [QualNames] ']')] [AppliesTo] [ActAttrs]';'
 TypeDecl  := 'type' IDENT '=' Type ';'
 Type      := PRIMTYPE | Path | SetType | RecType
 EntType   := Path
@@ -411,6 +411,8 @@ AppliesTo := 'appliesTo' '{' AppDecls '}'
 ActAttrs  := 'attributes' '{' AttrDecls '}'
 AppDecls  := ('principal' | 'resource') ':' EntOrTyps [',' | ',' AppDecls]
            | 'context' ':' RecType [',' | ',' AppDecls]
+QualName      := Name | Path '::' STR
+QualNames := QualName {',' QualName }
 Path      := IDENT {'::' IDENT}
 EntTypes  := Path {',' Path}
 EntOrTyps := EntType | '[' [EntTypes] ']'
@@ -458,3 +460,234 @@ Mitigating this problem: The Rust internals already parse the JSON schema to a d
 One alternative would be to _replace_ the current JSON-based sytnax with the one in this proposal. This proposal would avoid the "cognitive burden" drawback mentioned above, but would be a disruptive, backward-incompatible change, and would lose the JSON format's benefits of existing tooling and easier programmatic schema construction.
 
 Another alternative would be to adopt a [Yaml](https://en.wikipedia.org/wiki/YAML)-based syntax. This approach would meet our goals of greater information density and support for comments, and it would come with some existing tooling (such as IDE extensions). A downside of Yaml is that it provides _more_ than we need, with a lack of conciseness leading to confusing. We could make our own parser for a subset of Yaml we wish to support for schemas, but that may lead to a confusing user experience. Yaml's indentation-sensitive parsing also means that an indentation mistake will be silently accepted, leading to a confusing user experience. Our custom syntax is whitespace-insensitive, and having total control over the grammar means better context for error messages.
+
+
+
+## Appendix A - AppliesTo Conversion Table
+
+The relationship of `appliesTo` clauses between JSON schemas and this new syntax are non-obvious when unspecified entities or actions with no targets are involved.
+This appendix details a conversion table for the purposes of specification.
+
+
+### Both Unspecified
+
+The following JSON schemas all set `principal` and `resource` to be *unspecified*, and leave the `context` as the empty record. They all map to the same schema
+
+```
+"actions" : {
+  "read" : {
+   }
+}
+```
+
+```
+"actions" : {
+  "read" : {
+    "appliesTo" : null
+  }
+}
+```
+
+```
+"actions" : {
+  "read" : {
+    "appliesTo" : {
+    }
+  }
+}
+```
+
+This means that both `principal` and `resource` are *unspecified* and that `context` is the empty record. This becomes:
+
+```
+action read { 
+  context : {}
+};
+```
+
+We must include the `context : {}` as `action A {};` is not valid in the grammar.
+
+### Missing Both/Yes Context
+
+```
+"actions" : {
+  "read" : {
+    "appliesTo" : {
+      "context" : A
+    }
+  }
+}
+```
+
+This means that both `principal` and `resource` are *unspecified* and that `context` has type A. This becomes:
+
+```
+action read appliesTo {
+  context : A
+};
+```
+
+### Missing `principalTypes` /No Context
+
+```
+"actions" : {
+  "read" : {
+    "appliesTo" : {
+      "resourceTypes" : [A]
+    }
+ }
+}
+```
+
+This means that `principal` is *unspecified*, but `resource` is specified. `context` is the empty record. Becomes: (Including the empty context would also be valid)
+
+```
+action read {
+  resource : [A]
+};
+```
+
+### Missing `principalTypes` /Yes Context
+
+```
+"actions" : {
+  "read" : {
+    "appliesTo" : {
+      "resourceTypes" : [A]
+      "context" : B
+    }
+ }
+}
+```
+
+This means that `principal` is *unspecified*, but `resource` is specified. `context` has type `B`. Becomes:
+
+```
+action read {
+  resource : [A],
+  context : B
+};
+```
+
+### Missing `resourceTypes`/No Context
+
+```
+"actions" : {
+  "read" : {
+    "appliesTo" : {
+      "principalTypes" : [A]
+    }
+  }
+}
+```
+
+This means that `resource` is *unspecified*, but `principal` is specified. `context` is the empty record. Becomes: (Including the empty context would also be valid).
+
+```
+action read appliesTo {
+  principal: [A]
+}
+```
+
+### Missing `resourceTypes`/Yes Context
+
+```
+"actions" : {
+  "read" : {
+    "applieTo" : {
+      "principalTypes" : [A],
+      "context" : B
+    }
+  }
+}
+```
+
+This means that `resource` is *unspecified*, but `principal` is specified. `context` has type B. Becomes:
+
+```
+action read appliesTo {
+  principal: [A],
+  context: B
+};
+```
+
+### Non-Applicable Actions
+
+The following *all* collapse to the same schema object. They all involve action types which are not applicable. Specifying that you are applicable to some `principal` P and not applicable to any resources is equivalent to not being applicable to any principals or resources.
+
+
+```
+"actions" : {
+  "read" : {
+    "appliesTo" : {
+      "principalTypes" : [],
+      "resourceTypes" : []
+    }
+  }
+}
+```
+
+```
+"actions" : {
+  "read" : {
+    "appliesTo" : {
+      "principalTypes" : [],
+      "resourceTypes" : [A]
+    }
+  }
+}
+```
+
+```
+"actions" : {
+  "read" : {
+    "appliesTo" : {
+      "principalTypes" : [A],
+      "resourceTypes" : []
+    }
+  }
+}
+```
+
+```
+"actions" : {
+  "read" : {
+    "appliesTo" : {
+      "principalTypes" : [],
+      "resourceTypes" : [],
+      "context" : A
+    }
+  }
+}
+```
+
+```
+"actions" : {
+  "read" : {
+    "appliesTo" : {
+      "principalTypes" : [A],
+      "resourceTypes" : [],
+      "context" : B
+    }
+  }
+}
+```
+
+```
+"actions" : {
+  "read" : {
+    "appliesTo" : {
+      "principalTypes" : [],
+      "resourceTypes" : [A],
+      "context" : B
+    }
+  }
+}
+```
+
+All of the above map to the following:
+
+```
+action read;
+```
+
