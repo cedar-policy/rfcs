@@ -13,7 +13,7 @@ Extend schemas to support declared enumerations of entity-typed values, analogou
 An enumerated entity type is declared as a normal entity type, but includes the keyword `enum` followed by the list of legal entity UIDs. Here is a simple example:
 ```
 entity User;
-entity Color enum ["red", "blue", "green"];
+entity Color enum ["Red", "Blue", "Green"];
 entity Task {
     owner: User,
     name: String,
@@ -30,7 +30,7 @@ permit(
     resource)
 when {
     principal == resource.owner &&
-    resource.status != Color::"red"
+    resource.status != Color::"Red"
 };
 ```
 
@@ -38,7 +38,7 @@ when {
 
 Enumerated types are useful when you have a fixed set of possible values, and the only thing you want to do with the values is compare them for equality. While you could effectively treat an entity type as an enumeration now, without declaring it in a schema, you gain some benefits by declaring it:
 
-- The validator can error on uses of illegal enumerated values, e.g., flagging the typo `resource.status != Color::"Red"` in the `when` clause in the basic example. 
+- The validator can error on uses of illegal enumerated values, e.g., flagging the typo `resource.status != Color::"red"` in the `when` clause in the basic example.
 - When using a policy analyzer, it can always generate request and entity store instances where the enumerated entity type has declared-valid values, rather than random UIDs.
 - When using an IDE or web-based policy builder, the enumeration can inform auto-completion suggestions. For the basic example above, in an auto-completing IDE writing `resource.status != ` ... would pop up the three options.
 
@@ -48,7 +48,7 @@ An enumerated entity `Foo` is declared by writing
 ```
 entity Foo enum [ … ];
 ```
-where `[` … `]` is the list of allowed values, expressed as strings.
+where `[` … `]` is a non-empty list of allowed values, expressed as strings.
 
 In the JSON format for schemas, you would write
 ```
@@ -82,6 +82,16 @@ permit(
 ```
 Likewise the request validator would flag a request with `Application::"TinyTODO"` as its resource, and it would flag the passed-in entity store if it contained such an illegal value.
 
+### Notes
+
+As a convention, our example enumerated entity names, like `Color::"Red"` or `Application::"TinyTodo"`, all begin with an uppercase letter. We choose to consider this approach good style, but not to mandate it.
+
+We require entity enumerations to be given as a non-empty list of strings, like `["Red", "Blue"]`, but we could also allow them to be specified as identifiers, like `[ Red, Blue ]`. Doing so would be similar to the handling of attributes, which can be specified as identifiers, `principal.owner`, or as strings, `principal["owner"]`. However, entity enumerations can only be _referenced_ as strings, e.g., as `Color::"Red"` not `Color::Red`. Specifying them as strings, only, makes this connection a little stronger.
+
+We do not permit declaring empty enumerations. Allowing them would add complication to policy analysis (to consider the exceptional case), but would be essentially useless: You could never create an entity of type `Foo`, where `Foo` is uninhabited, and while you could write `expr is Foo`, this expression is always `false`.
+
+That an entity is an enumeration is specified as a refinement when declaring the entity type, e.g., writing `entity Application;` declares the `Application` entity type, while writing `entity Application enum ["TinyTodo"];` declares the `Application` entity type and then refines it to say that only the `"TinyTodo"` entity ID is well defined. An alternative syntax that is more intuitive to some readers is `entity enum Application ["TinyTodo"]`. This syntax is similar to Java-style syntax, `enum Application { TinyTodo }`. However, this approach could create some confusion: `enum` is currently a valid entity type, so it's legal to write `entity enum;` in schemas today. Moreover, if we eventually take Alternative C, below, we may allow `enum` to be accompanied by other type refinements, such as `in` and attribute declarations. For example, we could one day be able to write `entity Application in [Application] enum ["TinyTodo", "Office"]` (or swapping their order, `entity Application enum ["TinyTodo", "Office"] in [Application]`), and might prefer the uniformity of that to `entity enum Application ["TinyTodo", "Office"] in [Application]`.
+
 ## Drawbacks
 
 One reason not to do this is that it's not particularly full featured---you cannot do anything useful with an enumerated entity value in a policy other than compare it for equality. We consider more full-featured extensions in the alternatives below, but these have drawbacks of their own. The functionality could be easily extended later, depending on how things play out.
@@ -96,7 +106,7 @@ We previously proposed, in [RFC 13](https://github.com/cedar-policy/rfcs/blob/en
 
 Rather than specify a particular entity type as an enumeration, we could define a new concept of enumeration as another kind of primitive type. Here is a notional schema:
 ```
-enum type Color = red | blue | green;
+enum type Color = Red | Blue | Green;
 entity Task {
   name: String,
   status: Color
@@ -109,7 +119,7 @@ permit(
     action == Action::"UpdateTask",
     resource)
 when {
-    resource.status != Color.red
+    resource.status != Color.Red
 };
 ```
 This syntax is similar to what's provided for Java `enum`s. 
@@ -125,17 +135,17 @@ The proposed approach that lists particular entity values as an enumeration make
 Enumerated entities as proposed are limited in their functionality and specificity. We could extend them. For example:
 ```
 entity Application enum [ "TinyTodo" ];
-entity RequestEntity enum [ "principal", "resource" ] in [ Application ];
+entity RequestEntity enum [ "Principal", "Resource" ] in [ Application ];
 entity User in [ Application ];
 action CreateList
     appliesTo { principal: [User], resource: [Application] };
 action GetLists
-    appliesTo { principal: [User, RequestEntity::"principal"],
+    appliesTo { principal: [User, RequestEntity::"Principal"],
                 resource: [Application]};
 ```
 This differs from some earlier examples in the following ways:
 1. Enumerated entities can have parents in the entity hierarchy, and can be parents of other enumerated entity values; both cases are shown in the definition of `RequestEntity`
-2. Enumerated entities can appear as _singleton types_, e.g., as `RequestEntity::"principal"` in the definition of action `GetLists`.
+2. Enumerated entities can appear as _singleton types_, e.g., as `RequestEntity::"Principal"` in the definition of action `GetLists`.
 
 Both of these extensions are similar to what's available for `Action`s right now, but generalized to arbitrary entity types. You could also imagine enumerated entity types having attributes, as has been anticipated for `Action`s.
 
