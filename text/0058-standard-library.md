@@ -288,6 +288,7 @@ We could also consider some keyword other than `extends`, such as:
 * `copies`
 * `elaborates`
 * `augments`
+
 or some syntax other than a keyword, such as:
 ```
 entity MyEntityType:A in [B];
