@@ -120,6 +120,14 @@ Hopefully we can address this with clear documentation.
 There's also nothing preventing us from providing API helpers that allow
 extending concrete `Entity` objects of a base type corresponding with a schema
 `extends` declaration (although this is not proposed in this RFC).
+4. Users may incorrectly assume that `extends` provides subtyping, while this
+RFC does not propose that it provides subtyping.
+For instance, users may assume that an action with principal type
+`BaseEntityType` could also be used with principal type `MyEntityType` which
+`extends` `BaseEntityType`; but this is not the case in the current proposal.
+It's also possible that the keyword being named `extends` in particular might
+make this problem worse due to existing associations with object-oriented
+inheritance; see Alternative H.
 
 This is not a breaking change for any existing Cedar users.
 All existing valid Cedar schemas remain valid.
@@ -275,12 +283,15 @@ entity MyEntityType in [B] extends A;
 ```
 Or we could allow both.
 
-We could also consider some keyword other than `extends`, or some syntax other
-than a keyword, for example:
+We could also consider some keyword other than `extends`, such as:
+* `expands`
+* `copies`
+* `elaborates`
+* `augments`
+or some syntax other than a keyword, such as:
 ```
 entity MyEntityType:A in [B];
 ```
-I'm personally partial to an `extends` keyword.
 
 [RFC 24]: https://github.com/cedar-policy/rfcs/blob/main/text/0024-schema-syntax.md
 [RFC 52]: https://github.com/cedar-policy/rfcs/pull/52
