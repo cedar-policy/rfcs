@@ -19,5 +19,3 @@ https://github.com/myusername/rfcs/blob/awesome-rfc-idea/text/0001-awesome-rfc-i
 
 <!-- FIXME -->
 [Rendered](https://github.com/USERNAME/REPONAME/blob/BRANCHNAME/text/FILENAME.md)
-
-By submitting this pull request, I confirm that you can use, modify, copy, and redistribute this contribution, under the terms of your choice.
