@@ -86,8 +86,7 @@ function name(param1, param2) {
   body
 };
 ```
-Standard Cedar variables (`principal`, `action`, `resource`, and `context`) are *not* considered bound with the body. 
-(Following the principal of macro hygiene)
+Standard Cedar variables (`principal`, `action`, `resource`, and `context`) are *not* considered bound within the body (following the principle of macro hygiene). 
 Use of an unbound variable in the body is a syntax error.
 A parameter list may not declare the same variable twice, and may not list any standard Cedar variables.
 An unused variable is a syntax warning.
