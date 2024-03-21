@@ -107,7 +107,9 @@ Here is an example:
 foo(1,2, principal.name)
 ```
 
-Function arguments are eagerly evaluated (i.e., call-by-value), as with extension functions today.
+Function arguments are lazily evaluated (i.e., call-by-name), as opposed to extension functions today.
+Call-by-name is required to support inlining correctly in the presence of errors.
+(Without errors, call-by-name and call-by-value are equivalent in Cedar)
 Functions do not exist at run-time -- they cannot be stored in entity attributes, requests, etc. As such, referencing a function by its name, without calling it, is a syntax error.
 Arguments for each of a function's declared parameters, and no more, must be provided at the call, or it's a syntax error.
 Other errors (such as type errors or overflow) are detected at runtime, or via validation.
@@ -149,8 +151,8 @@ Function names may shadow extension functions (results in a warning).
 ### Formal semantics
 This RFC adds one new evaluation rule to Cedar:
 If $f$ is the name of a declared function, _def_($f$) is the body of the definition, and $p_1, ..., p_n$ is the list of parameters in the definition:
-$f(v_1, ..., v_n) \rightarrow$ _def_$(f) [p_1 \mapsto v_1, ..., p_n \mapsto v_n]$
-Where $e[x \mapsto v]$ means to substitute the $v$ for $x$ in $e$, as usual.
+$f(e_1, ..., e_n) \rightarrow$ _def_$(f) [p_1 \mapsto e_1, ..., p_n \mapsto e_n]$
+Where $e[x \mapsto e']$ means to substitute $e'$ for $x$ in $e$, as usual.
 
 ### Formal grammar
 The grammar of Cedar expressions is unchanged, as we re-use the existing call form.
@@ -160,7 +162,7 @@ Params ::= Ident (',' Ident)? ','?
 ```
 Note the `Params` non-terminal allows trailing commas in parameter lists.
 
-### Validation
+### Validation and Analysis
 
 The validator typechecks functions at use-sites via inlining.
 This means that functions can be polymorphic. For example, one could write the following, where `eq` is used in the first instance with a pair of entities, and in the second instance with a pair of strings.
@@ -175,6 +177,8 @@ when {
   eq(principal.org,"Admin")
 };
 ```
+
+Likewise, any static analysis tools would work via inlining.
 
 ## Drawbacks
 
@@ -243,18 +247,37 @@ function semver(major : Long, minor : Long, patch : Long) -> Semver {
 This would allow functions to typechecked in absence of a use-site, and allow for easier user specification of intent.
 It would also probably result in clearer type checker error messages.
 
+If we allowed `type` declarations in policy set files, it would just be one file:
+
+```
+type Semver = { major : Long, minor : Long, patch : Long };
+function semver(major : Long, minor : Long, patch : Long) -> Semver {
+  { major : major, minor : minor, patch : patch }
+};
+```
+
 This introduces the following questions:
 
-1. Do we allow `type` declaration in policies, or just in schemas?
-2. Are type annotations enforced dynamically à la Contracts, or are they just ignored at runtime?
+1. Do we allow `type` declarations allowed in policy sets, or just in schemas?
+2. Are type annotations on functions enforced dynamically à la Contracts, or are they just ignored at runtime?
   1. If they are dynamically enforced, that implies access to the schema to unfold type definitions. It also may introduce redundant type checking.
 3. Are type annotations required or optional?
 4. Will we have types to support generics, i.e., polymorphism?
+5. Will type annotations have support for parametric polymorphism/generics?
 
 
 Leaving them out for this RFC only precludes only one future design decision, making type annotations required.
 This decision feels unlikely, as we want Cedar to be useful without using a schema/the validator.
-Adding _optional_ type annotations in the future is backwards compatible, but mandating type annotations may not be, due to the use of polymorphic functions.
+Adding _optional_ type annotations in the future is backwards compatible, but mandating type annotations will not be. 
+It will at minimum require a syntax change to add the annotations, and
+may be impossible due to the use of polymorphic functions.
+
+### Call By Value
+Functions could be call-by-value instead of call-by-name.
+In general, this would follow principal of least surprise.
+Extension functions are call-by-value, and few popular languages have call-by-name constructs.
+The simplicity of validation and analysis and pluses for CBN, but the big problem is enabling inlining for execution.
+
 
 ### Let functions call other functions
 As long as cycles are forbidden and functions as arguments are disallowed, we could allow functions to call other functions without sacrificing termination.
