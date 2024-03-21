@@ -11,7 +11,10 @@
 
 ## Summary
 
-This RFC proposes to support user-defined functions in Cedar. Cedar functions provide a lightweight mechanism for users to create abstractions in their policies, aiding readability and reducing the chance for errors. Cedar functions have restrictions to ensure termination and efficiency, maintain the feasibility of validation and analysis, and help ensure policies are readable.
+This RFC proposes to support user-defined function-like macros in Cedar.
+We call these Cedar Functions.
+Cedar Functions provide a lightweight mechanism for users to create abstractions in their policies, aiding readability and reducing the chance for errors. 
+Cedar Functions have restrictions to ensure termination and efficiency, maintain the feasibility of validation and analysis, and help ensure policies are readable.
 
 ### Basic Example
 
@@ -147,9 +150,11 @@ This means that while you could name a function `principal`, you could never cal
 Function name conflicts at the top level are a parse error.
 Function names may shadow extension functions (results in a warning).
 
-### Formal semantics
-This RFC adds one new evaluation rule to Cedar:
-If $f$ is the name of a declared function, _def_($f$) is the body of the definition, and $p_1, ..., p_n$ is the list of parameters in the definition:
+### Formal semantics/Desugaring rules
+This RFC does not add any evaluation rules to Cedar, as functions can be completely desugared.
+Dusugaring proceeds from the innermost function call to avoid hygiene issues.
+If $f$ is the name of a declared function, _def_($f$) is the body of the definition, and $p_1, ..., p_n$ is the list of parameters in the definition.
+Let $e_1, ..., e_n$ be a list of Cedar expression that do not contain and Cedar Function calls:
 $f(e_1, ..., e_n) \rightarrow$ _def_$(f) [p_1 \mapsto e_1, ..., p_n \mapsto e_n]$
 Where $e[x \mapsto e']$ means to substitute $e'$ for $x$ in $e$, as usual.
 
@@ -290,7 +295,7 @@ Make (any subset of) the following errors runtime errors instead of parse errors
 3. Function application with incorrect arity -->
 
 ### Naming
-Should these really be called `function`s? They are actually `macro`s.
+Should these really be called `function`s? They are actually `macro`s. `snippet`?
 
 ### Different namespaces for functions and variables
 In the style of a Lisp-2, we could have different namespaces for functions are variables.
