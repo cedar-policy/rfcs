@@ -154,7 +154,7 @@ Function names may shadow extension functions (results in a warning).
 This RFC does not add any evaluation rules to Cedar, as functions can be completely desugared.
 Dusugaring proceeds from the innermost function call to avoid hygiene issues.
 If $f$ is the name of a declared function, _def_($f$) is the body of the definition, and $p_1, ..., p_n$ is the list of parameters in the definition.
-Let $e_1, ..., e_n$ be a list of Cedar expression that do not contain and Cedar Function calls:
+Let $e_1, ..., e_n$ be a list of Cedar expression that do not contain any Cedar Function calls:
 $f(e_1, ..., e_n) \rightarrow$ _def_$(f) [p_1 \mapsto e_1, ..., p_n \mapsto e_n]$
 Where $e[x \mapsto e']$ means to substitute $e'$ for $x$ in $e$, as usual.
 
