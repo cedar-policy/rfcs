@@ -75,7 +75,7 @@ A Cedar function declaration is composed of three elements:
 1. A name, which is a valid (possibly namespaced) identifier.
 2. A list of parameters, each of which is a non-namespaced identifier.
 3. A body, which is a Cedar expression.
-    1. The body may contain (non-namespaced) variables, drawn from the function's parameters and Cedar's global variables.
+    1. The body may contain (non-namespaced) variables, drawn from the function's parameters.
     2. The body may not contain calls to other functions.
 
 
@@ -86,7 +86,8 @@ function name(param1, param2) {
   body
 };
 ```
-Standard Cedar variables (`principal`, `action`, `resource`, and `context`) are not considered bound with the body.
+Standard Cedar variables (`principal`, `action`, `resource`, and `context`) are *not* considered bound with the body. 
+(Following the principal of macro hygiene)
 Use of an unbound variable in the body is a syntax error.
 A parameter list may not declare the same variable twice, and may not list any standard Cedar variables.
 An unused variable is a syntax warning.
@@ -253,7 +254,7 @@ This introduces the following questions:
 
 Leaving them out for this RFC only precludes only one future design decision, making type annotations required.
 This decision feels unlikely, as we want Cedar to be useful without using a schema/the validator.
-Adding _optional_ type annotations in the future is backwards, but mandating type annotations may not be, due to the use of polymorphic functions.
+Adding _optional_ type annotations in the future is backwards compatible, but mandating type annotations may not be, due to the use of polymorphic functions.
 
 ### Let functions call other functions
 As long as cycles are forbidden and functions as arguments are disallowed, we could allow functions to call other functions without sacrificing termination.
