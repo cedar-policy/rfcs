@@ -183,6 +183,43 @@ when {
 
 Likewise, any static analysis tools would work via inlining.
 
+### Templates
+Cedar macros use the same notation for their variables as do templates, since in both cases variables are "holes" that are filled in with a Cedar expression to make a full construct -- for templates, the construct is a policy, for macros it is an expression.
+
+Templates can include calls to macros. For example:
+
+```
+def semver(?major, ?minor, ?patch) ... // same as initial example
+def semverGT(?lhs, ?rhs) ... // same as initial example
+permit (
+  principal == ?principal,
+  action == Action::"view",
+  resource in ?resource)
+when {
+  semverGT(resource.apiVersion, semver(2,1,0))
+};
+```
+
+When we link this template, we get a full policy, as usual.
+
+A macro parameter can end up having the same name as a template variable, with the effect that it shadows it, which is expected with normal lexical scoping:
+
+```
+def isOwner(?principal,?resource) ?principal == ?resource.owner;
+permit(principal,action,resource in ?resource) 
+when { isOwner(principal,resource) };
+```
+
+Here, notice that the isOwner macro's reference to ?resource is to its parameter, not to the template slot. (We'd recommend to users to choose different parameter names to avoid confusion.)
+
+As already mentioned, you cannot refer to a parameter in a macro that it does not bind, which enforces hygiene. So the following is not allowed.
+
+```
+def isOwner() ?principal == ?resource.owner; 
+// ERROR: cannot refer to unbound variables ?principal, ?resource
+```
+
+
 ## Drawbacks
 
 ### Redundancy
@@ -246,7 +283,7 @@ Pros of calling them "Functions":
 * Macros may have a poor reputation as producing impossible to read code/error messages. Most languages with macros have the guidance to avoid them if possible.
 
 Pros of calling them "Macros":
-* While some mainstream languages lake a macro facility, all mainstream languages lack Call-By-Name functions. Most readers are used to CBV languages. So they inherently assume (having not actually read the docs) that for functions when you write f(1+2,principal.id like "foo") then you will evaluate 1+2 and then principal.id like "foo", and then call the function with the results. They will not imagine that inlining will happen, and that short-circuiting and whatnot can change the results. By calling them macros, we help point out this distinction.
+* While some mainstream languages lack a macro facility, all mainstream languages lack Call-By-Name functions. Most readers are used to CBV languages. So they inherently assume (having not actually read the docs) that for functions when you write f(1+2,principal.id like "foo") then you will evaluate 1+2 and then principal.id like "foo", and then call the function with the results. They will not imagine that inlining will happen, and that short-circuiting and whatnot can change the results. By calling them macros, we help point out this distinction.
 * Regardless of the particular macro implementation (C/Rust/Whatever), users who are familiar with macros will understand that macros do not evaluate their arguments. For macros they know that when you write f(1+2,principal.id like "foo") you are substituting full expressions 1+2 and principal.id like "foo" into the body, you are not evaluating the them first.
 
 
