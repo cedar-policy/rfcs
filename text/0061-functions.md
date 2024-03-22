@@ -106,14 +106,14 @@ A function macro application has the same syntax as an extension function constr
 Here are some examples:
 
 ```
-foo(1,2, principal.name)
+foo(1, 2, principal.name)
 bar(1 + 1, resource.owner in principal)
 baz(some_other_function(3))
 ```
 
 Function arguments are lazily evaluated (i.e., call-by-name), as opposed to extension functions today.
 Call-by-name is required to support inlining correctly in the presence of errors.
-(Without errors, call-by-name and call-by-value are equivalent in Cedar)
+(Without errors, call-by-name and call-by-value should be equivalent.)
 Functions do not exist at run-time -- they cannot be stored in entity attributes, requests, etc. As such, referencing a function by its name, without calling it, is a syntax error.
 Arguments for each of a function's declared parameters, and no more, must be provided at the call, or it's a syntax error.
 Other errors (such as type errors or overflow) are detected at runtime, or via validation.
@@ -145,17 +145,14 @@ permit(principal,action,resource) when {
 
 All functions in a policyset are in scope for all policies, i.e., function declarations do not need to lexically precede use.
 Cedar policies and function bodies are lexically scoped.
-`principal`/`action`/`resource`/ `context` are considered to be more tightly bound then function names.
-This means that while you could name a function `principal`, you could never call it. (This should probably be a validator warning)
-Function name conflicts at the top level are a parse error.
-Function names may shadow extension functions (results in a warning).
+We forbid defining functions with names `principal`, `action`, `resource`, or `context`, to avoid conflicts and confusion with global variable names.
 
 ### Formal semantics/Desugaring rules
 This RFC does not add any evaluation rules to Cedar, as functions can be completely desugared.
 Dusugaring proceeds from the innermost function call to avoid hygiene issues.
 If $f$ is the name of a declared function, _def_($f$) is the body of the definition, and $p_1, ..., p_n$ is the list of parameters in the definition.
 Let $e_1, ..., e_n$ be a list of Cedar expression that do not contain any Cedar Function calls:
-$f(e_1, ..., e_n) \rightarrow$ _def_$(f) [p_1 \mapsto e_1, ..., p_n \mapsto e_n]$
+$f(e_1, ..., e_n) \rightarrow$ _def_ $(f) [p_1 \mapsto e_1, ..., p_n \mapsto e_n]$
 Where $e[x \mapsto e']$ means to substitute $e'$ for $x$ in $e$, as usual.
 
 ### Formal grammar
@@ -278,24 +275,40 @@ may be impossible due to the use of polymorphic functions.
 
 ### Call By Value
 Functions could be call-by-value instead of call-by-name.
-In general, this would follow principal of least surprise.
-Extension functions are call-by-value, and few popular languages have call-by-name constructs.
-The simplicity of validation and analysis and pluses for CBN, but the big problem is enabling inlining for execution.
+In general, this would follow principle of least surprise.
+Extension functions are call-by-value, and few popular languages have call-by-name functions.
 
+However, CBV without further changes would lead to validation soundness issues. In particular, consider the following.
+```
+function drop(a,b) { a };
+permit(principal,action,resource)
+when { drop(true,1+"hello") };
+```
+This policy will validate because once we've inlined the function we'd have
+```
+permit(principal,action,resource)
+when { true };
+```
+But if we actually do CBV evaluation then this policy will fail because `1+"hello"` will fail. We could solve this problem by validating the argument expressions of a function call individually, in addition to validating the entire policy after inlining. But that's extra work. There's also the same problem with analysis: Our logical encoding would have to do CBV to be consistent with the actual evaluator, rather than just inlining, or else we need to prove that eager-eval(e) = lazy-eval(e) for all validated e.
+
+CBN also has the benefit that it's more powerful. For example, you could not define `implies` as follows if we had CBV:
+```
+def implies(e1,e1) {
+  !e1 || (e1 && e2)
+}
+permit(principal,action,resource) when {
+  implies(principal has attr,
+          resource has attr && principal.attr == resource.attr)
+};
+```
+The above won't work with CBV because the second expression to the call to `implies` will fail if `principal.attr` does not exist.
 
 ### Let functions call other functions
 As long as cycles are forbidden and functions as arguments are disallowed, we could allow functions to call other functions without sacrificing termination.
 However, the potential complexity explosion is high, and it's backwards compatible to add this later.
 
-<!-- ### Make parse errors runtime errors
-Make (any subset of) the following errors runtime errors instead of parse errors: 
-
-1. Application of non-function
-2. Non-application of function
-3. Function application with incorrect arity -->
-
 ### Naming
-Should these really be called `function`s? They are actually `macro`s. `snippet`?
+Should these really be called `function`s? They are essentially macros. Call them that?
 
 ## Unresolved Questions
 
