@@ -1,4 +1,4 @@
-# User-defined Functions
+# User-defined Function Macros
 
 ## Related Issues and PRs
 
@@ -12,9 +12,9 @@
 ## Summary
 
 This RFC proposes to support user-defined function-like macros in Cedar.
-We call these Cedar Functions.
-Cedar Functions provide a lightweight mechanism for users to create abstractions in their policies, aiding readability and reducing the chance for errors. 
-Cedar Functions have restrictions to ensure termination and efficiency, maintain the feasibility of validation and analysis, and help ensure policies are readable.
+We call these Cedar Function Macros.
+Cedar Function Macros provide a lightweight mechanism for users to create abstractions in their policies, aiding readability and reducing the chance for errors. 
+Cedar Function Macros have restrictions to ensure termination and efficiency, maintain the feasibility of validation and analysis, and help ensure policies are readable.
 An important implementation note is that Cedar policies may be implemented purely through desugaring.
 
 ### Basic Example
@@ -66,15 +66,15 @@ Cedar currently lacks mechanisms for users to build abstractions. The only exist
     2. Users may have data structures that are totally bespoke to their systems. It makes no sense to include these in the standard Cedar distribution at all, yet users may still want some way to build abstractions. 
 2. They are too powerful. Extensions are implemented via arbitrary Rust code, which is essential for encoding features that cannot be represented via Cedar expressions (such as IP Addresses), but opens the door for a wide range of bugs/design issues. It’s trivial to design an extension that is difficult to validate and/or logically encode for analysis. Problematically, extension functions can potentially exhibit non-determinism, non-termination, or non-linear performance; interact with the operating system; or violate memory safety. This raises the code review burden when considering an extension function's implementation.
 
-In contrast, functions written as simple abstractions over Cedar expressions, which themselves cannot call other Cedar functions, have none of these problems. They naturally inherit the properties of Cedar expressions. Cedar functions are guaranteed to terminate and be deterministic. Since they are compositions of Cedar expressions, it’s easy to validate and analyze them.
+In contrast, function macros written as simple abstractions over Cedar expressions, which themselves cannot call other Cedar functions, have none of these problems. They naturally inherit the properties of Cedar expressions. Cedar functions are guaranteed to terminate and be deterministic. Since they are compositions of Cedar expressions, it’s easy to validate and analyze them.
 
 ## Detailed Design
 
-### Function declarations
+### Function Macro declarations
 
-This RFC adds a new top level form to Cedar policysets: the function declaration.
+This RFC adds a new top level form to Cedar policysets: the function macro declaration.
 
-A Cedar function declaration is composed of three elements:
+A Cedar function macro declaration is composed of three elements:
 
 1. A name, which is a valid (possibly namespaced) identifier.
 2. A list of parameters, each of which is a non-namespaced identifier preceded by a `?`.
@@ -96,9 +96,9 @@ An unused variable is a syntax warning.
 Function and variable names share the same namesapce, with standard lexical scoping.
 Inside of a function, any function application (see below) that does not resolve to an extension function or built-in operation is an error. In other words, Cedar functions are not permitted to call other Cedar functions.
 
-### Function applications (a.k.a. function calls)
+### Function macro applications (a.k.a. function calls)
 
-A function application has the same syntax as an extension function constructor application. In particular, a function application is composed of two elements:
+A function macro application has the same syntax as an extension function constructor application. In particular, a function application is composed of two elements:
 
 1. The function name (potentially namespaced)
 2. A comma separated list of arguments, which are arbitrary cedar expressions.
