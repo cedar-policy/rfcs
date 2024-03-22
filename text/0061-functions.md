@@ -72,7 +72,7 @@ In contrast, function macros written as simple abstractions over Cedar expressio
 
 ### Function Macro declarations
 
-This RFC adds a new top level form to Cedar policysets: the function macro declaration.
+This RFC adds a new top level form to Cedar policy sets: the function macro declaration.
 
 A Cedar function macro declaration is composed of three elements:
 
