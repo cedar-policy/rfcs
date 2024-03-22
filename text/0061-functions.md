@@ -33,7 +33,7 @@ when {
 Here it is instead represented with functions
 
 ```
-def semver(?major, ?minor, ?long) 
+def semver(?major, ?minor, ?patch) 
   { major : ?major, minor : ?minor, patch : ?patch }
 ;
 
