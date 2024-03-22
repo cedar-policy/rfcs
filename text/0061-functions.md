@@ -15,6 +15,7 @@ This RFC proposes to support user-defined function-like macros in Cedar.
 We call these Cedar Functions.
 Cedar Functions provide a lightweight mechanism for users to create abstractions in their policies, aiding readability and reducing the chance for errors. 
 Cedar Functions have restrictions to ensure termination and efficiency, maintain the feasibility of validation and analysis, and help ensure policies are readable.
+An important implementation note is that Cedar policies may be implemented purely through desugaring.
 
 ### Basic Example
 
@@ -32,20 +33,20 @@ when {
 Here it is instead represented with functions
 
 ```
-function semver(major, minor, long) {
-  { major : major, minor : minor, patch : patch }
-};
+def semver(?major, ?minor, ?long) 
+  { major : ?major, minor : ?minor, patch : ?patch }
+;
 
 // lhs > rhs ?
-function semverGT(lhs, rhs) {
-  if lhs.major == rhs.major then 
-    if lhs.minor == rhs.minor then
-      lhs.patch > rhs.patch
+def semverGT(?lhs, ?rhs) 
+  if ?lhs.major == ?rhs.major then 
+    if ?lhs.minor == ?rhs.minor then
+      ?lhs.patch > ?rhs.patch
     else
-      lhs.minor > rhs.minor
+      ?lhs.minor > ?rhs.minor
   else
-    lhs.major > rhs.major
-};
+    ?lhs.major > ?rhs.major
+;
 
 // Permit access when the api is greater than 2.1
 permit (principal, action == Action::"someAction", resource)
@@ -76,20 +77,19 @@ This RFC adds a new top level form to Cedar policysets: the function declaration
 A Cedar function declaration is composed of three elements:
 
 1. A name, which is a valid (possibly namespaced) identifier.
-2. A list of parameters, each of which is a non-namespaced identifier.
+2. A list of parameters, each of which is a non-namespaced identifier preceded by a `?`.
 3. A body, which is a Cedar expression.
     1. The body may contain (non-namespaced) variables, drawn from the function's parameters.
     2. The body may not contain calls to other functions.
+    3. The body may contain functions calls to builtin Cedar functions/methods or extensions calls. (ex: Things like `.contains()` and `ip("10.10.10.10")` are fine)
+    4. Standard Cedar variables (`principal`, `action`, `resource`, and `context`) are *not* considered bound within the body (following the principle of macro hygiene). 
 
 
 Structurally, a declaration is written like this:
 
 ```
-function name(param1, param2) {
-  body
-};
+def name(?param1, ?param2) body ;
 ```
-Standard Cedar variables (`principal`, `action`, `resource`, and `context`) are *not* considered bound within the body (following the principle of macro hygiene). 
 Use of an unbound variable in the body is a syntax error.
 A parameter list may not declare the same variable twice, and may not list any standard Cedar variables.
 An unused variable is a syntax warning.
@@ -101,12 +101,14 @@ Inside of a function, any function application (see below) that does not resolve
 A function application has the same syntax as an extension function constructor application. In particular, a function application is composed of two elements:
 
 1. The function name (potentially namespaced)
-2. A comma separated list of arguments
+2. A comma separated list of arguments, which are arbitrary cedar expressions.
 
-Here is an example:
+Here are some examples:
 
 ```
 foo(1,2, principal.name)
+bar(1 + 1, resource.owner in principal)
+baz(some_other_function(3))
 ```
 
 Function arguments are lazily evaluated (i.e., call-by-name), as opposed to extension functions today.
@@ -117,9 +119,7 @@ Arguments for each of a function's declared parameters, and no more, must be pro
 Other errors (such as type errors or overflow) are detected at runtime, or via validation.
 Examples:
 ```
-function foo(a, b) {
-    a + b
-};
+def foo(?a, ?b) ?a + ?b;
 
 permit(principal,action,resource) when {
   foo + 1 // Parse error
@@ -161,8 +161,9 @@ Where $e[x \mapsto e']$ means to substitute $e'$ for $x$ in $e$, as usual.
 ### Formal grammar
 The grammar of Cedar expressions is unchanged, as we re-use the existing call form.
 ```
-function ::= 'function' Path '(' Params? ')' '{' Expr '}' ';'
-Params ::= Ident (',' Ident)? ','?
+function ::= 'def' Path '(' Params? ')' Expr ';'
+Params ::= ParamIdent (',' ParamIdent)? ','?
+ParamIdent ::= '?' IDENT // These are equivalent to the production rule for template slots
 ```
 Note the `Params` non-terminal allows trailing commas in parameter lists.
 
@@ -171,9 +172,7 @@ Note the `Params` non-terminal allows trailing commas in parameter lists.
 The validator typechecks functions at use-sites via inlining.
 This means that functions can be polymorphic. For example, one could write the following, where `eq` is used in the first instance with a pair of entities, and in the second instance with a pair of strings.
 ```
-function eq(a, b) {
-  a == b
-};
+def eq(?a, ?b) ?a == ?b ;
 
 permit(principal, action, resource)
 when {
@@ -207,14 +206,15 @@ Extension functions provide more full-featured constructors through custom parsi
 
 For example, you could encode a decimal number as a `Long`, and then make Cedar functions to construct and compare decimals:
 ```
-function mydecimal(i,f) {
-  if f >= 0 && f <= 9999 then
-    i * 10000 + f    // will overflow if i too big
+def mydecimal(?i,?f) 
+  if ?f >= 0 && ?f <= 9999 then
+    ?i * 10000 + ?f    // will overflow if i too big
   else
     18446744073709551615 + 1    // fraction f too big: induce overflow
-};
-function mydecimalLTE(d,e) {
-  d <= e    // d and e are just Long numbers
+;
+
+def mydecimalLTE(?d,?e) {
+  ?d <= ?e    // d and e are just Long numbers
 }
 ```
 These functions basically implement the equivalent of Cedar `decimal` numbers. But the approach has at least two drawbacks.
@@ -243,9 +243,9 @@ type SemVer = { major : Long, minor : Long, patch : Long };
 ```
 Policy:
 ```
-function semver(major : Long, minor : Long, patch : Long) -> Semver {
-  { major : major, minor : minor, patch : patch }
-};
+def semver(?major : Long, ?minor : Long, ?patch : Long) -> Semver 
+  { major : ?major, minor : ?minor, patch : ?patch }
+;
 ```
 
 This would allow functions to typechecked in absence of a use-site, and allow for easier user specification of intent.
@@ -255,9 +255,9 @@ If we allowed `type` declarations in policy set files, it would just be one file
 
 ```
 type Semver = { major : Long, minor : Long, patch : Long };
-function semver(major : Long, minor : Long, patch : Long) -> Semver {
-  { major : major, minor : minor, patch : patch }
-};
+def semver(?major : Long, ?minor : Long, ?patch : Long) -> Semver 
+   major : ?major, minor : ?minor, patch : ?patch 
+;
 ```
 
 This introduces the following questions:
@@ -296,25 +296,6 @@ Make (any subset of) the following errors runtime errors instead of parse errors
 
 ### Naming
 Should these really be called `function`s? They are actually `macro`s. `snippet`?
-
-### Different namespaces for functions and variables
-In the style of a Lisp-2, we could have different namespaces for functions are variables.
-Assuming for the minute that functions-calling-functions is allowed:
-```
-function foo() {
-  ...
-};
-
-function bar(foo) {
-  foo(1) // No longer an error. `foo` is looked up in the function namespace not the variable namespace
-};
-
-function bar(foo) {
-  foo(foo) // Also fine
-}
-
-```
-We argue against this on principle of least surprise; very few modern languages work like this.
 
 ## Unresolved Questions
 
