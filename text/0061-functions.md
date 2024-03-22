@@ -12,7 +12,7 @@
 ## Summary
 
 This RFC proposes to support user-defined function-like macros in Cedar.
-We call these Cedar Function Macros.
+We call these Cedar Function Macros (macros for short).
 Cedar Function Macros provide a lightweight mechanism for users to create abstractions in their policies, aiding readability and reducing the chance for errors. 
 Cedar Function Macros have restrictions to ensure termination and efficiency, maintain the feasibility of validation and analysis, and help ensure policies are readable.
 An important implementation note is that Cedar policies may be implemented purely through desugaring.
@@ -55,7 +55,7 @@ when {
 };
 ```
 
-For simplicity, safety, and readability, Cedar functions cannot call other functions, and cannot take functions as arguments.
+For simplicity, safety, and readability, Cedar macros cannot call other macros, and cannot take macros as arguments.
 
 ## Motivation
 
@@ -111,11 +111,11 @@ bar(1 + 1, resource.owner in principal)
 baz(some_other_function(3))
 ```
 
-Function arguments are lazily evaluated (i.e., call-by-name), as opposed to extension functions today.
+Macro arguments are lazily evaluated (i.e., call-by-name), as opposed to extension functions today.
 Call-by-name is required to support inlining correctly in the presence of errors.
 (Without errors, call-by-name and call-by-value should be equivalent.)
-Functions do not exist at run-time -- they cannot be stored in entity attributes, requests, etc. As such, referencing a function by its name, without calling it, is a syntax error.
-Arguments for each of a function's declared parameters, and no more, must be provided at the call, or it's a syntax error.
+Macros do not exist at run-time -- they cannot be stored in entity attributes, requests, etc. As such, referencing a function by its name, without calling it, is a syntax error.
+Arguments for each of a macro's declared parameters, and no more, must be provided at the call, or it's a syntax error.
 Other errors (such as type errors or overflow) are detected at runtime, or via validation.
 Examples:
 ```
@@ -143,14 +143,17 @@ permit(principal,action,resource) when {
 
 ### Namespacing/scoping
 
-All functions in a policyset are in scope for all policies, i.e., function declarations do not need to lexically precede use.
-Cedar policies and function bodies are lexically scoped.
+All macros in a policyset are in scope for all policies, i.e., function declarations do not need to lexically precede use.
+Cedar policies and macro bodies are lexically scoped.
+`principal`/`action`/`resource`/ `context` are considered to be more tightly bound then function names.
+Macro name conflicts at the top level are a parse error.
+Macro names may shadow extension functions (results in a warning).
 We forbid defining functions with names `principal`, `action`, `resource`, or `context`, to avoid conflicts and confusion with global variable names.
 
 ### Formal semantics/Desugaring rules
-This RFC does not add any evaluation rules to Cedar, as functions can be completely desugared.
-Dusugaring proceeds from the innermost function call to avoid hygiene issues.
-If $f$ is the name of a declared function, _def_($f$) is the body of the definition, and $p_1, ..., p_n$ is the list of parameters in the definition.
+This RFC does not add any evaluation rules to Cedar, as macros can be completely desugared.
+Dusugaring proceeds from the innermost macro call to avoid hygiene issues.
+If $f$ is the name of a declared macro, _def_($f$) is the body of the definition, and $p_1, ..., p_n$ is the list of parameters in the definition.
 Let $e_1, ..., e_n$ be a list of Cedar expression that do not contain any Cedar Function calls:
 $f(e_1, ..., e_n) \rightarrow$ _def_ $(f) [p_1 \mapsto e_1, ..., p_n \mapsto e_n]$
 Where $e[x \mapsto e']$ means to substitute $e'$ for $x$ in $e$, as usual.
@@ -158,7 +161,7 @@ Where $e[x \mapsto e']$ means to substitute $e'$ for $x$ in $e$, as usual.
 ### Formal grammar
 The grammar of Cedar expressions is unchanged, as we re-use the existing call form.
 ```
-function ::= 'def' Path '(' Params? ')' Expr ';'
+macro ::= 'def' Path '(' Params? ')' Expr ';'
 Params ::= ParamIdent (',' ParamIdent)? ','?
 ParamIdent ::= '?' IDENT // These are equivalent to the production rule for template slots
 ```
@@ -166,8 +169,8 @@ Note the `Params` non-terminal allows trailing commas in parameter lists.
 
 ### Validation and Analysis
 
-The validator typechecks functions at use-sites via inlining.
-This means that functions can be polymorphic. For example, one could write the following, where `eq` is used in the first instance with a pair of entities, and in the second instance with a pair of strings.
+The validator typechecks macros at use-sites via inlining.
+This means that macros can be polymorphic. For example, one could write the following, where `eq` is used in the first instance with a pair of entities, and in the second instance with a pair of strings.
 ```
 def eq(?a, ?b) ?a == ?b ;
 
@@ -183,7 +186,7 @@ Likewise, any static analysis tools would work via inlining.
 ## Drawbacks
 
 ### Redundancy
-Cedar functions can only accomplish things that can already accomplished with Cedar expressions.
+Cedar macros can only accomplish things that can already accomplished with Cedar expressions.
 This means we are not expanding the expressive power of Cedar in any way. 
 We are also adding more than one way to accomplish the same task.
 Bringing back our SemVer example:
@@ -227,7 +230,25 @@ Of course, these drawbacks do not necessarily speak against Cedar functions gene
 A policy can no longer be read by itself, it has to be read in the context of all function definitions it uses.
 Policies that use a large number of functions may be hard to read.
 
+
 ## Alternatives
+
+### Naming: Are these macros or are these functions?
+The feature described in this RFC could be interpreted as either Macros or as Call-By-Name pure functions. 
+They are equivalent in this context.
+This raises the question of what we should call them.
+The RFC opts for Macros, and this sections details the pros and cons of each.
+
+Pros of calling them "Functions":
+
+* Developers are probably more familiar with the concepts of functions than of macros. Many modern languages lack a macro facility (Javascript, Java, Python, Ruby), and the feature looks like normal function calls.
+* Macros mean different things in different languages: C/C++/Rust macros allow you to edit the token stream, whereas this RFC's feature can only operate on fully parsed ASTs, and can only produce fully parsed ASTs. In addition, we provide no way to pattern match/pull features out of the argument asts.
+* Macros may have a poor reputation as producing impossible to read code/error messages. Most languages with macros have the guidance to avoid them if possible.
+
+Pros of calling them "Macros":
+* While some mainstream languages lake a macro facility, all mainstream languages lack Call-By-Name functions. Most readers are used to CBV languages. So they inherently assume (having not actually read the docs) that for functions when you write f(1+2,principal.id like "foo") then you will evaluate 1+2 and then principal.id like "foo", and then call the function with the results. They will not imagine that inlining will happen, and that short-circuiting and whatnot can change the results. By calling them macros, we help point out this distinction.
+* Regardless of the particular macro implementation (C/Rust/Whatever), users who are familiar with macros will understand that macros do not evaluate their arguments. For macros they know that when you write f(1+2,principal.id like "foo") you are substituting full expressions 1+2 and principal.id like "foo" into the body, you are not evaluating the them first.
+
 
 ### Type annotations
 We could require/allow Cedar functions to have type annotations, taking type definitions from either the schema or allowing them to be inline.
