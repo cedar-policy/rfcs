@@ -93,7 +93,7 @@ def name(?param1, ?param2) body ;
 Use of an unbound variable in the body is a syntax error.
 A parameter list may not declare the same variable twice, and may not list any standard Cedar variables.
 An unused variable is a syntax warning.
-Function and variable names share the same namesapce, with standard lexical scoping.
+Function and variable names share the same namespace, with standard lexical scoping.
 Inside of a function, any function application (see below) that does not resolve to an extension function or built-in operation is an error. In other words, Cedar functions are not permitted to call other Cedar functions.
 
 ### Function macro applications (a.k.a. function calls)
