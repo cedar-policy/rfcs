@@ -262,12 +262,87 @@ Second, there is no special parsing for Cedar functions. With Cedar's built-in `
 
 Of course, these drawbacks do not necessarily speak against Cedar functions generally, but suggest that for suitably general use-cases (like decimal numbers!), an extension function might be warranted instead.
 
+### Hidden performance costs
+Macros allow users to write policies whose size after expansion is exponential in their pre-expansion size. Here is a pathological example.
+
+```
+def double (?x) { left: ?x, right: ?x }
+
+permit(principal,action,resource) when {
+    double(double(double(double({})))) has left
+};
+```
+
+With 4 calls to double, we've created a parse tree (and a runtime value) of size $2^4$.
+
+This is a fundamental issue: Macros provide readability through compactness, and in so doing they hide real costs. This is true of any programming language abstraction, and we see this tension play out in many contexts.
+
+One mitigation is to expose the hidden costs, when needed. For example:
+- A policy authoring tool could reveal the post-expansion policy size to users, compared to the pre-expansion size, and could warn users in pathological cases like the above.
+- Services storing user-provided Cedar policies that wish to protect themselves can impose bounds based on the post-expansion policy size (shared wth users), rather than the concrete policy size.
+
+Ultimately, this RFC takes the position that it is better to give the tool of macros to users to improve the readability and maintainability policies, than it is to withhold that tool for fear that they could misuse it. Without the tool of macros, users must "implement" their effects by cut-and-paste, which still blows up policy size while also making policies harder to read and maintain.
+
 ### Readability: Policies are no longer standalone
 A policy can no longer be read by itself, it has to be read in the context of all function definitions it uses.
 Policies that use a large number of functions may be hard to read.
 
-
 ## Alternatives
+
+### Allow Cedar variables to appear free in macros
+
+This RFC requires that Cedar variables `principal`, `resource`, etc. not appear in a macro body. Allowing them to appear could make macros easier to read. For example, consider this policy:
+```
+def hasTagsForRole(?principal,?resource,?role,?tag)
+  ?principal.taggedRoles has ?role &&
+  ?principal.taggedRoles[?role] has ?tag &&
+  ?resource.tags has ?tag &&
+  ?principal.taggedRoles[?role][?tag].containsAll(?resource.tags[?tag])
+;
+
+permit(principal in Group:"Role-A", action, resource) when {
+  hasTagsForRole(principal,resource,"Role-A","country") &&
+  hasTagsForRole(principal,resource,"Role-A","job-family") &&
+  hasTagsForRole(principal,resource,"Role-B","task")
+}
+```
+In this scenario, a `principal` has a `taggedRoles` attribute to collect tags that are associated with that role, e.g., `principal["Role-A"]["country"]` is a set, if present, that contains the values of the `country` tag associated with `Role-A`. The policy authorizes access to a resource when the principal contains all the values the resource has for the tags `country`, `job-family`, and `task`, which are associated with `Role-A`.
+
+This example is a good use-case for macros: Without them a policy author would need to cut-and-past the `hasTagsForRole` part, producing a policy that is much harder to read and maintain:
+```
+permit(principal in Group:"Role-A", action, resource) when {
+  principal.taggedRoles has "Role-A" &&
+  principal.taggedRoles["Role-A"] has "country" &&
+  resource.tags has "country" &&
+  principal.taggedRoles["Role-A"]["country"].containsAll(resource.tags["country"])
+  &&
+  principal.taggedRoles has "Role-A" &&
+  principal.taggedRoles["Role-A"] has "job-family" &&
+  resource.tags has "job-family" &&
+  principal.taggedRoles["Role-A"]["job-family"].containsAll(resource.tags["job-family"])
+  &&
+  principal.taggedRoles has "Role-B" &&
+  principal.taggedRoles["Role-B"] has "task" &&
+  resource.tags has "task" &&
+  principal.taggedRoles["Role-B"]["task"].containsAll(resource.tags["task"])
+}
+```
+But it could potentially be even easier to read, and a little less error prone, if we allowed `principal` and `resource` to appear free in the macro definition:
+```
+def hasTagsForRole(?role,?tag)
+  principal.taggedRoles has ?role &&
+  principal.taggedRoles[?role] has ?tag &&
+  resource.tags has ?tag &&
+  principal.taggedRoles[?role][?tag].containsAll(resource.tags[?tag])
+;
+
+permit(principal in Group::"Role-A", action, resource) when {
+  hasTagsForRole("Role-A","country") &&
+  hasTagsForRole("Role-A","job-family") &&
+  hasTagsForRole("Role-B","task")
+}
+```
+This version makes it more clear that the macro is really only a function of `?role` and `?tag` -- the `principal` and `resource` part should always be the policy's `principal` and `resource`, so we should not be forced to abstract them but always rotely fill the same variables.
 
 ### Naming: Are these macros or are these functions?
 The feature described in this RFC could also be referred to _functions_ with call-by-name semantics, since that is an accurate description of what they are. There are some good reasons to call them functions, instead of macros:
