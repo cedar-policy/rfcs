@@ -121,7 +121,7 @@ Notice how the argument expression `principal has attr` has been substituted for
 
 ### Errors
 
-Macros do not exist at run-time -- they cannot be stored in entity attributes, requests, etc. As such, referencing a function by its name, without calling it, is a syntax error.
+Macros do not exist at run-time -- they cannot be stored in entity attributes, requests, etc. As such, referencing a macro by its name, without calling it, is a syntax error.
 Arguments for each of a macro's declared parameters, and no more, must be provided at the call, or it's a syntax error.
 Other errors (such as type errors or overflow) are detected at runtime, or via validation.
 Examples:
@@ -238,9 +238,9 @@ This policy does accomplish the user's goal of encoding the SemVer relationship.
 The problem is readability. A reader of this policy has to work out that it is implementing the standard semantic version comparison operator, and not some bespoke versioning scheme. Another problem is maintainability. If you have multiple policies that reason about SemVers, you have to repeat the logic, inline, in each policy. This violates basic software engineering tenets (Don’t Repeat Yourself), allowing bugs to sneak in via typos or botched copy/paste.
 
 ### No custom parsing or error-handling
-Extension functions provide more full-featured constructors through custom parsing and error handling, but Cedar functions provide no such facilities. This may make them harder to read, write, and understand.
+Extension functions provide more full-featured constructors through custom parsing and error handling, but Cedar macros provide no such facilities. This may make them harder to read, write, and understand.
 
-For example, you could encode a decimal number as a `Long`, and then make Cedar functions to construct and compare decimals:
+For example, you could encode a decimal number as a `Long`, and then make Cedar macros to construct and compare decimals:
 ```
 def mydecimal(?i,?f) 
   if ?f >= 0 && ?f <= 9999 then
@@ -253,14 +253,14 @@ def mydecimalLTE(?d,?e) {
   ?d <= ?e    // d and e are just Long numbers
 }
 ```
-These functions basically implement the equivalent of Cedar `decimal` numbers. But the approach has at least two drawbacks.
+These macros basically implement the equivalent of Cedar `decimal` numbers. But the approach has at least two drawbacks.
 
 First, if `i` and/or `f` are outside the allowed range, you will get a Cedar overflow exception at run-time. This exception is not as illuminating as the custom error emitted by the `decimal` extension function (whose message will be `"Too many digits"`).
-Moreover, custom errors from constructor parameter validity checks can be emitted during validation when using extension functions, but not when using Cedar functions.
+Moreover, custom errors from constructor parameter validity checks can be emitted during validation when using extension functions, but not when using Cedar macros.
 
-Second, there is no special parsing for Cedar functions. With Cedar's built-in `decimal`, you can write `decimal("123.12")` which more directly conveys the number being represented than does `mydecimal(123,1200)`. (Note that `mydecimal(123,12)` represents the number 123.0012, which may surprised some readers!).
+Second, there is no special parsing for Cedar macros. With Cedar's built-in `decimal`, you can write `decimal("123.12")` which more directly conveys the number being represented than does `mydecimal(123,1200)`. (Note that `mydecimal(123,12)` represents the number 123.0012, which may surprised some readers!).
 
-Of course, these drawbacks do not necessarily speak against Cedar functions generally, but suggest that for suitably general use-cases (like decimal numbers!), an extension function might be warranted instead.
+Of course, these drawbacks do not necessarily speak against Cedar macros generally, but suggest that for suitably general use-cases (like decimal numbers!), an extension function might be warranted instead.
 
 ### Hidden performance costs
 Macros allow users to write policies whose size after expansion is exponential in their pre-expansion size. Here is a pathological example.
@@ -284,8 +284,8 @@ One mitigation is to expose the hidden costs, when needed. For example:
 Ultimately, this RFC takes the position that it is better to give the tool of macros to users to improve the readability and maintainability policies, than it is to withhold that tool for fear that they could misuse it. Without the tool of macros, users must "implement" their effects by cut-and-paste, which still blows up policy size while also making policies harder to read and maintain.
 
 ### Readability: Policies are no longer standalone
-A policy can no longer be read by itself, it has to be read in the context of all function definitions it uses.
-Policies that use a large number of functions may be hard to read.
+A policy can no longer be read by itself, it has to be read in the context of all macro definitions it uses.
+Policies that use a large number of macros may be hard to read.
 
 ## Alternatives
 
@@ -373,7 +373,7 @@ Doing so may also make it easier to provide clear validation error messages.
 But introducing type annotations for macros introduces several questions.
 
 1. Do we allow `type` declarations allowed in policy sets, or just in schemas?
-2. Are type annotations on functions enforced dynamically à la "contracts," or are they just ignored at runtime?
+2. Are type annotations on macros enforced dynamically à la "contracts," or are they just ignored at runtime?
   1. If they are dynamically enforced, that implies access to the schema to unfold type definitions. It also may introduce redundant type checking.
 3. Are type annotations required or optional?
 4. Will we have types to support generics, i.e., polymorphism?
