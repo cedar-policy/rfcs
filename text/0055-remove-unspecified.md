@@ -116,6 +116,7 @@ Cedar schema JSON syntax:
 Users will not be allowed to include entities of type `__cedar::Default` in the store, which ensures that these entities will never have attributes or ancestors/descendants, which are properties we will rely on during validation.
 Users will not be allowed to reference the type `__cedar::Default` in their policies (so neither `principal == __cedar::Default::"principal"` nor `principal is __cedar::Default` are allowed).
 Users do not need to add `__cedar::Default` to their schemas (and it will be an error if they do) because `__cedar::Default` is defined automatically.
+Finally, users cannot create entity uids with type `__cedar::Default`, which prevents using default entities with the `RequestEntity::EntityUid` constructor.
 
 ## Motivation
 
@@ -153,12 +154,6 @@ Here are some options we’ve ruled out:
 - `Arbitrary`: same issue as “any”
 - `Unspecified`: potential for confusion with partial evaluation “unknown”
 - `Mock`: implies that this entity type should be used for debugging/testing
-
-### `Default` vs. `EntityUid(__cedar::Default::"eid")`
-
-Under the current proposal, there are two ways to pass an unspecified entity into a `Request`: `RequestEntity::Default` and `RequestEntity::EntityUid(__cedar::Default::"eid")`.
-Both are equivalent, although the latter allows the user to assign an particular name ("eid") to the entity, which could be helpful when debugging error messages.
-When using the `Default` variant, Cedar will assign the entity id "principal", "action", or "resource" depending on where the entity is used in the request.
 
 ### Upgrade strategy
 
