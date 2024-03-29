@@ -61,11 +61,8 @@ We expect that this concept will only become more confusing once we stabilize th
 Unspecified entities also lead to two sharp corners in our public API:
 
 1. Omitting a `appliesTo` field in the schema (or setting it to null) means that an action applies only to unspecified entities, while using an empty list means that it applies to no entities. There is no way to say that an action applies to both unspecified entities and other types of entities. For more discussion, see [RFC35](https://github.com/cedar-policy/rfcs/pull/35). (Note: RFC35 has been closed in favor of the current RFC.)
-2. It is unclear how we should create `Request`s that use both unspecified and unknown entities. This has not been an issue so far since partial evaluation and its APIs are experimental, but we are looking to stabilize them soon. Currently the best (although not ideal) proposal is to use a builder pattern for `Request`s (e.g., `request.principal(Some(User::"alice"))` sets the principal field of a request). To set a field to be “unspecified” users should pass in `None` instead of `Some(_)`; to set a field to be unknown users should not call the field constructor at all.
-
-### Unspecified vs. unknown
-
-Unspecified and unknown entities are both pre-defined "dummy" entities that act like any other entity, as long as they are unused or only used in a trivial way (e.g., `principal == principal`).
+2. It is unclear how we should create `Request`s that use both unspecified and unknown entities. This has not been an issue so far since partial evaluation and its APIs are experimental, but we are looking to stabilize them soon. Currently the best (although not ideal) proposal is to use a builder pattern for `Request`s (e.g., `request.principal(Some(User::"alice"))` sets the principal field of a request). To set a field to be “unspecified” users could pass in `None` instead of `Some(_)`; to set a field to be unknown users would not call the field constructor at all.  
+_NB:_ Unspecified and unknown entities are both pre-defined "dummy" entities that act like any other entity, as long as they are unused or only used in a trivial way (e.g., `principal == principal`).
 If a policy uses an _unknown entity_ in a non-trivial way, then evaluation will produce a residual.
 If a policy uses an _unspecified entity_ in a non-trivial way, then evaluation will produce an error.
 
