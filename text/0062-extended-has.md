@@ -20,7 +20,7 @@ Suppose that entites of type `User` have an optional `contactInfo` attribute of 
 ```
 permit(
   principal is User,
-  action == Action::"star",
+  action == Action::"preview",
   resource == Movie::"Blockbuster"
 ) when {
   principal has contactInfo &&
