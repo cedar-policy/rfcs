@@ -35,7 +35,7 @@ This RFC proposes to extend the syntax of the `has` operator so that this chain 
 ```
 permit(
   principal is User,
-  action == Action::"star",
+  action == Action::"preview",
   resource == Movie::"Blockbuster"
 ) when {
   principal has contactInfo.address.zip &&
@@ -60,7 +60,7 @@ No other components need to change. In particular, validator, evaluator, and Lea
 We extend the grammar as follows:
 
 ```
-Has    := Expr `has` IDENT['.' IDENT]
+Relation ::= ... | Add 'has' (IDENT['.' IDENT]* | STR) |  ...
 ```
 
 Note that this extension works only for attribute names that are valid Cedar identifiers. It cannot be used with attribute names that are not valid Cedar identifiers. For example, we cannot write `principal has "contact info".address.zip`; this check has to be expressed as `principal has "contact info" && principal["contact info"] has address.zip`. Arbitrary attribute names can be supported in the future if there is demand for it.
@@ -125,6 +125,6 @@ Expr.and
 
 ## Alternatives
 
-We considered several variants of the extended syntax that would support arbitrary attribute names. For example, `principal has contactInfo."primary address".zip` or `principal has [contactInfo]["primary address"][zip]`.
+We considered several variants of the extended syntax that would support arbitrary attribute names. For example, `principal has contactInfo."primary address".zip` or `principal has ["contactInfo"]["primary address"]["zip"]`.
 
 We decided that the alternatives were less intuitive and readable. If needed, we can support arbitrary attribute names in the future without causing any further breaking changes to the EST.
