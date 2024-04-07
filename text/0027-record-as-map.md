@@ -154,17 +154,19 @@ if principal.isAdmin then principal.rec else { tag1: "foo", tag2: "bar" }
 ```
 (will have type `{ tag1: String }`).
 
-Strict validation does not support width subtyping. This means there is no way to create `map` literals in a policy, only record literals. For strictly valid policies, maps can only exist in entity or record attributes passed in to the Cedar evaluator. We might consider extending the language syntax to include casts, to allow constructing maps directly, e.g., `(map<String>){ tag1: "foo", tag2: "bar" }`.
+Strict validation does not support width subtyping. This means there is no way to create `map` literals in a policy, only record literals. For strictly valid policies, maps can only exist in entity or record attributes passed in to the Cedar evaluator. On the one hand, we might consider extending the language syntax to include casts, to allow constructing maps directly, e.g., `(map<String>){ tag1: "foo", tag2: "bar" }`. On the other hand, it's unlikely that map literals will be useful, as opposed to record literals, since their benefit is to couple dynamic data with static policies.
 
 ## Alternatives
 
-We could avoid adding maps entirely, and work around their absence. A simpler form of map is not worth adding, but a more general form might be.
+We could avoid adding maps entirely, and work around their absence, but the workaround could be tedious and/or we would not be able to support motivating use-cases.
 
 ### Workarounds
 
 #### Records wtih optional attributes
 
-A `map` is only needed when the keys are truly unknown statically. If the list of keys is known, one can also create a record type that enumerates every key as optional. In sum: Every time you create a policy that writes a map key as a literal, the validator will complain if that key is not in the schema. Just add the key to the schema, and the new policy will validate, along with the old ones. Changing the schema to constantly extend the list of valid keys may be tedious, however. If policies are being constructed on the fly, e.g., by a service's users, a schema update on each policy addition may not be feasible.
+A `map` is only needed when the keys are truly unknown statically. If the list of keys is known, one can also create a record type that enumerates every key as optional. In sum: Every time you create a policy that writes a map key as a literal, the validator will complain if that key is not in the schema. So, add the key to the schema, and the new policy will validate along with the old ones.
+
+However, changing the schema to constantly extend the list of valid keys may be tedious. If policies are being constructed on the fly, e.g., by a service's users, a schema update on each policy addition may not be feasible.
 
 #### Sets of records as key-value pairs
 
@@ -182,15 +184,18 @@ when {
     ])
 };
 ```
-With current Cedar, this approach is insufficient to model a policy that says "the `project` tag for `principal` is the same as the `project` tag for the `resource`", which we could write with maps as `project.tags["project"] == resource.tags["project"]`. However, with the addition of the `any` operator from [RFC 21](https://github.com/cedar-policy/rfcs/blob/any-and-all-operators/text/0021-any-and-all-operators.md#add-all-and-any-operators), we could encode this logic as follows:
+With current Cedar, this approach is insufficient to model a policy that says "the `project` tag for `principal` is the same as the `project` tag for the `resource`", which we could write with maps as `project.tags["project"] == resource.tags["project"]`.
+
+With the addition of the _generalized_ `any?` operator from [RFC 21](https://github.com/cedar-policy/rfcs/pull/21), we could encode this logic as follows:
 ```
 when {
-  resource.tags.any(
+  resource.tags.any? (
     it.key == "project" &&
-    principal.tags.contains({key: "project", value: it.value}))
+    principal.tags.contains({key: "project", value: it.value})
+  )
 }
 ```
-Here, `any` iterates over the `tags` set, binding `it` to each value it reaches in the contained expression. This expression returns `true` when the value's key is `"project"` and when `principal.tags` contains the same key and value (notated as `it.value`). We effectively find `it.value` for one set and then use that value to perform the membership test in the second set.
+Here, `any?` iterates over the `tags` set, binding `it` to each value it reaches in the contained expression. This expression returns `true` when the value's key is `"project"` and when `principal.tags` contains the same key and value (notated as `it.value`). We effectively find `it.value` for one set and then use that value to perform the membership test in the second set.
 
 We could use a similar encoding for the `Timebox` example. Each `List` resource would have an attribute `timeboxes` of type `set<{ user: User, start: Long, end: Long }>`. Then we add a policy:
 ```
@@ -199,17 +204,20 @@ permit(
     action == Action::"GetList",
     resource in Application::"TinyTodo"
 ) when {
-    resource.timeboxes.any(
+    resource.timeboxes.any? (
         it.user == principal &&
         it.start >= context.now &&
         it.end < context.now
     )
 }
 ```
+Unfortunately, the accepted RFC 21's `any?` is too simple for either of these use-cases. The simple `any?` provides no binding variable `it`, which is needed to reference elements of the key/value in separate subexpressions.
 
 ### Non-dynamic attributes
 
-We considered adding a `map` type, but not generalizing the syntax for `has` and for attribute projection to allow member expressions; i.e., we would still require them to be string literals or identifiers. Doing so does not add any expressive power, as it means that you can use records and enumerate all of the possible keys as optional attributes. However, it might still be useful for applications that are creating policies on the fly as part of the business logic, in which case updating the schema may be impractical.
+We could add a `map` type but not generalize the syntax for `has` and for attribute projection to allow member expressions; i.e., we would still require them to be string literals or identifiers. Doing so does not add any expressive power, as it means that you can use records and enumerate all of the possible keys as optional attributes.
+
+However, it might still be useful for applications that are creating policies on the fly as part of the business logic, in which case updating the schema may be impractical. We could support non-dynamic member expressions now and add dynamic ones later, to ensure they are needed.
 
 ### Combined records/maps
 
@@ -219,7 +227,7 @@ This generalization would result in a more general subtyping rule, and an additi
 ```
 { foo?: String, bar: Long, *: String } <: { bar: Long, *: String }
 ```
-It's a two-way door to not add this generalization now. If we add `map<T>` now and add the generalization later, then `map<T>` can remain as a synonym for type `{ *: T }`.
+We could add this generalization later. If we add `map<T>` now, then `map<T>` can be a synonym for type `{ *: T }`.
 
 ### Map literals
 
