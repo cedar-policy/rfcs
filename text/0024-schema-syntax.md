@@ -2,15 +2,16 @@
 
 ## Related issues and PRs
 
-- Reference Issues: 
-- Implementation PR(s): https://github.com/cedar-policy/cedar/pull/347
+- Reference Issues:
+- Implementation PR(s): [cedar#347](https://github.com/cedar-policy/cedar/pull/347) (cancelled), [cedar#557](https://github.com/cedar-policy/cedar/pull/557) (merged)
 
 ## Timeline
 
 - Started: 2023-07-24
 - Entered FCP (intent to accept): 2023-08-22
 - Accepted: 2023-10-02
-- Landed:
+- Landed: 2024-02-19 on `main` ([#557](https://github.com/cedar-policy/cedar/pull/557))
+- Released: Cedar 3.1.0, 2024-03-08
 
 ## Summary
 
@@ -115,9 +116,9 @@ Here is an example illustrating the action declaration syntax.
 ```
 action ReadActions;
 action WriteActions;
-action CreateDocument 
+action CreateDocument
     appliesTo { principal: [User], resource: [Drive] };
-action DeleteDocument in [WriteActions] 
+action DeleteDocument in [WriteActions]
     appliesTo { principal: [User], resource: [Document] };
 action ViewDocument in [ReadActions] appliesTo {
     principal: [User,Public],
@@ -171,7 +172,7 @@ action "Delete Document $$" in ["Write Actions"] appliesTo {
 We anticipate future support for attributes as part of action entities. If/when they are supported, we can specify action attributes after the `appliesTo` part as an inline record using Cedar syntax following an `attributes` keyword. For example, here’s an extension of `ViewDocument` with action attributes.
 
 ```
-action ViewDocument in [ReadActions] 
+action ViewDocument in [ReadActions]
   appliesTo {
     principal: [User,Public],
     resource: Document,
@@ -211,6 +212,8 @@ Note the use of `=` for `type` declarations, but the lack of (required) `=` for 
 As with `entity` and `action` declarations, the name implicitly includes the surrounding namespace as a prefix.
 
 While common types can be declared anywhere within a namespace and safely referenced by entity and action declarations, they cannot refer to one another, to avoid introducing definitional cycles. (To allow mutual reference, we could make declaration order matter: `entity`, `action`, and other `type` declarations cannot refer to a common type before it is defined.)
+
+_Much later note, May 2024: In the fullness of time we relaxed the above restriction and allowed common types to refer to one another, as long as there are no definitional cycles. See [cedar#766](https://github.com/cedar-policy/cedar/pull/766)._
 
 ### Disambiguating Types in Custom Syntax
 
