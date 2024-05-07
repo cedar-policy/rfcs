@@ -74,6 +74,9 @@ namespace where there is no collision with a typename in the active namespace.
 The explicit-`::` change deals with referencing a typename in the empty
 namespace where there _is_ a collision with a typename in the active namespace.
 
+This issue has been encountered "in the wild" by multiple people, according to
+a [comment on cedar#579](https://github.com/cedar-policy/cedar/issues/579#issuecomment-2077482637).
+
 ## Detailed design
 
 ### Change 1: Fully qualified syntax for referring to typenames in the empty namespace
