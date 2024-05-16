@@ -57,7 +57,7 @@ It also addresses the request in [Cedar issue 660](https://github.com/cedar-poli
 
 Doc comments are designed to be very similar to annotations, and could reasonably be implemented as syntactic sugar for a special annotation annotation key.
 The primary difference is that, in order to fully satisfy the documentation use case, doc comments need to appear in more positions than are supported for annotations.
-We may choose to extend annotation to be supported in all positions proposed for doc comments, but this is not a necessary extensions to accept this RFC.
+We may choose to extend annotation to be supported in all positions proposed for doc comments, but this is not a necessary extension to accept this RFC.
 
 Doc comments will be defined by this grammar.
 
@@ -68,14 +68,14 @@ DocComment ::= {DocCommentLine}
 
 ### Policies
 
-Documentation for the policy as whole appears before the policy effect.
+Documentation for the policy as a whole appears before the policy effect.
 It may be anywhere in relation to the annotations on that policy.
 Documentation for individual policy scope clauses must appear immediately before that clause.
 
 The policy grammar is now:
 
 ```
-Policy ::= (Annotation|DocComment)} Effect '(' Scope ')' {Conditions} ';'
+Policy ::= {(Annotation|DocComment)} Effect '(' Scope ')' {Conditions} ';'
 Scope ::= [DocComment] Principal ',' [DocComment] Action ',' [DocComment] Resource
 ```
 
@@ -83,7 +83,7 @@ Scope ::= [DocComment] Principal ',' [DocComment] Action ',' [DocComment] Resour
 
 Documentation for a declaration in a schema appears immediately before the `entity`, `action`, `type`, or `namespace` keyword at the start of the declaration.
 The fields of the attributes in a record type can also be documented with the comment appearing directly before the attribute name.
-A record type might be written for an entities attributes, actions context, or common type definition, or it might be nested inside of some other type.
+A record type might be written for an entity's attributes, action's context, or common type definition, or it might be nested inside of some other type.
 Doc comments are supported in all of these locations.
 
 The schema grammar is now:
@@ -96,7 +96,7 @@ AttrDecls := [DocComment] Name ['?'] ':' Type [',' | ',' AttrDecls]
 
 ### Improperly placed comments
 
-Comments starting with the `///` that are not in a legal positions for doc comments are an error.
+Comments starting with the `///` that are not in a legal position for doc comments are an error.
 The definition of comments is accordingly updated to
 
 ```
@@ -104,13 +104,13 @@ COMMENT ::= '//' ([^/\r\n] [^\r\n]*)? [\r\n]
 ```
 
 This makes the RFC a breaking change for any users who wrote comments in this style, but I believe that is preferable to silently ignoring what a user intended to be a doc comment.
-For an initial and backwards compatible change, improperly place doc comments could be allowed with a warning.
-We can then make this an error in a future major version of the Cedar, or never make it an error if the break is not acceptable.
+For an initial and backwards compatible change, improperly placed doc comments could be allowed with a warning.
+We can then make this an error in a future major version of Cedar, or never make it an error if the break is not acceptable.
 
 ### Alternative doc comment syntax
 
 Choosing to use Rust style doc comments feels natural after developing Cedar in Rust, but we should consider alternative syntax options.
-Some options include using block style doc comments (`/** .. */`), using another common comment character for doc comments (e.g., `#`), and picking a different third character following hte usual two slashes (e.g., `//@` to emphasize the connection with annotations).
+Some options include using block style doc comments (`/** .. */`), using another common comment character for doc comments (e.g., `#`), and picking a different third character following the usual two slashes (e.g., `//@` to emphasize the connection with annotations).
 
 ### JSON Formats
 
@@ -220,7 +220,7 @@ One powerful option is [Entangled](https://entangled.github.io/) which would all
 
 The drawback to this alternative is that it would require that users install a second tool distributed separately from Cedar.
 Different users may also decide to use different literate programming tools, meaning their policy and schema source may not be directly compatible without a pre-processing pass to remove the literate comments.
-This concern could be addressed by explicitly recommending particular tools, or making directly Cedar parsers directly depend on Rust crates implementing literate programming.
+This concern could be addressed by explicitly recommending particular tools, or making Cedar parsers directly depend on Rust crates implementing literate programming.
 
 Because this alternative amounts to using some tool as pre-processing pass before passing policies and schema to Cedar, it remains available to users regardless of what opinionated stance we choose for the Cedar language.
 Users who want more sophisticated literate programming features can always use their tool of choice.
