@@ -184,6 +184,21 @@ Here are some options we’ve ruled out:
 - `Unspecified`: potential for confusion with partial evaluation "unknown"
 - `Mock`: implies that this entity type should be used for debugging/testing
 
+#### Discussion notes
+
+We considered this alternative seriously, and it even became the main proposal for a period of time.
+But ultimately we decided that this alternative feels like a temporary solution, and we would eventually want to get rid of unspecified/default entities anyways.
+
+Here's a nice (lightly edited) summary from @max2me:
+> Both the main proposal and Alternative A are breaking changes, so I'd rather go a step forward and require customers to update schema, code, and policies once for the benefit of a brighter future (Alternative A would require customers to update just schema and code, yet all the same testing will have to occur).
+>
+> My concerns with Alternative A:
+>
+> - Lack of symmetry -- you omit something in the policy and yet explicitly mention it in the authorization code and schema. This leads to a fragmented experience of working with Cedar as a technology.
+> - Surprise factor -- I suspect that most customers who leave principal/resource unscoped in policies will not realize that in addition to all the entities they reference in their code, there is a hidden default type.
+>
+> In my opinion, occasional duplication of policies and the need to define your own default type is a small cost to pay for the overall simplicity and cohesiveness of the system.
+
 ### Alternative B - Maintain the status quo, but clean up the implementation
 
 Pre-define the `__cedar::Default` entity type as in Alternative A, but do not allow users to reference it directly.
