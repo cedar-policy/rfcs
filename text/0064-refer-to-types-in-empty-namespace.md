@@ -127,6 +127,18 @@ primtiive and extension types, where we first check for an entity or common type
 `String` in the active namespace before falling back on resolving to
 `__cedar::String`.
 
+### Change 3: Warn when defining a typename that shadows an existing definition
+
+This is a small change (adding a validation warning) that wouldn't require an
+RFC by itself, but since it is related, and came up in comments on this RFC
+thread, it is listed here.
+
+If the user defines an entity/common type that shadows an existing definition
+(i.e., a definition in the empty namespace, or the name of a primitive/extension
+type), we will produce a validation warning for that definition.
+(However, this is not a validation error, and this RFC's Change 1 will still
+allow you to refer to the shadowed name.)
+
 ## Drawbacks
 
 * The schema implementation becomes more complex, as we need more complex
@@ -150,10 +162,15 @@ and JSON schema grammars.
 ## Unresolved questions
 
 * Should we also support the `::id` syntax in policies?
-It's totally unnecessary from an expressiveness perspective, as policies do not
-have a notion of active namespace, so the unqualified name `id` always refers to
-the `id` in the empty namespace and is never implicitly prefixed with any other
-namespace.
-But, users who are used to writing `::User` in schemas (for some `User` type
-they defined in the empty namespace), might expect to also refer to that type as
-`::User` in policies.
+    [2024-05-17: Based on discussion in the RFC thread, the proposed resolution is "no"]
+    * Arguments for:
+        * Consistency: Users will write `::User` in schemas and might expect to
+        be able to write `::User` in policies as well
+    * Arguments against:
+        * It's unnecessary from an expressiveness perspective, as policies do not
+        have a notion of active namespace, so the unqualified name `id` always refers to
+        the `id` in the empty namespace and is never implicitly prefixed with any other
+        namespace.
+        * We can catch `::User` in the policy parser and provide a specific, informative
+        error message, which makes this less of a sharp edge
+        * We can always go back and add support for `::id` in policies later, if needed
