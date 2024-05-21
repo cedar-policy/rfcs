@@ -10,11 +10,13 @@
 - Started: 2023-07-14
 - Entered FCP (intent to accept): 2023-10-27
 - Accepted: 2023-11-08
-- Landed:
+- Rejected: 2024-05-21
 
 ## Summary
 
 This RFC proposes extending the language with `all?` and `any?` operators that allow checking if all elements or any element in a set satisfies a given predicate. The `all?` operator returns `true` if the provided predicate is true for all elements in the set. The `any?` operator returns true if the predicate is true for any element in the set.
+
+**Update (2024-05-21)**: This RFC was originally accepted and then revised to address analyzability issues. After further investigation, we found that even the revised version is not analyzable as described below, and further restrictions would be needed to make it analyzable. For example, one option is to restrict the predicates to compare set members to constants only. It is unclear if the proposed operators remain sufficiently useful with these added restrictions.  So we are rejecting the RFC at this time.
 
 ## Basic example
 
