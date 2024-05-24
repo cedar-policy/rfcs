@@ -83,7 +83,7 @@ Capability tracking must be generalized to support open records. Today, if you w
 
 A record literal is given _closed_ type, i.e., one without a default attribute type. For example, the literal `{ name: "jose", jobLevel : 7 }` has type `{ name: String, jobLevel: Long }`. The validator does this because it knows that the record has no additional attributes beyond those in the literal.
 
-#### Subtyping
+#### Permissive Validation: Subtyping
 
 For permissive validation, we adjust the subtyping rules as follows. First, we add the following rule (1):
 ```
@@ -130,6 +130,40 @@ u1: T  ... um: T
 { f1: v1, ..., fn: vn, g1: u1, ... gm: um } : { f1: T1, ..., fn: Tn } default T
 ```
 In particular, when asked to determine if a record is open with default attribute type `T`, the validator confirms that all of the required attributes `f1` ... `fn` are present with the right types, and all the remaining non-required attributes `g1` ... `gm` have values of the default attribute type `T`. Another way to put this is that a record `v` can be given _open_ record type `T` (which has some default attribute type) iff there exists a _closed_ type `T'` such that `v` has the type `T'` and `T'` is a subtype of `T`.
+
+## Drawbacks
+
+### Unintuitive strict validation behavior
+
+Strict validation lacks subtyping, so adding open records could lead to some unintuitive validation behavior.
+
+For example, suppose that entity `User` has a `tags` attribute whose type is `{ } default String`. Suppose our policy contains the following expression (call it E): `principal.tags == { foo: "hello", bar: "there" }`. Unfortunately, with strict validation expression E will be rejected. That's because strict validation requires both sides of `==` to have the same type, but the literal `{ foo: "hello", bar: "there" }` has type `{ foo: String, bar: String }` while `principal.tags` has the type `{ } default String`, which is not the same. (With subtyping, a common type between the two could be found.)
+
+For a similar reason, we could not write something like the following:
+```
+(if (principal.ok) then
+  principal.tags
+else
+  { foo: "hello", bar: "there" }) has foo && principal.foo == "hello"
+```
+This expression is rejected is because conditionals require both branches to have the same type.
+
+That said, the use-case that motivates open records is supported, e.g., an expression like the following will validate, assuming both `principal.tags` and `resource.tags` have the same type (such as `{ } default String`):
+```
+principal.tags has "priority" && resource.tags has "priority" && principal.tags["priority"] == resource.tags["priority"]
+```
+
+Moreover, the validation incompleteness described here is already visible to some degree. For example, you cannot write `principal.identities == resource.owners` when the former has type `Set<User>` and the latter has type `Set<String>`, even though both could be the `[]` and thus the `==` expression could evaluate to `true`.
+
+We could imagine a future extension in which we use _type inference_ to give literals different types depending on the context, e.g., to allow something like `principal.tags == { foo: "hello", bar: "there" }` by inferring the type of the latter to be `{ } default String` assuming the former's is. (We could do likewise to allow `principal.identities == []`, which is not currently allowed.)
+
+### Implementation effort
+
+The implementation effort for adding open records is non-trivial, as it will require changing the Rust code, the Lean models and proofs, and the differential test generators. It will also affect any component that leverages the schema and validator algorithms, such as schema-based parsing, and the policy analyzer. Quoting a [comment from an earlier version of this RFC](https://github.com/cedar-policy/rfcs/pull/66#discussion_r1613723900) about the latter:
+
+"On the analysis side, implementing this proposal will require adding another theory to the encoding: theory of arrays with extensionality. This will not only slow down the analysis in practice, but it will also be technically challenging to integrate into the encoding. By technically challenging, I mean we have to figure out how to do bridge a fundamental mismatch between SMT arrays and open records, where the 'open' part is a finite map. Arrays are not finite maps---rather, they behave like uninterpreted functions over the entire domain (strings in our case)---and we will need to figure out how to convert the resulting infinite maps back into Cedar's finite maps in order to provide correct counterexamples and to preserve the completeness of the encoding."
+
+That said, there are no required changes to the _evaluator_, _authorizer_, or _partial evaluator_, as this RFC only proposes to change Cedar types, not values.
 
 ## Alternatives
 
