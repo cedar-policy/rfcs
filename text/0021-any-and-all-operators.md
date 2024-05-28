@@ -8,8 +8,7 @@
 ## Timeline
 
 - Started: 2023-07-14
-- Entered FCP (intent to accept): 2023-10-27
-- Accepted: 2023-11-08
+- Accepted: 2023-11-08 (but later rejected, see below)
 - Rejected: 2024-05-21
 
 ## Summary
