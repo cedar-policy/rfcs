@@ -2,7 +2,7 @@
 
 ## Related issues and PRs
 
-- Reference Issues: [cedar#579](https://github.com/cedar-policy/cedar/issues/579)
+- Reference Issues: [cedar#579]
 - Implementation PR(s):
 
 ## Timeline
@@ -38,9 +38,10 @@ namespace Demo {
 
 Currently, the `Demo::User` declaration is an error, because in its `id`
 attribute, the `id` type implicitly refers to `Demo::id`, which doesn't exist.
-With this RFC, this example would implicitly work correctly, because when
-`Demo::id` is not found, the resolver would fall back to looking for `id` in the
-empty namespace, and find the appropriate declaration.
+With [cedar#579], this example
+would implicitly work correctly, because when `Demo::id` is not found, the
+resolver would fall back to looking for `id` in the empty namespace, and find
+the appropriate declaration.
 
 As a separate issue, in the `owner` attribute of `Demo::Account`, the `User`
 type implicitly refers to `Demo::User` and not the `User` in the empty
@@ -60,22 +61,27 @@ The fact that RFC 24 did not provide a way to refer to typenames in the empty
 namespace by using some kind of fully qualified name seems like an oversight,
 and should be corrected for consistency.
 
-The other change proposed in this RFC, implicitly falling back to the empty
+The other change discussed in this RFC, implicitly falling back to the empty
 namespace (so that the `Demo::User` declaration is legal in the example above),
-is an ergonomic change to avoid having to use the new syntax in the common case
-where there is actually no typename collision (i.e., where the typename is not
-actually defined in both the active and the empty namespace).
+can be viewed as an ergonomic change to avoid having to use the new syntax in
+the common case where there is actually no typename collision (i.e., where the
+typename is not actually defined in both the active and the empty namespace).
+However, it is actually better characterized as a bugfix and has been pulled out
+of this RFC into [cedar#579]; see discussion there.
 
-The two changes are theoretically separable and/or severable, but make sense to
-address together, as they both relate to how we reference typenames in the empty
+Both changes relate to how we reference typenames in the empty namespace.
+The implicit-fallback change ([cedar#579]) deals with referencing a typename in
+the empty namespace where there is no collision with a typename in the active
 namespace.
-The implicit-fallback change deals with referencing a typename in the empty
-namespace where there is no collision with a typename in the active namespace.
-The explicit-`::` change deals with referencing a typename in the empty
-namespace where there _is_ a collision with a typename in the active namespace.
+The explicit-`::` change (Change 1 below, in this RFC) deals with referencing a
+typename in the empty namespace where there _is_ a collision with a typename in
+the active namespace.
 
 This issue has been encountered "in the wild" by multiple people, according to
 a [comment on cedar#579](https://github.com/cedar-policy/cedar/issues/579#issuecomment-2077482637).
+It's unclear whether Change 1 is needed in any of these cases though, or if
+Change 2 / the newly-rescoped [cedar#579] is sufficient for these real-world
+cases.
 
 ## Detailed design
 
@@ -102,30 +108,9 @@ prepended.
 
 ### Change 2: Implicitly falling back on the empty namespace
 
-When the schema refers to an unqualified typename (e.g, `id`) which doesn't
-exist in the active namespace, we should fall back to looking for it in the
-empty namespace.
-Only if it exists in neither the active nor empty namespace should this be an
-error.
-
-E.g., in the example at the top of this RFC, consider the type of the `id`
-attribute of `Demo::User`.
-Since there is no `id` type defined in namespace `Demo`, this is an error today.
-With this change, when we see there is no `Demo::id`, we implicitly look for
-`id` in the empty namespace, and resolving `id` to be the common type `::id`
-defined to be `String` in the empty namespace.
-The user could, of course, write `::id` directly, but with this change, they
-do not have to, in the common case where there is no collision (where `id` is
-not actually defined in both the `Demo` and empty namespaces).
-
-This applies to both entity and common types defined in the empty namespace.
-
-This applies to both the human (RFC 24) and JSON schema syntaxes.
-
-This is reminiscent of, but not dependent on, the existing similar behavior for
-primtiive and extension types, where we first check for an entity or common type
-`String` in the active namespace before falling back on resolving to
-`__cedar::String`.
+_Moved back to [cedar#579], as this change is uncontroversial and deserves to be
+treated as a bugfix, not requiring an RFC. The controversial part and the part
+that requires an RFC is Change 1 specifically._
 
 ### Change 3: Warn when defining a typename that shadows an existing definition
 
@@ -152,9 +137,8 @@ semantics as they had before this RFC.
 ## Alternatives
 
 Instead of `::id`, we could use many other syntaxes.
-One proposal in the original
-[cedar#579](https://github.com/cedar-policy/cedar/issues/579) thread was to use
-something in the `__cedar` namespace, e.g., `__cedar::schema::top_level::id`.
+One proposal in the original [cedar#579] thread was to use something in the
+`__cedar` namespace, e.g., `__cedar::schema::top_level::id`.
 Other possibilities include other special characters, like `^id` or `#id`, or even
 a special keyword, like `root id`, which should be unambiguous in both the human
 and JSON schema grammars.
@@ -174,3 +158,5 @@ and JSON schema grammars.
         * We can catch `::User` in the policy parser and provide a specific, informative
         error message, which makes this less of a sharp edge
         * We can always go back and add support for `::id` in policies later, if needed
+
+[cedar#579]: https://github.com/cedar-policy/cedar/issues/579
