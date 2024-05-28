@@ -8,6 +8,9 @@
 ## Timeline
 
 - Started: 2024-03-07
+- Accepted: 2024-03-15
+- Landed: 2024-03-20 in `cedar-policy`
+- Released: 2024-03-29 in `cedar-policy` v3.1.2
 
 ## Summary
 

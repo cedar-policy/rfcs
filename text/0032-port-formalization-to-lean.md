@@ -8,9 +8,9 @@
 ## Timeline
 
 - Started: 2023-10-12
-- Entered FCP (intent to accept): 2023-10-16
 - Accepted: 2023-10-24
 - Landed: 2023-10-26 on `main`
+- Released: The Dafny formalization was deprecated in `cedar-spec` v3.1.0 (released 2024-03-08)
 
 ## Summary
 

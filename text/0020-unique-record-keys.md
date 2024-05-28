@@ -8,9 +8,9 @@
 ## Timeline
 
 - Started: 2023-07-14
-- Entered FCP (intent to accept): 2023-07-28
 - Accepted: 2023-08-04
 - Landed: 2023-10-24 on `main`
+- Released: 2023-12-15 in `cedar-policy` v3.0.0
 
 ## Summary
 
