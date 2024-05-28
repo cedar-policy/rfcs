@@ -8,6 +8,7 @@
 ## Timeline
 
 - Started: 2024-02-27
+- Accepted: 2024-05-28
 
 ## Summary
 
