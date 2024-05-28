@@ -12,7 +12,7 @@
 
 - Started: 2023-10-24 (predecessor [#28](https://github.com/cedar-policy/rfcs/pull/28) started on 2023-10-03, and predecessor [#23](https://github.com/cedar-policy/rfcs/pull/23) started on 2023-07-18)
 - Accepted: 2023-11-14
-- Landed: 2023-11-16
+- Landed: 2023-11-16 on `main`
 - Released: 2023-12-15 in `cedar-policy` v3.0.0
 
 ## Summary
