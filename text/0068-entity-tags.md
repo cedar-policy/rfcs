@@ -143,13 +143,13 @@ Capability tracking must be generalized to support tags. In particular, an entit
 ```
 After the subexpression (1), `resource.policyTags.write` should be added to the current capability set. After subexpression (2), `principal.authTags.write` should be added to it. Finally, when validating subexpression (3), the expression `resource.policyTags["write"]` will be considered valid since `resource.policyTags.write` is in the current capability set and it will be given type `Set<String>`, as `resource.policyTags` has type `Tags<Set<String>>`. The expression `principal.authTags["write"]` is handled similarly. If either of the `has` subexpressions (1) or (2) were omitted, subexpression (3) would not validate due to the missing capability set entries.
 
-#### Permissive Validation: Subtyping
+#### Equality disallowed
 
-For permissive validation, we adjust subtyping to allow `Tags` types to be treated co-variantly:
+The validator will disallow attempts to compare `Tags<T>` attributes. For example, for our example schema the following policy expression will be rejected:
 ```
-Tags<T> <: Tags<U>    iff T <: U
+resource.policyTags == principal.authTags
 ```
-We might consider adding rules that permit subtyping between records and tags, but doing so introduces some complications with width subtyping. Indeed, we could also consider granting `Tags` more first-class stature when carrying out permissive validation. We reserve the right to extend the typing and subtyping rules in the future, if needed.
+This goes with tags' second-class status, such that `has` and projection (i.e., using `.` or `[]`) are the only allowed operators.
 
 ### Validating and parsing entities
 
@@ -162,6 +162,16 @@ v1: T ... vn: T
 In particular, when asked to determine if a record has type `Tags<T>`, we confirm that all values in the record have type `T`. By the nature of restrictions on schemas, the validator will only ever consider `Tags<T>` types associated with entity attributes.
 
 Similarly, schema-based parsing considers schemas when parsing in entities, and it can confirm when parsing that attributes labeled as `Record` in the JSON but defined as `Tags<T>` in the schema have the appropriate shape.
+
+#### Permissive Validation
+
+Permissive validation supports subtyping, which we extend so as to allow `Tags` types to be treated co-variantly:
+```
+Tags<T> <: Tags<U>    iff T <: U
+```
+We might consider adding rules that permit subtyping between records and tags, but doing so introduces some complications with width subtyping.
+
+We could choose to grant `Tags` first-class status under permissive validation. For example, we could allow `Tags` values to appear anywhere, e.g., in `Set`s or records, and we could allow equality between `Tags` values. We choose not to do this for now, but may revisit in the future.
 
 ## Drawbacks
 
@@ -176,7 +186,7 @@ Supporting dynamic keys is more work, but doable. With them, `Tags<T>` tags woul
 
 ### Second-class status
 
-Only entity attributes are permitted to have type `Tags<T>`, which eliminates the possibility of `Tags<T>` literals and tags directly containing other tags. 
+Only entity attributes are permitted to have type `Tags<T>`, which eliminates the possibility of `Tags<T>` literals and tags directly containing other tags. We also forbid using `==` between `Tags<T>` attributes.
 
 These restrictions are present for two reasons. First, second-class status ensures tags are efficiently _analyzable_. Allowing first-class `Tags` values would require supporting equality between `Tags` values. Supporting equality would require policy analysis to model tags as arrays imbued with the extensionality axioms, which are known to be expensive. Second, second-class status means that we cannot introduce `Tags` literals, which means we do not need to introduce new syntax for tags, which would be essentially the same as record literal syntax, leading to user confusion. Nor do we need to consider how we might treat record literals as equivalent to `Tags<T>` values.
 
@@ -247,7 +257,7 @@ Because expressions like `principal has context.name` are now grammatically lega
 
 #### Analysis
 
-The policy analyzer's logical encoding must be generalized to account for keys being specified as expressions rather than as literals. Because we are encoding tags as uninterpreted functions from strings (the key) to values, this presents no problem: it doesn't matter whether the key is a literal string or an expression that evaluates (is equivalent) to a string. That said, counterexample generation could be a little more involved.
+The policy analyzer's logical encoding must be generalized to account for keys being specified as expressions rather than as literals. Because we are encoding tags as uninterpreted functions, this presents no problem: it doesn't matter whether the key given to the function is a literal string or an expression that evaluates (is equivalent) to a string. That said, counterexample generation could be a little more involved.
 
 #### Summary
 
