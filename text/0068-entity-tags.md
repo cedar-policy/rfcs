@@ -165,7 +165,7 @@ In particular, when asked to determine if a record has type `Tags<T>`, we confir
 
 Similarly, schema-based parsing considers schemas when parsing in entities, and it can confirm when parsing that attributes labeled as `Record` in the JSON but defined as `Tags<T>` in the schema have the appropriate shape.
 
-#### Permissive Validation
+### Permissive Validation
 
 Permissive validation supports subtyping, which we extend so as to allow `Tags` types to be treated co-variantly:
 ```
@@ -188,9 +188,9 @@ Supporting dynamic keys is more work, but doable. With them, `Tags<T>` tags woul
 
 ### Second-class status
 
-Only entity attributes are permitted to have type `Tags<T>`, which eliminates the possibility of `Tags<T>` literals and tags directly containing other tags. We also forbid using `==` between `Tags<T>` attributes.
+Only entity attributes are permitted to have type `Tags<T>`, which eliminates the possibility of `Tags<T>` literals and tags directly containing other tags. We also forbid using `==` and operations other than `has` and projection on `Tags<T>`-typed expressions.
 
-These restrictions are present for two reasons. First, second-class status ensures tags are efficiently _analyzable_. Allowing first-class `Tags` values would require supporting equality between `Tags` values. Supporting equality would require policy analysis to model tags as arrays imbued with the extensionality axioms, which are known to be expensive. Second, second-class status means that we cannot introduce `Tags` literals, which means we do not need to introduce new syntax for tags, which would be essentially the same as record literal syntax, leading to user confusion. Nor do we need to consider how we might treat record literals as equivalent to `Tags<T>` values.
+These restrictions are present for two reasons. First, second-class status ensures tags are efficiently _analyzable_. Allowing first-class `Tags` values would require supporting equality between `Tags` values (directly or indirectly). Supporting equality would require policy analysis to model tags as arrays imbued with the extensionality axioms, which are known to be expensive. Second, second-class status means that we cannot introduce `Tags` literals, which means we do not need to introduce new syntax for tags, which would be essentially the same as record literal syntax, leading to user confusion. Nor do we need to consider how we might treat record literals as equivalent to `Tags<T>` values.
 
 The use-cases that we are aware of do not suffer from these limitations. Typically, you want to attach tags to principals and resources. If you wanted tags to contain other tags, or you wanted to store tags in the `context` record, you can create specific entity types containing only those tags. For example:
 ```
