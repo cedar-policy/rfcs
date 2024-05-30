@@ -143,13 +143,15 @@ Capability tracking must be generalized to support tags. In particular, an entit
 ```
 After the subexpression (1), `resource.policyTags.write` should be added to the current capability set. After subexpression (2), `principal.authTags.write` should be added to it. Finally, when validating subexpression (3), the expression `resource.policyTags["write"]` will be considered valid since `resource.policyTags.write` is in the current capability set and it will be given type `Set<String>`, as `resource.policyTags` has type `Tags<Set<String>>`. The expression `principal.authTags["write"]` is handled similarly. If either of the `has` subexpressions (1) or (2) were omitted, subexpression (3) would not validate due to the missing capability set entries.
 
-#### Equality disallowed
+#### Limited operations
 
-The validator will disallow attempts to compare `Tags<T>` attributes. For example, for our example schema the following policy expression will be rejected:
+Tags' second-class status means that expressions of types `Tags<T>` are only permitted as part of `has` and projection expressions (i.e., using `.` or `[]`). The validator should disallow these expressions in other contexts, e.g., the following should be disallowed:
 ```
 resource.policyTags == principal.authTags
+[resource.policyTags, principal.authTags]
+(if true then principal.authTags else principal.authTags).write
 ```
-This goes with tags' second-class status, such that `has` and projection (i.e., using `.` or `[]`) are the only allowed operators.
+(Note that the last case is disallowed because `principal.authTags` and `principal.authTags` are not directly part of a `.` sub-expression -- they are returned from the `if` first.)
 
 ### Validating and parsing entities
 
