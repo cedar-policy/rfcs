@@ -133,12 +133,21 @@ defined in this RFC.
 ## Drawbacks
 
 1. The Cedar validator, and other tools that rely on schemas, will have to make
-network calls in order to perform their jobs. This may not be acceptable for
-some users. Of course, those users could simply not use this feature.
+network calls in order to perform their jobs. This has availability and latency
+implications which may not be acceptable for some users. Of course, those users
+could simply not use this feature.
 2. Cedar schemas would no longer be self-contained, in that a single (hopefully
 readable) file contains all of the relevant definitions. To mitigate this, we
 could provide a utility that displays the schema with all imports expanded.
-3. Implementation complexity for the Cedar validator and other tools that rely
+3. The Cedar Rust code would have to bring in substantial new dependencies, so
+that it could download libraries from remote URLs. To mitigate this for users
+who are concerned about this and don't need/want this feature (e.g., in
+resource-constrained environments, offline environments, Wasm, etc), we could
+put this RFC's functionality behind a Cargo feature, so that it and its
+dependencies could be opted-into / opted-out-of at compile time. (This RFC
+proposes it would be enabled by default, but the Cargo feature would allow users
+to compile-time disable it.)
+4. Implementation complexity for the Cedar validator and other tools that rely
 on schemas.
 
 This is not a breaking change for any existing Cedar users.
