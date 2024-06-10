@@ -59,7 +59,7 @@ but we anticipate that we may need more reserved namespaces in more contexts in 
 
 ## Detailed design
 
-We will update the [namespace](https://docs.cedarpolicy.com/policies/syntax-grammar.html#grammar-path) to the following to exclude namespaces and identifiers starting with `__cedar`.
+We will update the [namespace grammar](https://docs.cedarpolicy.com/policies/syntax-grammar.html#grammar-path) to the following to exclude namespaces and identifiers starting with `__cedar`.
 
 
 ```
@@ -70,7 +70,7 @@ RESERVED ::= 'true' | 'false' | 'if' | 'then' | 'else' | 'in' | 'like' | 'has'
 ```
 
 This primarily applies to entity types names.
-In the case where an entity type isn't qualified with a namespace, the leading identifier is just the entity type, so we would forbid an unqualified type `__User`.
+In the case where an entity type isn't qualified with a namespace, the leading identifier is just the entity type, so we would forbid an unqualified type `__cedar`.
 It also applies anywhere else namespaces may appear, including the top-level `namespace` element in a schema file, qualified references to common types in a schema file, and extension function names in policies.
 
 It also applies where a standalone identifier is expected.
