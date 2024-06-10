@@ -11,19 +11,20 @@
 
 ## Summary
 
-Allow Cedar schemas to include/import "libraries" of definitions from remote
-URLs.
+Allow Cedar schemas to include/import "libraries" of definitions from local
+files and/or remote URLs.
 
 This RFC does not propose that the Cedar team would build or maintain any such
-libraries; it only proposes the mechanism for importing libraries from URLs.
+libraries; it only proposes the mechanism for importing libraries from local
+files and/or remote URLs.
 
 ## Basic example
 
 Human schema format:
 ```
-import "https://raw.githubusercontent.com/cedar-policy/cedar-examples/release/3.2.x/cedar-example-use-cases/document_cloud/document_cloud.cedarschema"
-import "https://example.com/cedar_schemas/oidc.cedarschema"
-import "https://example.com/cedar_schemas_json/foobar.cedarschema.json"
+import "https://raw.githubusercontent.com/cedar-policy/cedar-examples/release/3.2.x/cedar-example-use-cases/document_cloud/document_cloud.cedarschema";
+import "https://example.com/cedar_schemas/oidc.cedarschema";
+import "https://example.com/cedar_schemas_json/foobar.cedarschema.json";
 
 namespace "MyApp" {
   ...
@@ -98,13 +99,18 @@ we obtain three key benefits:
 Import statements are only allowed at the top level, outside of all namespace
 declarations.
 (In the future, another RFC could propose allowing imports in other positions.)
+An import statement (in the human schema format) consists of the keyword
+`import`, a single string (surrounded in double-quotes), and a terminating
+semicolon (`;`).
+The string argument to `import` must be either a local file URI (beginning with
+`file:///`), or a remote URL (beginning with either `http://` or `https://`).
 
 The target of the import must be a raw file containing a valid Cedar schema.
 This schema may contain any definitions that are valid today in Cedar schemas,
 including namespaces, entity type definitions, common type definitions, and
 action declarations.
-The validator will essentially concatenate all of these definitions into the
-schema at the location of the `import` statement.
+The validator will (at least conceptually) concatenate all of these definitions
+into the schema at the location of the `import` statement.
 
 Cedar will autodetect whether the imported schema is a human-format or
 JSON-format schema.
@@ -143,7 +149,7 @@ could provide a utility that displays the schema with all imports expanded.
 that it could download libraries from remote URLs. To mitigate this for users
 who are concerned about this and don't need/want this feature (e.g., in
 resource-constrained environments, offline environments, Wasm, etc), we could
-put this RFC's functionality behind a Cargo feature, so that it and its
+put the remote-URL functionality behind a Cargo feature, so that it and its
 dependencies could be opted-into / opted-out-of at compile time. (This RFC
 proposes it would be enabled by default, but the Cargo feature would allow users
 to compile-time disable it.)
@@ -173,6 +179,20 @@ For instance, in the human schema format, this could look like
 ```import [json] "https://..."```
 (where the absence of `[json]` would indicate the human format, since Cedar
 positions that as the default format).
+
+## Unresolved questions
+
+### URI/URL formats
+
+This RFC currently proposes allowing local file URIs beginning `file:///`, and
+remote URLs beginning `http://` or `https://`. We could expand this to more options, such as:
+- `ftp` URLs
+- `file://hostname/<path>` for specifying local-network files (see
+  [Wikipedia on "File URI scheme"](https://en.wikipedia.org/wiki/File_URI_scheme))
+- other schemes?
+
+We could also restrict this to fewer options, e.g., remove `http://` and require
+`https://` only for remote URLs.
 
 [RFC 58]: https://github.com/cedar-policy/rfcs/pull/58
 [`Schema::from_schema_fragments()`]: https://docs.rs/cedar-policy/latest/cedar_policy/struct.Schema.html#method.from_schema_fragments
