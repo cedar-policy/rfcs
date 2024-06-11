@@ -8,6 +8,7 @@
 ## Timeline
 
 - Started: 2024-02-14
+- Entered FCP: 2024-06-10
 
 ## Summary
 
