@@ -2,8 +2,8 @@
 
 ## Related issues and PRs
 
-- Reference Issues: (fill in existing related issues, if any)
-- Implementation PR(s): (leave this empty)
+- Reference Issues: https://github.com/cedar-policy/cedar/issues/920
+- Implementation PR(s): https://github.com/cedar-policy/cedar/pull/969
 
 ## Timeline
 
