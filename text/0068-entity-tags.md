@@ -68,7 +68,7 @@ Type             := PRIMTYPE | Path | SetType | RecType
 ```
 In essence: We alter the definition of entity types to include attributes with type `{ T }`, where `T` is any type not mentioning another tags type. Not shown here are the productions for `RecType` and `AttrDecls`, which apply to records rather than entities. These productions are unchanged---normal records may not include attributes with `{ T }` types.
 
-The JSON syntax for schemas specifies tags as records with a `default` type. Doing so leverages the analogy that tags are like records in which all attributes are optional, with the same type. Here's our introductory example schema in this format:
+The JSON syntax for schemas specifies tags as records with a `default` element, rather than an `attributes` element. Doing so leverages the analogy that tags are like records in which all attributes are optional, with the same type. Here's our introductory example schema in this format:
 ```
 "entityTypes": {
     "User" : {
@@ -80,11 +80,9 @@ The JSON syntax for schemas specifies tags as records with a `default` type. Doi
                 },
                 "authTags" : {
                     "type" : "Record",
-                    "attributes" : {
-                        "default": {
-                            "type" : "Set",
-                            "element": "String"
-                        }
+                    "default": {
+                        "type" : "Set",
+                        "element": "String"
                     }
                 }
             }
@@ -100,11 +98,9 @@ The JSON syntax for schemas specifies tags as records with a `default` type. Doi
                 },
                 "policyTags" : {
                     "type" : "Record",
-                    "attributes" : {
-                        "default": {
-                            "type" : "Set",
-                            "element": "String"
-                        }
+                    "default": {
+                        "type" : "Set",
+                        "element": "String"
                     }
                 }
             }
@@ -112,7 +108,7 @@ The JSON syntax for schemas specifies tags as records with a `default` type. Doi
     }
 }
 ```
-Legal schemas only allow records with `default` to appear as direct entity attributes, and likewise restricts the `type` associated with `default` to not include `default`-containing record types. Record types with a `default` may not have any named attributes.
+Legal schemas only allow records with `default` to appear as direct entity attributes, and likewise restricts the `type` associated with `default` to not include `default`-containing record types. Records with a `default` element cannot also have an `attributes` element (and so cannot have named attributes).
 
 ### Policies, entities, and evaluation
 
