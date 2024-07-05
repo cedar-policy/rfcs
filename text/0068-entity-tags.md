@@ -170,9 +170,9 @@ Similarly, schema-based parsing considers schemas when parsing in entities, and 
 
 ### Permissive Validation
 
-Permissive validation supports subtyping, which we extend so as to allow tags types to be treated co-variantly:
+Permissive validation supports subtyping, which we extend so as to allow tag types to be treated co-variantly:
 ```
-{ ?: T } <: { U }    iff T <: U
+{ ?: T } <: { ?: U }    iff T <: U
 ```
 We might consider adding rules that permit subtyping between records and tags, but doing so introduces some complications with width subtyping. We could choose to grant tags first-class status under permissive validation. For example, we could allow tags values to appear anywhere, e.g., in `Set`s or records, and we could allow equality between tags values. We choose not to do these things for now.
 
