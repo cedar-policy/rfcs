@@ -91,6 +91,17 @@ This RFC does not change anything about [cedar#579].
 We still plan to implement [cedar#579], which allows users to refer to types in
 the empty namespace, in cases where they are not shadowed.
 
+This RFC does apply the new restriction uniformly in both the human and JSON
+schema syntaxes.
+The motivation and situation is the same in both syntaxes for the case of an
+entity typename shadowing an entity typename, and for the case of a common
+typename shadowing a common typename.
+For the case of an entity typename shadowing a common typename or vice versa,
+this RFC still proposes to disallow in both syntaxes, even though these
+situations are not ambiguous in the JSON syntax, which distinguishes between
+entity type and common type references.
+See [this RFC discussion thread](https://github.com/cedar-policy/rfcs/pull/70#discussion_r1659120108).
+
 ## Drawbacks
 
 ### Drawback 1
