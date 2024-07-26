@@ -15,9 +15,9 @@
 
 ## Summary
 
-This RFC proposes to extend the Cedar type system with the ability to include _embedded attribute maps_ (EA-maps for short) in entity types. For evaluation purposes, EA-maps have the same programming interface as records: keys are like record attributes and values are like attribute values. The difference is in how they are validated: the keys of EA-maps need not be enumerated in advance, as is required with record attributes, and all values must have the same type. Moreover, EA-maps are treated by the validator as second-class, meaning valid usage scenarios are somewhat restricted.
+This RFC proposes to extend the Cedar type system with the ability to include _embedded attribute maps_ (EA-maps for short) in entity types, with the primary goal of supporting a full-featured encoding for _tags_. For evaluation purposes, EA-maps have the same programming interface as records: keys are like record attributes and values are like attribute values. The difference is in how they are validated: the keys of EA-maps need not be enumerated in advance, as is required with record attributes, and all values must have the same type. Moreover, EA-maps are treated by the validator as second-class, meaning valid usage scenarios are somewhat restricted.
 
-The main body of this RFC proposes that tag keys must be _literals_ when used to look up a tag's value, just like record attributes, but Alternative A generalizes this proposal to allow keys to be dynamically computed. Alternative A thus adds expressive power but also implementation cost.
+The main body of this RFC proposes that EA-map keys must be _literals_ when used to look up a key's value, just like record attributes, but Alternative A generalizes this proposal to allow keys to be dynamically computed. Alternative A thus adds expressive power but also implementation cost.
 
 ### Basic example
 
@@ -52,11 +52,11 @@ This policy states that for a `User` to carry out the _writeDoc_ action on a `Do
 
 ## Detailed design
 
-Neither the Cedar evaluator/authorizer, the JSON format for entities, nor the JSON or natural syntax for policies needs to change to support embedded attribute maps. This is because the notion of EA-map only arises at validation time, not evaluation time. At evaluation time, EA-maps are represented as records and support the same operations. In other words, for policy writers who do not use validation, there is no need for EA-maps: You can just use records. To support changes to the validator, the Cedar schema format, the validator, and the schema-based entity parser need to change to account for a new `{ ?: T }` type. 
+Neither the Cedar evaluator/authorizer, the JSON format for entities, nor the JSON or natural syntax for policies needs to change to support embedded attribute maps. This is because the notion of EA-map only arises at validation time, not evaluation time. At evaluation time, EA-maps are represented as records and support the same operations. In other words, for policy writers who do not use validation, there is no need for EA-maps: You can just use records. To support changes to the validator, the Cedar schema format, the validator, and the schema-based entity parser need to change to account for a new `{ ?: T }` type.
 
 ### Schema
 
-EA-maps have type `{ ?: T }`, where `T` is the type of tag values. Only entity attributes can be given type `{ ?: T }`, and `T` cannot directly mention another EA-maps type.
+EA-maps have type `{ ?: T }`, where `T` is the type of values. Only entity attributes can be given type `{ ?: T }`, and `T` cannot directly mention another EA-maps type.
 
 We extend schemas as follows to support the new EA-maps type. Here's the natural syntax:
 ```
@@ -112,7 +112,7 @@ Legal schemas only allow records with `default` to appear as direct entity attri
 
 ### Policies, entities, and evaluation
 
-EA-maps support all of the same operations as records. Suppose that `E` is an expression of type `{ ?: T }`. Then expression `E has F` will check whether `E` has tag key `F`, evaluating to `true` if so and `false` otherwise. Expression `E.F` or `E["F"]` will retrieve the value associated with key `F` if `F` is present, signaling an error if it is not.
+EA-maps support all of the same operations as records. Suppose that `E` is an expression of type `{ ?: T }`. Then expression `E has F` will check whether `E` has key `F`, evaluating to `true` if so and `false` otherwise. Expression `E.F` or `E["F"]` will retrieve the value associated with key `F` if `F` is present, signaling an error if it is not.
 
 As a result, within the evaluator we can represent EA-maps as records, so the evaluator code does not need to change. In particular, EA-maps with keys `F1` ... `Fn` and associated values `V1` .. `Vn` are internally represented as records `{ F1: V1, ..., Fn: Vn }`. Similarly, EA-maps are represented as records in the JSON entity format. For example, here is entity representing `User::"Alice"` which conforms to our example schema:
 ```
@@ -170,7 +170,7 @@ Similarly, schema-based parsing considers schemas when parsing in entities, and 
 
 ### Permissive Validation
 
-Permissive validation supports subtyping, which we extend so as to allow tag types to be treated co-variantly:
+Permissive validation supports subtyping, which we extend so as to allow EA-maps' value types to be treated co-variantly:
 ```
 { ?: T } <: { ?: U }    iff T <: U
 ```
@@ -185,7 +185,7 @@ EA-maps keys must be written in policies as literals. For example, you cannot wr
 principal.authTags has context.key && 
 principal.authTags[context.key] == context.value
 ```
-Supporting such _dynamic keys_ is more work, but doable. With them, EA-maps would be strictly more powerful than existing tag encodings/workarounds. We sketch the needed implementation work in Alternative A, below, and a comparison to workarounds further below.
+Supporting such _dynamic keys_ is more work, but doable. With them, EA-maps would be strictly more powerful than existing encodings/workarounds for tags (the main use-case for EA-maps). We sketch the needed implementation work in Alternative A, below, and a comparison to workarounds further below.
 
 ### Second-class status
 
@@ -193,7 +193,7 @@ Only entity attributes are permitted to have type `{ ?: T }`, which eliminates t
 
 These restrictions are present for two reasons. First, second-class status ensures EA-maps are efficiently _analyzable_. Allowing first-class EA-maps values would require supporting equality between EA-maps values (directly or indirectly). Supporting equality would require a policy analysis to model EA-maps as arrays imbued with the extensionality axioms, which are known to be expensive. Second, second-class status means that we cannot introduce EA-maps literals, which means we do not need to introduce new syntax for EA-maps, which would be essentially the same as record literal syntax, leading to possible user confusion. Nor do we need to consider how we might treat record literals as equivalent to `{ ?: T }` values.
 
-The use-cases that we are aware of do not suffer due to these limitations. Typically, you want to attach EA-maps to principals and resources to act as _tags_. If you wanted EA-maps to contain other EA-maps, or you wanted to store EA-maps in the `context` record, you can create specific entity types containing only those EA-maps. For example:
+The use-cases that we are aware of do not suffer due to these limitations. If you wanted EA-maps to contain other EA-maps, or you wanted to store EA-maps in the `context` record, you can create specific entity types containing only those EA-maps. For example:
 ```
 entity User {
     roles: Set<String>,
