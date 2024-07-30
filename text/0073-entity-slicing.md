@@ -3,7 +3,7 @@
 ## Related Issues
 
 - Reference Issues: [#592](https://github.com/cedar-policy/cedar/issues/592)
-- Implementation PR(s): (leave this empty)
+- Implementation PR(s): [#1102](https://github.com/cedar-policy/cedar/pull/1102)
 
 ## Timeline
 
