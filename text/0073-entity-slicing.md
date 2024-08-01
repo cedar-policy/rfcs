@@ -273,7 +273,7 @@ The easiest is the `SimpleEntityLoader`  api shown here. Users need only write a
 /// This entity loader is called "Simple" for two reasons:
 /// 1) First, it is not synchronous- `load_entity` is called multiple times.
 /// 2) Second, it is not precise- the entity manifest only requires some
-/// fields to be loaded.
+/// fields to be loaded, but this loader always loads all fields.
 pub trait SimpleEntityLoader {
     /// Simple entity loaders must implement `load_entity`,
     /// a function that loads entities based on their `EntityUID`s.
