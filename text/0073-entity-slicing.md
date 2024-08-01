@@ -276,7 +276,7 @@ The easiest is the `SimpleEntityLoader`  api shown here. Users need only write a
 /// fields to be loaded.
 pub trait SimpleEntityLoader {
     /// Simple entity loaders must implement `load_entity`,
-    /// a function that loads an entities based on their EntityUIDs.
+    /// a function that loads entities based on their `EntityUID`s.
     /// For each element of `entity_ids`, returns the corresponding
     /// [`Entity`] in the output vector.
     fn load_entity(&mut self, entity_ids: &[&EntityUID]) -> Vec<Entity>;
