@@ -63,7 +63,7 @@ action Read, Edit appliesTo {
 ```
 
 
-Here are a couple cedar policies conforming to the schema:
+Here are a couple Cedar policies conforming to the schema:
 
 ```
 // allow documents to be read by anyone in the readers set
