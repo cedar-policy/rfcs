@@ -147,7 +147,7 @@ This document proposes the **Entity Manifest**, a data structure that specifies 
 type EntityManifest = HashMap<RequestType, RequestEntityManifest>
 ```
 
-`RequestType` stores the type of the principal, action, and resource. This allows entity slicing to be specific to the type of the request, greatly reducing the amount of data required. (The context type can be inferred from the action UID)
+`RequestType` stores the principal type, resource type, and action UID. This allows entity slicing to be specific to the type of the request, greatly reducing the amount of data required. (The context type can be inferred from the action UID and schema.)
 
 ```
 pub struct RequestType {
