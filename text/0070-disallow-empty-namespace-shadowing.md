@@ -58,12 +58,14 @@ conflicting empty-namespace declaration into a new namespace.
 
 We disallow shadowing a type or action in the empty namespace with a new
 declaration in a nonempty namespace.
-For entity and common types, we disallow this shadowing regardless of whether
+* For entity and common types, we disallow this shadowing regardless of whether
 the shadowed declaration is an entity or common type, and regardless of whether
 the shadowing declaration is an entity or common type.
-For actions, we only disallow shadowing other actions; we continue to allow an
-action to have the same name as an entity or common type (in the same namespace
-or in the empty namespace).
+* For actions, we only disallow shadowing other actions.
+  We continue to allow an action to have the same name as an entity or common
+  type (in the same namespace or in the empty namespace).
+  That is not "shadowing", as there is no place in a schema where it's ambiguous
+  whether you're referring to an action or an entity/common type.
 
 This RFC does not disallow shadowing altogether; in particular, it does not
 disallow shadowing a entity typename with a common typename in the same namespace,
