@@ -131,7 +131,7 @@ When a client would like to answer a cedar `Request`, it first consults the cach
 
 However, the server or client must take care to ensure that the client’s entity manifest is up-to-date. Since the entity manifest is computed based on the schema and policies, is must be re-computed whenever the schema or policies change. There are multiple ways to ensure that the cache is up to date, one being to tag each entity manifest uniquely and check on each request.
 
-Looking to the future, we hope to provide several options and guidence for how to use the entity manifest:
+Looking to the future, we hope to provide several options and guidance for how to use the entity manifest:
 
 1. Use the `SimplifiedEntityLoader` api (see later section).
 2. Use a specialized entity loader when the format of the database sufficiently matches the schema.
