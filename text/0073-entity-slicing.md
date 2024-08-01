@@ -240,7 +240,7 @@ While it’s possible to soundly handle all Cedar expressions, we simplify the p
 ```
 
 
-The grammar partitions cedar expressions into **datapath expressions** and all other cedar operators. The partition is reasonable since, in practice, users do not interleave datapath expressions with other operators.
+The grammar partitions Cedar expressions into **datapath expressions** and all other Cedar operators. The partition is reasonable since, in practice, users do not interleave datapath expressions with other operators.
 Here are examples of cedar expressions rejected by this grammar:
 
 
