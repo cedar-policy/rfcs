@@ -14,8 +14,12 @@
 
 ## Summary
 
-This RFC proposes a new API for finding an **entity slice**: a subset of the entity store needed for a particular request.
-Specifically, we propose a new function with signature `(Schema, Policies) -> EntityManifest`. There are more details on the `EntityManifest` later in this document, but the key idea is to store data paths **indexed by the request type**. The `Policies` must validate against the `Schema` in strict mode.
+This RFC proposes a new API for describing an **entity slice**: a subset of the entity store needed for a particular request.
+This RFC doesn't handle loading the entity slice itself,
+instead proposing a data structure called an Entity Manifest.
+The Entity manifest describes what entity data is needed 
+independent of how it is stored.
+Specifically, we propose a new function with signature `(Schema, Policies) -> EntityManifest`. The `Policies` must validate against the `Schema` in strict mode.
 
 The rest of this document follows the following format:
 
@@ -88,16 +92,12 @@ when
   resource.metadata.owner == principal
 };
 
-// allow read if the user's ancestor is a global admin
+// allow read if the user is a global admin
 permit(
-  principal,
+  principal in User::"GlobalAdmin",
   action in [Action::"Read"],
   resource
-)
-when
-{
-  principal in User::"GlobalAdmin"
-};
+);
 ```
 
 Now, we would like to answer the question: given a request that a **User** would like to **Read** a **Document,** what data is required?
@@ -124,10 +124,11 @@ Data required:
 
 ## Example Usage
 
+![A client communicates with a Cedar Server](clientserver.png)
 
 The image above shows an example usage of the entity manifest. On the left, a client has access to the entity data and a cached entity manifest. On the right, a server stores the schema and policies.
 
-When a client would like to answer a cedar `Request`, it first consults the cached entity manifest to load the entity slice. Then, it sends the entity slice and the request to the server. The server returns the authorization result.
+When a client would like to answer a Cedar `Request`, it first consults the cached entity manifest to load the entity slice. Then, it sends the entity slice and the request to the server. The server returns the authorization result.
 
 However, the server or client must take care to ensure that the client’s entity manifest is up-to-date. Since the entity manifest is computed based on the schema and policies, is must be re-computed whenever the schema or policies change. There are multiple ways to ensure that the cache is up to date, one being to tag each entity manifest uniquely and check on each request.
 
@@ -182,14 +183,14 @@ pub struct RequestEntityManifest {
 ```
 
 
-Finally, we have the `AccessTrie` data structure, which stores the access paths trie. These paths can also request parents in the entity hierarchy. Note: in the implementation, the entity slice also stores optional type annotations.
+Finally, we have the `AccessTrie` data structure, which stores the access paths trie. These paths can also request ancestors in the entity hierarchy. Note: in the implementation, the entity slice also stores optional type annotations.
 
 ```
 pub struct AccessTrie {
     /// Child data of this entity slice.
     pub children: HashMap<SmolStr, Box<AccessTrie>>,
-    /// If the parents in the entity hierarchy are required.
-    pub parents_required: bool
+    /// If the ancestors in the entity hierarchy are required.
+    pub ancestors_required: bool
 }
 ```
 
@@ -216,7 +217,7 @@ The merge operator for access paths is straightforward. First, convert all acces
 
 ## Computing access paths
 
-This section proposes a simple static analysis that soundly computes all of the necessary access paths for a cedar expression.
+This section proposes a simple static analysis that soundly computes all of the necessary access paths for a Cedar expression.
 While it’s possible to soundly handle all Cedar expressions, we simplify the problem by rejecting Cedar programs unless they follow the following grammar:
 
 
@@ -225,7 +226,7 @@ While it’s possible to soundly handle all Cedar expressions, we simplify the p
          <datapath-expr> in <expr>
          <expr> + <expr>
          if <expr> { <expr> } { <expr> }
-         ... all other cedar operators not mentioned by datapath-expr
+         ... all other Cedar operators not mentioned by datapath-expr
          
 <datapath-expr> = <datapath-expr>.<field>
                   <datapath-expr> has <field>
@@ -240,7 +241,10 @@ While it’s possible to soundly handle all Cedar expressions, we simplify the p
 ```
 
 
-The grammar partitions Cedar expressions into **datapath expressions** and all other Cedar operators. The partition is reasonable since, in practice, users do not interleave datapath expressions with other operators.
+The grammar partitions Cedar expressions into **datapath expressions** and all other Cedar operators.
+On the LHS of `in`, `.`, and `has`, expressions involving `in`, `+`, `if-then-else`, and most other Cedar functions/operators are not allowed; only Cedar variables, entity literals, and `.` or `has` expressions are allowed.
+
+The partition is reasonable since, in practice, users do not interleave datapath expressions with other operators.
 Here are examples of Cedar expressions rejected by this grammar:
 
 
@@ -253,11 +257,11 @@ Here are examples of Cedar expressions rejected by this grammar:
 
 Now that we have this partition, computing all the access paths is fairly simple:
 
-1. First, find all access path expressions. These can be translated into access paths directly.
+1. First, find all datapath expressions. These can be translated into access paths directly.
 2. Second, handle all instances of equality between records. For equality between records (`==`) or set containment where the elements are records (`.contains`, `.containsAny`, and `.containsAll`)
         1. Find all access paths that are children of these operators
             1. Following the schema, fully load all fields for the leaf of the access path
-3. Finally, handle instances where the ancestors in the entity hierarchy are required. Annotate the left-hand-side of the `in` operator with the `parents_required` flag.
+3. Finally, handle instances where the ancestors in the entity hierarchy are required. Annotate the left-hand-side of the `in` operator with the `ancestors_required` flag.
 
 ## 
 
@@ -268,7 +272,7 @@ The easiest is the `SimpleEntityLoader`  api shown here. Users need only write a
 
 
 ```
-/// Implement this trait to efficiently load entities based on
+/// Implement this trait to load entities based on
 /// the entity manifest.
 /// This entity loader is called "Simple" for two reasons:
 /// 1) First, it is not synchronous- `load_entity` is called multiple times.
@@ -313,7 +317,7 @@ Along a similar note, all Cedar changes in the future will need a corresponding 
 
 ### Supporting Partial Loading of Sets
 
-As written, entity manifests in this RFC do not support loading only parts of a Cedar Set, or only some of the parents in the entity hierarchy. This is because sets are loaded on the leaves of the access trie, with no way to specify which elements are requested.
+As written, entity manifests in this RFC do not support loading only parts of a Cedar Set, or only some of the ancestors in the entity hierarchy. This is because sets are loaded on the leaves of the access trie, with no way to specify which elements are requested.
 
 To support this feature, we recommend that we take a constraint-based approach. Constraints would be attached to nodes in the access trie, specifying which elements of sets or the parent hierarchy are needed. Constraints form a small query language, so this would increase the complexity of the entity manifest.
 
@@ -441,19 +445,19 @@ resource.tags.stage
 
 ## Paths needed in github_example
 
-using "parents" as cedar's ancestor relation- requires all ancestors transitively
+using "ancestors" as Cedar's ancestor relation- requires all ancestors transitively
 
 
 ```
 Action::"pull"
-resource.readers.parents
+resource.readers.ancestors
 
 
 Action::"fork"
-resource.readers.parents
+resource.readers.ancestors
 
 Action::"delete_issue"
-resource.repo.readers.parents
+resource.repo.readers.ancestors
 resource.reporter
 
 Action::"assign_issue"
@@ -469,7 +473,7 @@ Action::"delete_issue"
 resource.repo.maintainers
 
 Action::"add_reader" ect
-resource.admins.parents
+resource.admins.ancestors
 ```
 
 
