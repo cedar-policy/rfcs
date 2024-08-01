@@ -279,7 +279,7 @@ pub trait SimpleEntityLoader {
     /// a function that loads entities based on their `EntityUID`s.
     /// For each element of `entity_ids`, returns the corresponding
     /// [`Entity`] in the output vector.
-    fn load_entity(&mut self, entity_ids: &[&EntityUID]) -> Vec<Entity>;
+    fn load_entity(&mut self, entity_ids: impl IntoIterator<Item = &EntityUID>) -> impl Iterator<Item = Entity>;
     
     /// Loads all the entities needed for a request
     /// using the `load_entity` function.
