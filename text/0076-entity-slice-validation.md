@@ -78,6 +78,8 @@ Currently, Cedar provides no support for slicing. Users are required to either b
 
 Additionally, there are some application scenarios where the actors writing the policies and the people performing slicing are not the same people, and thus the slicers need to impose some kind of restrictions on policy authors.
 
+This RFC has a close connection to [RFC 74: Entity Slicing using Data Tries](https://github.com/cedar-policy/rfcs/pull/74), which also seeks to provide a sound foundation for entity slicing. We discuss the relationship between them in the Alternatives below; ultimately, we believe they are complementary and should coexist.
+
 ## Detailed design
 
 ### Entity dereferences
@@ -258,6 +260,14 @@ Level-based slicing is coarse-grained: *all* attributes up to the required level
 Implementing levels is a non-trivial effort: We must update the Rust code for the validator of policies and entities, and the Lean code and proofs. We also must provide code to perform level-based slicing.
 
 ## Alternatives
+
+### Alternative: Entity Slicing using Data Tries
+
+[RFC 74, Entity Slicing using Data Tries](https://github.com/cedar-policy/rfcs/pull/74) proposes the idea of an _entity manifest_ to ease the task of entity slicing. This manifest is a trie-based data structure that expresses which entity attributes and ancestors are needed for each possible action. This data structure is strictly more precise than the concept of level, meaning that it may require less entity data to be provided. For example, the first part of our Basic Example in this RFC (policies 1, 2, and 4 of TinyTodo), the determined entity manifest would indicate that for the `GetList` action, you would need to provide `resource.owner`, `resource.readers`, `resource.editors` and the ancestors of `principal`. This is less data than would be retrieved by the slicing algorithm proposed here: These are level-1 valid policies, so the generic algorithm would acquire the same data given in the manifest but also more, e.g., the ancestors of `resource` and the attributes of `principal`.
+
+Entity manifests are less effective as a _prescriptive_ mechanism that aims to limit the shape of allowable policies. For example, a Cedar policy and entity storage service might like to disallow uploading policies whose entity data is expensive to retrieve in the worst case. With levels, such a service can upper-bound this work by blocking schemas with a level greater than a threshold, say 3. Validation will then ensure that uploaded policies respect this upper bound. Manifests are unwieldy as a specification mechanism, since they are specialized to particular entity definitions and name particular types and attributes, of which there could be many. They'd also have to be updated as types evolved over time, while a level-based specification is less likely to change.
+
+We believe that ultimately level-based validation and entity manifests should coexist. Level-based validation is used to bound entity retrieval work and prevent pathological policies, while entity manifests are used to more efficiently define the needed entity data. We could imagine a deployment strategy in which we accept this RFC and perform generic entity slicing as described here, and then later implement entity manifests, and start performing slicing using those instead.
 
 ### Alternative: Level as a validation parameter, not in the schema
 
