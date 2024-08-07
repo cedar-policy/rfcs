@@ -143,6 +143,8 @@ action getDetails appliesTo { ... }
 
 Policy writers know, by seeing `level = 1`, that they can write `principal.manager` in policies, but not `principal.manager.manager`.
 
+Cedar users can currently validate policies using multiple schema files: during validation, the files are effectively concatenated together prior to validation. When combining files, the validator should allow at most one to have a `level` specification, else it's an error. Doing so serves the expected use-case that one of those files will be for the application, specifying the `action` types and the `level`, while any others will be only general `entity` and `type` definitions, which are not application specific and thus need not concern themselves with entity slicing.
+
 ### Validation algorithm
 
 Validation works essentially as today (see our [OOPSLA’24 paper](https://dl.acm.org/doi/pdf/10.1145/3649835), page 10), but using leveled types. To validate a policy c at level N, we use a request environment which maps `principal`, `resource`, and `context` to leveled types with level N. For example, for the schema given above, to validate at level 2 our request environment would map `principal` to `User`(2), `resource` to `User`(2), and `context` to the type given in the schema annotated with 2, i.e., `{ admin: User(2), building: { location: Long, ITDeptHead: User(2) },... }`.
@@ -192,8 +194,8 @@ function slice(request, level, get-entity) {
             if !es.contains(euid) {
                 es.insert(euid, get-entity(euid));
             }
-            ; Set of all euids mentioned in this entities data
-            let new-euids = filter(not-in-es?, all-euids(es.get(euid));
+            // Set of all euids mentioned in this entities data
+            let new-euids = filter(not-in-es?, all-euids(es.get(euid)));
             t = t.union(new-euids);
         }
         // set t to be the new worklist
@@ -209,7 +211,7 @@ function slice(request, level, get-entity) {
 
 ### Soundness
 
-Leveled types permit us to generalize the soundness statement we use today. Currently, soundness assumes that expressions like `principal.manager` will never error, i.e., that the proper entity information is available. Now we assume dereferences are only available up to a certain level. In particular, we define a well-formedness judgment μ⊢v:τwhere μ is an entity store, v is a value, and τ is a possibly leveled type. This judgment is standard for values having non-entity type, e.g.,
+Leveled types permit us to generalize the soundness statement we use today. Currently, soundness assumes that expressions like `principal.manager` will never error, i.e., that the proper entity information is available. Now we assume dereferences are only available up to a certain level. In particular, we define a well-formedness judgment μ ⊢ v : τ where μ is an entity store, v is a value, and τ is a possibly leveled type. This judgment is standard for values having non-entity type, e.g.,
 
 ```
 mu |- i : Long
@@ -228,7 +230,7 @@ mu |- E::s : E(0)
 
 mu(E::s) = (v,h) where v = { f1: v1, ..., fn: vn } and h is an ancestor set
 mu |- v1 : T1 ... mu |- vn : Tn
-where level(T1) >= n-1
+where level(T1) >= n-1 ... level(Tn) >= n-1
 ------------------------------------------------------------------------------------
 mu |- E::s : E(n) where n > 0
 ```
@@ -245,13 +247,14 @@ Thus the soundness statement says that
 2. If entity store μ is validated against schema `s` 
 3. If request σ is validated against schema `s` 
 4. If μ ⊢ σ(principal): E(l) where E is the expected type of the principal for this particular action, and  similarly check the proper leveling of action, request, and context.
-    1. We prove separately that `slice` and σ produces a store μ that satisfies this property
 5. Then: 
     1. `isAuthorized(sigma, p, mu)` is either a successful result value or an integer overflow error
         1. All errors except integer overflow + missing entity are prevented by the current validator 
         2. missing entity errors are prevented by the new validator + slicer 
 
 We extend the proof of soundness to leverage premise #4 above: This justifies giving `principal` a type with level l in the initial request context, and it justifies the extensions to the rules that perform dereferencing, as they decrease the leveled result by 1, just as the μ⊢v:τ rule does, which we are given.
+
+We also want to prove the soundness of the `slice(request, level, get-entity)` procedure defined above: If `slice`(σ, `l`, `get-entity`) = μ and request σ is validated against schema `s` and level `l`, then μ validates against schema `s` at level `l`.
 
 ## Drawbacks
 
@@ -271,7 +274,7 @@ We believe that ultimately level-based validation and entity manifests should co
 
 ### Alternative: Level as a validation parameter, not in the schema
 
-This RFC has suggested that the level should be specified in the schema. Alternatively, we could specify the level as a parameter to the validator itself, leaving schemas unchanged. The benefit of doing so is that entity slicing becomes an orthogonal concern: The schema specifies the structure of data, but nothing about what data is required/allowed for a request. The drawback is that policy writers cannot look in one place to know the limits on the policies they can write.  
+This RFC has suggested that the level should be specified in the schema. Alternatively, we could specify the level as a parameter to the validator itself, leaving schemas unchanged. The benefit of doing so is that entity slicing becomes an orthogonal concern: The schema specifies the expected type structure of data provided with a request, but not how much of that data is required. The drawback is that policy writers cannot look in one place to know the limits on the policies they can write.
 
 ### Alternative: Per-entity levels, rather than a global level
 
@@ -380,7 +383,7 @@ when { resource.editors in Team::"admin" };
 permit(principal in Team::"temp",action,resource);
 ```
 
-_Entity selection_: When collecting ancestors with `getentity` [during entity selection](https://quip-amazon.com/oXOuAij6Bse8/Validating-Entity-Selection#temp:C:aLCfd096a6e6e5849aaadec7cc6f), the application only gets ancestors per the expressions in the annotation. To do that, it would evaluate these expressions for the current request, and provide the ancestors present in the result, if present. For example, suppose our TinyTodo request was
+_Entity selection_: When collecting ancestors during entity selection, the application only gets ancestors per the expressions in the annotation. To do that, it would evaluate these expressions for the current request, and provide the ancestors present in the result, if present. For example, suppose our TinyTodo request was
 
 ```
 principal = User::"Alice"
