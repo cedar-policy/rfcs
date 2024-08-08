@@ -152,9 +152,10 @@ EA-maps' second-class status means that they can only be used as part of checkin
 ```
 resource.policyTags == principal.authTags
 [resource.policyTags, principal.authTags]
-(if true then principal.authTags else principal.authTags).write
+{foo: principal.authTags}
+(if principal.isAdmin then principal.authTags else principal.authTags).write
 ```
-(Note that the last case is disallowed because `principal.authTags` is not _directly_ part of a `.` sub-expression -- it is returned from the `if` first.)
+(Note that the last case is disallowed because `principal.authTags` is not _directly_ part of a `.` sub-expression -- it is returned from the `if` first. However, the usual short-circuiting mechanism would allow an `if` expression with a constant condition.)
 
 ### Validating and parsing entities
 
@@ -252,7 +253,7 @@ We can allow this extended syntax and evaluation semantics to apply to normal re
 
 #### Validator
 
-The validator must change to further extend capability tracking from what we've described above to include dynamically contructed attribute names. This should be straightforward. When the validator sees something like `principal.tags has resource.name` then this would generate the capability `principal.tags[resource.name]` that would allow a follow-on expression `principal.tags[resource.name]` to validate. 
+The validator must change to further extend capability tracking from what we've described above to include dynamically contructed attribute names. This should be straightforward. When the validator sees something like `principal.tags has resource.name` then this would generate the capability `principal.tags[resource.name]` that would allow a follow-on expression `principal.tags[resource.name]` to validate.
 
 In addition, it's now possible that an attribute-constructing expression could access a bogus attribute, so those expressions must be validated as well. E.g., when validating `principal.tags has resource.name` or `principal.tags[resource.name]`, the validator must confirm that `resource` indeed has a `name` attribute.
 
