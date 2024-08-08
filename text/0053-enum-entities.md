@@ -23,7 +23,7 @@ entity Task {
 action UpdateTask
     appliesTo { principal: [User], resource: [Task] };
 ```
-These data definitions could be used in policies such as 
+These data definitions could be used in policies such as
 ```
 permit(
     principal,
@@ -123,7 +123,7 @@ when {
     resource.status != Color.Red
 };
 ```
-This syntax is similar to what's provided for Java `enum`s. 
+This syntax is similar to what's provided for Java `enum`s.
 
 The benefit of this approach is that it may feel a little more natural than representing a concept, like a color, as a set of legal entity values. It would also be easy to encode this approach in a policy analysis.
 
@@ -145,13 +145,13 @@ action GetLists
                 resource: [Application]};
 ```
 This differs from some earlier examples in the following ways:
-1. Enumerated entities can have parents in the entity hierarchy, and can be parents of other enumerated entity values; both cases are shown in the definition of `RequestEntity`
+1. Enumerated entities can have parents that are enumerated entity values, and can be parents of other enumerated entity values; both cases are shown in the definition of `RequestEntity`
 2. Enumerated entities can appear as _singleton types_, e.g., as `RequestEntity::"Principal"` in the definition of action `GetLists`.
 
 Both of these extensions are similar to what's available for `Action`s right now, but generalized to arbitrary entity types. You could also imagine enumerated entity types having attributes, as has been anticipated for `Action`s.
 
 One drawback of this Alternative is that it creates added complication for both the validator (e.g., to handle singleton types) and the analyzer (e.g., to deal with the more general hierarchy constraints).
 
-Another drawback is that it adds complication to the entity store: Once you add hierarchy constraints and attributes, you need to create actual entities to include with policy requests (or extract them from the schema at request-time). The RFC as proposed does not require that.
+Another drawback is that it adds complication to the entity store: Once you add hierarchy constraints and attributes, you need to create actual entities to include with policy requests, by extracting them from the schema at request-time. The RFC as proposed does not require that.
 
 The good news is that this Alternative is a strict generalization of the RFC as proposed, which means if we agree to the current proposal we can later upgrade to some or all of this Alternative without incurring a breaking change.
