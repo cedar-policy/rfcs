@@ -96,7 +96,7 @@ Also note that by “dereference” above, we are only referring to the given op
 
 ### Entity roots
 
-The variables `principal`, `action`, and `resource` are *entity roots*. (Entity literals are *not* entity roots, and operations on such literals are limited, as described below.) They directly name entities from a request that could be dereferenced in a policy. A `context` is not an entity root directly; rather, any attributes it (transitively) contains that have entity type are considered roots. For example, consider the following schema:
+The variables `principal`, `action`, and `resource` are *entity roots*. (Entity literals are *not* entity roots, and operations on such literals are limited, as described below. Slots and the `Unknown` entity are treated as entity literals because slots will be replaced by literals and `Unknown` cannot be dereferenced.) They directly name entities from a request that could be dereferenced in a policy. A `context` is not an entity root directly; rather, any attributes it (transitively) contains that have entity type are considered roots. For example, consider the following schema:
 
 ```
 entity User {
