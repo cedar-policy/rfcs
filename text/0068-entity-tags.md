@@ -152,9 +152,10 @@ EA-maps' second-class status means that they can only be used as part of checkin
 ```
 resource.policyTags == principal.authTags
 [resource.policyTags, principal.authTags]
-(if true then principal.authTags else principal.authTags).write
+{foo: principal.authTags}
+(if principal.isAdmin then principal.authTags else principal.authTags).write
 ```
-(Note that the last case is disallowed because `principal.authTags` is not _directly_ part of a `.` sub-expression -- it is returned from the `if` first.)
+(Note that the last case is disallowed because `principal.authTags` is not _directly_ part of a `.` sub-expression -- it is returned from the `if` first. However, the usual short-circuiting mechanism would allow an `if` expression with a constant condition.)
 
 ### Validating and parsing entities
 
