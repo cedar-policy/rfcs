@@ -82,7 +82,7 @@ The JSON syntax for schemas specifies EA-maps as records with a `default` elemen
                     "type" : "Record",
                     "default": {
                         "type" : "Set",
-                        "element": "String"
+                        "element": { "type": "String" }
                     }
                 }
             }
@@ -100,7 +100,7 @@ The JSON syntax for schemas specifies EA-maps as records with a `default` elemen
                     "type" : "Record",
                     "default": {
                         "type" : "Set",
-                        "element": "String"
+                        "element": { "type": "String" }
                     }
                 }
             }
