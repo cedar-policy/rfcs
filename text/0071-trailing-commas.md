@@ -145,30 +145,6 @@ becomes:
 Idents    := IDENT {',' | ',' IDENT}
 ```
 
-### Cedar Policy Formatter
-This RFC proposes a change to the style guide, that having a trailing
-comma is the preferred style _except_ for the commas separating
-`principal`, `action`, and `resource`.
-The Cedar policy formatter should enforce this.
-
-Example:
-```
-permit(principal,action,resource,) when {
-    { 
-        "foo" : [1,2],
-        "bar" : 3
-    } == context
-}
-```
-would become:
-```
-permit(principal,action,resource) when {
-    { 
-        "foo" : [1,2,],
-        "bar" : 3,
-    } == context
-}
-```
 
 ### Backwards Compatibility 
 This change is fully backwards compatible. 
@@ -176,12 +152,9 @@ This change is fully backwards compatible.
 ## Drawbacks
 
 * Trailing commas are potentially confusing.
-* Policies produced by the new formatter won't parse with old parsers
 
 ## Alternatives
 
 * Keep status quo: this is a non critical change
 
 ## Unresolved questions
-
-* We could forbid the trailing the comma after `resource`.
