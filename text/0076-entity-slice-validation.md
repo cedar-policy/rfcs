@@ -130,20 +130,7 @@ During validation, we extend entity types with a *level*, which is either `∞` 
 
 ### Specifying the level
 
-The maximum level that policies may validate at is specified in the schema. The benefit of this is that policy writers can see the expected form of policies in one place. For example, we could extend our schema above as follows:
-
-```
-level = 1;
-entity User {
-    manager: User,
-    age: Long,
-};
-action getDetails appliesTo { ... }
-```
-
-Policy writers know, by seeing `level = 1`, that they can write `principal.manager` in policies, but not `principal.manager.manager`.
-
-Cedar users can currently validate policies using multiple schema files: during validation, the files are effectively concatenated together prior to validation. When combining files, the validator should allow at most one to have a `level` specification, else it's an error. Doing so serves the expected use-case that one of those files will be for the application, specifying the `action` types and the `level`, while any others will be only general `entity` and `type` definitions, which are not application specific and thus need not concern themselves with entity slicing.
+The maximum level that policies may validate at is specified as a parameter to the validator. Schemas are unchanged. Just like Cedar currently supports strict (the default) and permissive validation, it would now support those things with the additional parameter of what level at which to validate. As discussed in the alternatives below, a drawback of this approach is that policy writers cannot look in one place (the schema) to know the limits on the policies they can write. But in a sense, due to the dichotomy of strict vs. permissive validation, that's already the case.
 
 ### Validation algorithm
 
@@ -272,9 +259,24 @@ Entity manifests are less effective as a _prescriptive_ mechanism that aims to l
 
 We believe that ultimately level-based validation and entity manifests should coexist. Level-based validation is used to bound entity retrieval work and prevent pathological policies, while entity manifests are used to more efficiently define the needed entity data. We could imagine a deployment strategy in which we accept this RFC and perform generic entity slicing as described here, and then later implement entity manifests, and start performing slicing using those instead.
 
-### Alternative: Level as a validation parameter, not in the schema
+### Alternative: Level in the schema, not as a validation parameter
 
-This RFC has suggested that the level should be specified in the schema. Alternatively, we could specify the level as a parameter to the validator itself, leaving schemas unchanged. The benefit of doing so is that entity slicing becomes an orthogonal concern: The schema specifies the expected type structure of data provided with a request, but not how much of that data is required. The drawback is that policy writers cannot look in one place to know the limits on the policies they can write.
+Instead of specifying the validation level as a parameter to the validation algorithm, we could specify it directly in schemas. The benefit of this is that policy writers can see the expected form of policies in one place. For example, we could extend our schema from the initial example as follows:
+
+```
+level = 1;
+entity User {
+    manager: User,
+    age: Long,
+};
+action getDetails appliesTo { ... }
+```
+
+Policy writers know, by seeing `level = 1`, that they can write `principal.manager` in policies, but not `principal.manager.manager`.
+
+On the other hand, you could imagine that different applications might like to use the same schema file but have different restrictions on entity retrieval, owing to the efficiency of a chosen storage strategy. For example, in a graph database, retrieving data may be efficient no matter what the level is, whereas in a relational database, each level might necessitate another join query, which could be very inefficient.
+
+Specifying levels in schemas also adds a complication when multiple schema files are used during validation. When a user specifies multiple files, they are effectively concatenated together by validator. What should happen if multiple files specify `level` and the level is different? One approach is that the validator would allow at most one to have a `level` specification, else it's an error. Doing so serves the expected use-case that one of those files will be for the application, specifying the `action` types and the `level`, while any others will be only general `entity` and `type` definitions, which are not application specific and thus need not concern themselves with entity slicing.
 
 ### Alternative: Per-entity levels, rather than a global level
 
@@ -320,7 +322,7 @@ entity User in [Team] enum { "default" @level } = {
 }; 
 ```
 
-This would say that there is a `User` entity whose ID is `default` which should always be present in the entity slice, e.g., along with other entities for the principal, resource, etc. That presence is at the level specified globally, e.g., if `level`was 1, then just the `User::"default"` and its direct attributes would be included, but not the entities those attributes point to.
+This would say that there is a `User` entity whose ID is `default` which should always be present in the entity slice, e.g., along with other entities for the principal, resource, etc. That presence is at the level specified globally, e.g., if level was 1, then just the `User::"default"` and its direct attributes would be included, but not the entities those attributes point to.
 
 ### Alternatives: Extensions to reduce ancestor requirements
 
@@ -336,7 +338,7 @@ A drawback of this approach is that it could slow down evaluation times. This is
 
 #### Alternative 2: Ancestor allow-lists
 
-When validating static policies, it’s possible to see which ancestors are potentially needed. Could we do something similar to `level` for policy validation, but for ancestors instead?
+When validating static policies, it’s possible to see which ancestors are potentially needed. Could we do something similar to level for policy validation, but for ancestors instead?
 
 For TinyTodo policies above, we see the following expressions in policies:
 
@@ -392,7 +394,7 @@ resource  = List::"123"
 context   = {}
 ```
 
-Since TinyTodo policies are `level` 2, we would provide entity data for both `User::"Alice"` and `List::"123"`. Suppose that the latter’s data is
+Since TinyTodo policies are level 2, we would provide entity data for both `User::"Alice"` and `List::"123"`. Suppose that the latter’s data is
 
 ```
 { id = "123", 
