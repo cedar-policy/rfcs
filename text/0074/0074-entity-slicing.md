@@ -217,53 +217,54 @@ The merge operator for access paths is straightforward. First, convert all acces
 
 ## Computing access paths
 
-This section proposes a simple static analysis that soundly computes all of the necessary access paths for a Cedar expression.
-While it’s possible to soundly handle all Cedar expressions, we simplify the problem by rejecting Cedar programs unless they follow the following grammar:
+This section proposes a simple static analysis that soundly computes all of the necessary access paths for a Cedar expression. 
+Given a Cedar expression, the analysis produces a pair (`HashMap<EntityRoot, AccessTrie>`, `WrappedAccessPaths`).
+The first value is the accumulated trie of data that needs to be loaded.
+The second value is the "live" access paths that need to be considered for the particular expression.
 
+`WrappedAccessPaths` represents multiple potential access paths, soundly over-approximating the execution of a cedar expression.
+Since Cedar expressions may be record literals, the access paths are wrapped in corresponding record literals in the analysis:
 
+```rust
+/// This allows the Entity Manifest to soundly handle
+/// data that is wrapped in record or set literals.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub(crate) enum WrappedAccessPaths {
+    /// No access paths are needed.
+    #[default]
+    Empty,
+    /// A single access path, starting with a cedar variable.
+    AccessPath(AccessPath),
+    /// The union of two [`WrappedAccessPaths`], denoting that
+    /// all access paths from both are required.
+    /// This is useful for join points in the analysis (`if`, set literals, ect)
+    Union(Box<WrappedAccessPaths>, Box<WrappedAccessPaths>),
+    /// A record literal, each field having access paths.
+    RecordLiteral(HashMap<SmolStr, Box<WrappedAccessPaths>>),
+    /// A set literal containing access paths.
+    /// Used to note that this type is wrapped in a literal set.
+    SetLiteral(Box<WrappedAccessPaths>),
+}
 ```
-<expr> = <datapath-expr>
-         <datapath-expr> in <expr>
-         <expr> + <expr>
-         if <expr> { <expr> } { <expr> }
-         ... all other Cedar operators not mentioned by datapath-expr
-         
-<datapath-expr> = <datapath-expr>.<field>
-                  <datapath-expr> has <field>
-                  <variable>
-                  <entity literal>
-                  
-<variable> = principal 
-             resource
-             action
-             context
-                  
-```
 
+The analysis is bottom-up traveral of cedar expressions.
+Most operators are strait-forward to analyze, but there are some special cases to get right:
 
-The grammar partitions Cedar expressions into **datapath expressions** and all other Cedar operators.
-On the LHS of `in`, `.`, and `has`, expressions involving `in`, `+`, `if-then-else`, and most other Cedar functions/operators are not allowed; only Cedar variables, entity literals, and `.` or `has` expressions are allowed.
-
-The partition is reasonable since, in practice, users do not interleave datapath expressions with other operators.
-Here are examples of Cedar expressions rejected by this grammar:
-
-
-```
-{ "myfield": principal.name }.myfield
-(if principal.ismanager then { "myfield" : 2 } else { "myfield": 3 }).myfield
-(if principal has mobilePhone then principal.mobilePhone else principal.workPhone).zipCode
-```
+1. For entity or struct dereferences, be sure to add to all `WrappedAccessPaths`.
+2. For equality between records (`==` or `.contains`, `.containsAny`, and `.containsAll`), all fields in the type need to be added to the access paths.
+3. For if statements, the `Union` variant should be used to ensure both
+control-flow cases are covered.
+4. Whenever the `WrappedAccessPaths` are dropped, it's important to add them to the accumulated answer.
 
 
 Now that we have this partition, computing all the access paths is fairly simple:
 
 1. First, find all datapath expressions. These can be translated into access paths directly.
-2. Second, handle all instances of equality between records. For equality between records (`==`) or set containment where the elements are records (`.contains`, `.containsAny`, and `.containsAll`)
+2. Second, handle all instances of equality between records. 
         1. Find all access paths that are children of these operators
             1. Following the schema, fully load all fields for the leaf of the access path
 3. Finally, handle instances where the ancestors in the entity hierarchy are required. Annotate the left-hand-side of the `in` operator with the `ancestors_required` flag.
 
-## 
 
 ## SimplifiedEntityLoader API
 
@@ -306,13 +307,6 @@ pub trait SimpleEntityLoader {
 ### Risk in unverified code
 
 Increasing the complexity of the Cedar API with entity manifests provides new places for users to make mistakes. For example, using an outdated entity manifest can result in unsound entity slices. Another example would be a user writing a buggy implementation of entity loading using the manifest.
-
-
-### Full Cedar Language Support
-
-The current analysis does not support the full Cedar language (see the **Computing Access Paths** section). With some effort, the implementation could be extended to support all of Cedar by more carefully tracking access paths through different types of Cedar operations. However, it’s unclear just how tricky this will be.
-
-Along a similar note, all Cedar changes in the future will need a corresponding change in the static analysis, making it harder to extend Cedar. For example, any operations that apply to records will need careful consideration.
 
 
 ### Supporting Partial Loading of Sets
