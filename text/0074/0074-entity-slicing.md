@@ -135,7 +135,7 @@ However, the server or client must take care to ensure that the client’s entit
 Looking to the future, we hope to provide several options and guidance for how to use the entity manifest:
 
 1. Use the `SimplifiedEntityLoader` api (see later section).
-2. Use a specialized entity loader when the format of the database sufficiently matches the schema.
+2. Use a specialized entity loader when the format of the database sufficiently matches the schema. For example, Cedar could provide an SQL database data loader.
 3. Write custom entity loading that leverages the entity manifest.
 
 
