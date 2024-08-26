@@ -321,7 +321,7 @@ To support this feature, we recommend that we take a constraint-based approach. 
 
 # Extended examples
 
-## Paths needed in document_cloud example
+## Paths needed in [document_cloud](https://github.com/cedar-policy/cedar-examples/blob/release/3.2.x/cedar-example-use-cases/document_cloud/policies.cedar) example
 
 ```
 Action::"CreateDocument"
@@ -401,7 +401,7 @@ action::"DeleteGroup"
 
 
 
-## Paths needed in tags_n_roles
+## Paths needed in [tags_n_roles](https://github.com/cedar-policy/cedar-examples/blob/main/cedar-example-use-cases/tags_n_roles/policies.cedar)
 
 ```
 Action::"Role-A Actions"
@@ -437,7 +437,7 @@ resource.tags.stage
 
 
 
-## Paths needed in github_example
+## Paths needed in [github_example](https://github.com/cedar-policy/cedar-examples/tree/main/cedar-example-use-cases/github_example)
 
 using "ancestors" as Cedar's ancestor relation- requires all ancestors transitively
 
@@ -472,7 +472,7 @@ resource.admins.ancestors
 
 
 
-## Paths needed in tax_preparer
+## Paths needed in [tax_preparer](https://github.com/cedar-policy/cedar-examples/tree/main/cedar-example-use-cases/tax_preprarer)
 
 ```
 Action::"viewDocument"
@@ -490,7 +490,7 @@ context.conset.team_region_list
 
 
 
-## Paths needed in sales_orgs
+## Paths needed in [sales_orgs](https://github.com/cedar-policy/cedar-examples/tree/main/cedar-example-use-cases/sales_orgs)
 
 ```
 Action::"ExternalPrezViewActions"
@@ -538,7 +538,7 @@ context.targetUser.job
 
 
 
-## Paths needed in hotel_chains
+## Paths needed in [hotel_chains](https://github.com/cedar-policy/cedar-examples/tree/main/cedar-example-use-cases/hotel_chains)
 
 ```
 Action::"viewReservation" ect
