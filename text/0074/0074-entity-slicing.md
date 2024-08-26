@@ -130,7 +130,7 @@ The image above shows an example usage of the entity manifest. On the left, a cl
 
 When a client would like to answer a Cedar `Request`, it first consults the cached entity manifest to load the entity slice. Then, it sends the entity slice and the request to the server. The server returns the authorization result.
 
-However, the server or client must take care to ensure that the client’s entity manifest is up-to-date. Since the entity manifest is computed based on the schema and policies, is must be re-computed whenever the schema or policies change. There are multiple ways to ensure that the cache is up to date, one being to tag each entity manifest uniquely and check on each request.
+However, the server or client must take care to ensure that the client’s entity manifest is up-to-date. Since the entity manifest is computed based on the schema and policies, it must be re-computed whenever the schema or policies change. There are multiple ways to ensure that the cache is up to date, one being to tag each entity manifest uniquely and check on each request.
 
 Looking to the future, we hope to provide several options and guidance for how to use the entity manifest:
 
