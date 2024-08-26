@@ -276,18 +276,18 @@ The easiest is the `SimpleEntityLoader`  api shown here. Users need only write a
 /// Implement this trait to load entities based on
 /// the entity manifest.
 /// This entity loader is called "Simple" for two reasons:
-/// 1) First, it may cause database consistency challenges- `load_entity` is called multiple times.
+/// 1) First, it may cause database consistency challenges- `load_entities` is called multiple times.
 /// 2) Second, it is not precise- the entity manifest only requires some
 /// fields to be loaded, but this loader always loads all fields.
 pub trait SimpleEntityLoader {
-    /// Simple entity loaders must implement `load_entity`,
+    /// Simple entity loaders must implement `load_entities`,
     /// a function that loads entities based on their `EntityUID`s.
     /// For each element of `entity_ids`, returns the corresponding
     /// [`Entity`] in the output vector.
-    fn load_entity(&mut self, entity_ids: impl IntoIterator<Item = &EntityUID>) -> impl Iterator<Item = Entity>;
+    fn load_entities(&mut self, entity_ids: impl IntoIterator<Item = &EntityUID>) -> impl Iterator<Item = Entity>;
     
     /// Loads all the entities needed for a request
-    /// using the `load_entity` function.
+    /// using the `load_entities` function.
     fn load(
         &mut self,
         schema: &Schema,
