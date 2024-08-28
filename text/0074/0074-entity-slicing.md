@@ -285,17 +285,17 @@ pub trait SimpleEntityLoader {
     /// For each element of `entity_ids`, returns the corresponding
     /// [`Entity`] in the output vector.
     fn load_entities(&mut self, entity_ids: impl IntoIterator<Item = &EntityUID>) -> impl Iterator<Item = Entity>;
-    
-    /// Loads all the entities needed for a request
-    /// using the `load_entities` function.
-    fn load(
-        &mut self,
-        schema: &Schema,
-        entity_manifest: &EntityManifest,
-        request: &Request,
-    ) -> Result<Entities, EntityManifestError> {
-      ...
-    }
+}
+
+/// Loads all the entities needed for a request
+/// using the `load_entities` function.
+fn load(
+    &mut loader: SimpleEntityLoader,
+    schema: &Schema,
+    entity_manifest: &EntityManifest,
+    request: &Request,
+) -> Result<Entities, EntityManifestError> {
+  ...
 }
 ```
 
