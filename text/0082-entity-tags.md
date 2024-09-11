@@ -3,7 +3,7 @@
 ## Related issues and PRs
 
 * Reference Issues: [#305](https://github.com/cedar-policy/cedar/issues/305)
-* Supercedes [RFC 68](https://github.com/cedar-policy/rfcs/pull/68)
+* Supersedes [RFC 68](https://github.com/cedar-policy/rfcs/pull/68)
 * Implementation PR(s): (leave this empty)
 
 ## Timeline
