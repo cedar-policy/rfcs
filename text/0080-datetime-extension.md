@@ -8,6 +8,9 @@
 ## Timeline
 
 - Started: 2024-08-08
+- Accepted: 2024-09-11
+- Landed: TBD
+- Released: TBD
 
 ## Summary
 

@@ -9,6 +9,8 @@
 
 - Started: 2024-02-27
 - Accepted: 2024-05-28
+- Landed: 2024-06-19 on `main` ([#983](https://github.com/cedar-policy/cedar/pull/983))
+- Released: TBD
 
 ## Summary
 
