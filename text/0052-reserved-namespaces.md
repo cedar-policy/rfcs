@@ -8,7 +8,9 @@
 ## Timeline
 
 - Started: 2024-02-14
-- Entered FCP: 2024-06-10
+- Accepted: 2024-06-10
+- Landed: 2024-07-15 on `main` ([#969](https://github.com/cedar-policy/cedar/pull/969))
+- Released: TBD
 
 ## Summary
 
