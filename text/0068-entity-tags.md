@@ -10,8 +10,7 @@
 
 - Started: 2024-05-29
 - Accepted: 2024-07-26
-- Landed: TBD
-- Released: TBD
+- Rejected: 2024-09-11
 
 ## Summary
 
@@ -39,12 +38,12 @@ Here's a policy that conforms to this schema:
 permit (
   principal is User,
   action == Action::"writeDoc",
-  resource is Document) 
+  resource is Document)
 when {
   document.owner == principal ||
     (principal.jobLevel > 6 &&
-    resource.policyTags has "write" && 
-    principal.authTags has "write" && 
+    resource.policyTags has "write" &&
+    principal.authTags has "write" &&
     resource.policyTags["write"].containsAny(principal.authTags["write"]))
 };
 ```
@@ -183,7 +182,7 @@ We might consider adding rules that permit subtyping between records and EA-maps
 
 EA-maps keys must be written in policies as literals. For example, you cannot write the following policy expression (using our example schema from above):
 ```
-principal.authTags has context.key && 
+principal.authTags has context.key &&
 principal.authTags[context.key] == context.value
 ```
 Supporting such _dynamic keys_ is more work, but doable. With them, EA-maps would be strictly more powerful than existing encodings/workarounds for tags (the main use-case for EA-maps). We sketch the needed implementation work in Alternative A, below, and a comparison to workarounds further below.
@@ -234,12 +233,12 @@ For completeness here is the current `Member` grammar:
 ```
 Member ::= Primary {Access}
 Access ::= '.' IDENT ['(' [ExprList] ')'] | '[' STR ']'
-Primary ::= LITERAL 
-           | VAR 
-           | Entity 
-           | ExtFun '(' [ExprList] ')' 
-           | '(' Expr ')' 
-           | '[' [ExprList] ']' 
+Primary ::= LITERAL
+           | VAR
+           | Entity
+           | ExtFun '(' [ExprList] ')'
+           | '(' Expr ')'
+           | '[' [ExprList] ']'
            | '{' [RecInits] '}'
 ```
 
@@ -253,7 +252,7 @@ We can allow this extended syntax and evaluation semantics to apply to normal re
 
 #### Validator
 
-The validator must change to further extend capability tracking from what we've described above to include dynamically contructed attribute names. This should be straightforward. When the validator sees something like `principal.tags has resource.name` then this would generate the capability `principal.tags[resource.name]` that would allow a follow-on expression `principal.tags[resource.name]` to validate. 
+The validator must change to further extend capability tracking from what we've described above to include dynamically contructed attribute names. This should be straightforward. When the validator sees something like `principal.tags has resource.name` then this would generate the capability `principal.tags[resource.name]` that would allow a follow-on expression `principal.tags[resource.name]` to validate.
 
 In addition, it's now possible that an attribute-constructing expression could access a bogus attribute, so those expressions must be validated as well. E.g., when validating `principal.tags has resource.name` or `principal.tags[resource.name]`, the validator must confirm that `resource` indeed has a `name` attribute.
 
@@ -300,5 +299,5 @@ This approach has the benefit that keys can be dynamic. E.g., you can write
 principal.tags.contains(context.tagvalue)
 ```
 where `context.tagvalue` can be dynamically determined. However, with this encoding of tags you cannot write expressions such as `resource.tags["project"] == principal.tags["project"]`
-or 
+or
 `resource.tags["projects"].contains(principal.tags["project"])`. We find this to be a strong limitation, as customers often want to exprss policies that relate the tags of principals to those of resources. Note that [RFC 21](https://github.com/cedar-policy/rfcs/pull/21) would lift this limitation through the introduction of the `any?` and `all?` operators, but it was rejected due to problems with logically encoding these operators during policy analysis.
