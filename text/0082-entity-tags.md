@@ -153,7 +153,7 @@ The JSON syntax for schemas specifies tags as a separate `tags` field that speci
 
 ### Validating policies
 
-We extend the way the policy validator to handle the `hasTag` and `getTag` operators analogously to how it handles the `has` and `.` operator on records and entities.
+We extend the policy validator to handle the `hasTag` and `getTag` operators analogously to how it handles the `has` and `.` operator on records and entities.
 
 
 #### Capabilities
