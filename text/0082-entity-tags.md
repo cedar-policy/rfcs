@@ -8,10 +8,10 @@
 
 ## Timeline
 
-* Start Date: 2024-09-11
-* Date Entered FCP: 2024-09-11
-* Date Accepted:
-* Date Landed:
+* Started: 2024-09-11
+* Accepted: TBD
+* Landed: TBD
+* Released: TBD
 
 ## Summary
 
