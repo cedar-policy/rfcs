@@ -10,7 +10,7 @@
 
 - Started: 2024-05-29
 - Accepted: 2024-07-26
-- Rejected: 2024-09-11
+- Rejected: 2024-09-11; see RFC 82
 
 ## Summary
 
