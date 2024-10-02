@@ -67,6 +67,7 @@ It limits the set of policies that can be partially evaluated.
 
 ## Alternatives
 
+An alternative approach to implement type-aware PE is to require input policies to pass strict validation, which assigns expressions with types.
 
 ## Unresolved questions
 
