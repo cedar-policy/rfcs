@@ -3,7 +3,7 @@
 ## Related issues and PRs
 
 - Reference Issues:
-- Implementation PR(s):
+- Implementation PR(s): https://github.com/cedar-policy/cedar/pull/1276
 
 ## Timeline
 
@@ -140,7 +140,12 @@ The `datetime(string)` function constructs a datetime value. Like with other ext
 - `"YYYY-MM-DDThh:mm:ss(+/-)hhmm"` (With timezone offset in hours and minutes)
 - `"YYYY-MM-DDThh:mm:ss.SSS(+/-)hhmm"` (With timezone offset in hours and minutes and millisecond precision)
 
-The `datetime` type does not provide a way for a policy author to create a `datetime` from a numeric timestamp. One of the readable formats listed above must be used, instead.
+The date and time must be valid. A valid date has `MM` between `1` and `12`, and `DD` between `1` and `31`, depending on the month/year. A valid time has `hh` between `0` and `23`, `mm` between `0` and `59`, and `ss` between `0` and `59`. In other words, a leap second is not representable. The hour offset is between `0` and `11`, even though an offset value greater than `11` can be handled with modulo operations.
+
+There is another constructor `datetime_unix(long)` that takes in an offset in milliseconds to the [Unix epoch](https://en.wikipedia.org/wiki/Epoch_(computing)). We provide this additional constructor for two reasons. First, the current implementation of partial evaluation requires an extension value to be representable as a restricted expression. For instance, PE evaluates `datetime("9999-12-31").offset(context.duration)` to an internal representation of `253402329600` (i.e., `10000-01-01`) when `context.duration` is `duration("1d")`. This timestamp cannot be represented by the input format above and PE hence cannot dump the residual expression.
+The second reason is that having a constructor taking a Unix timestamp makes existing users who represent datetime using Unix time smoothly migrate to the proposed extension.
+
+An alternative to address the issue above without introducing a new constructor is to expand the format such that the year can be greater than `9999` and a negative value.
 
 Values of type `datetime` have the following methods:
 
@@ -150,14 +155,14 @@ Values of type `datetime` have the following methods:
 - `.toDate()` returns a new `datetime`, truncating to the day, such that printing the `datetime` would have `00:00:00` as the time.
 - `.toTime()` returns a new `duration`, removing the days, such that only milliseconds since `.toDate()` are left. This is equivalent to `DT.durationSince(DT.toDate())`
 
-Values of type `datetime` can be used with comparison operators:
+Values of type `datetime` can be compared using the following functions:
 
-- `DT1 < DT2` returns `true` when `DT1` is before `DT2`
-- `DT1 <= DT2` returns `true` when `DT1` is before or equal to `DT2`
-- `DT1 > DT2` returns `true` when `DT1` is after `DT2`
-- `DT1 >= DT2` returns `true` when `DT1` is after or equal to `DT2`
-- `DT1 == DT2` returns `true` when `DT1` is equal to `DT2`
-- `DT1 != DT2` returns `true` when `DT1` is not equal to `DT2`
+- `DT1.before(DT2)` returns `true` when `DT1` is before `DT2`
+- `DT1.beforeOrEqualTo(DT2)` returns `true` when `DT1` is before or equal to `DT2`
+- `DT1.after(DT2)` returns `true` when `DT1` is after `DT2`
+- `DT1.afterOrEqualTo(DT2)` returns `true` when `DT1` is after or equal to `DT2`
+
+Note that we propose to use overloaded operators to perform comparison between `datetime`s, which is not currently feasible to implement. We will implement this feature for all applicable Cedar extensions, after the `datetime` extension is implemented.
 
 Equality is based on the underlying representation (see below) so, for example, `datetime("2024-08-21T") == datetime("2024-08-21T00:00:00.000Z")` is true. This behavior is consistent with the decimal extension function, where `decimal("1.0") == decimal("1.0000")` is also true.
 
@@ -192,12 +197,10 @@ Values of type `duration` have the following methods:
 
 Values with type `duration` can also be used with comparison operators:
 
-- `DUR1 < DUR2` returns `true` when `DUR1` is shorter than `DUR2`
-- `DUR1 <= DUR2` returns `true` when `DUR1` is shorter than or equal to `DUR2`
-- `DUR1 > DUR2` returns `true` when `DUR1` is longer than `DUR2`
-- `DUR1 >= DUR2` returns `true` when `DUR1` is longer than or equal to `DUR2`
-- `DUR1 == DUR2` returns `true` when `DUR1` is equal to `DUR2`
-- `DUR1 != DUR2` returns `true` when `DUR1` is not equal to `DUR2`
+- `DUR1.shorterThan(DUR2)` returns `true` when `DUR1` is shorter than `DUR2`
+- `DUR1.shorterThanOrEqualTo(DUR2)` returns `true` when `DUR1` is shorter than or equal to `DUR2`
+- `DUR1.longerThan(DUR2)` returns `true` when `DUR1` is longer than `DUR2`
+- `DUR1.longerThanOrEqualTo(DUR2)` returns `true` when `DUR1` is longer than or equal to `DUR2`
 
 Equality is based on the underlying representation (see below) so, for example, `duration("1d") == duration("24h")` is true.
 
