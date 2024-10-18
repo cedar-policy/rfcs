@@ -162,7 +162,7 @@ Values of type `datetime` can be compared using the following functions:
 - `DT1.after(DT2)` returns `true` when `DT1` is after `DT2`
 - `DT1.afterOrEqualTo(DT2)` returns `true` when `DT1` is after or equal to `DT2`
 
-Note that we propose to use overloaded operators to perform comparison between `datetime`s, which is not currently feasible to implement. We will implement this feature for all applicable Cedar extensions, after the `datetime` extension is implemented.
+Note that we originally proposed to use overloaded operators to perform comparison between `datetime`s. But this feature is too involved and thus merits a dedicated RFC. So, we keep the convention of using extension functions to perform comparison in this RFC.
 
 Equality is based on the underlying representation (see below) so, for example, `datetime("2024-08-21T") == datetime("2024-08-21T00:00:00.000Z")` is true. This behavior is consistent with the decimal extension function, where `decimal("1.0") == decimal("1.0000")` is also true.
 
