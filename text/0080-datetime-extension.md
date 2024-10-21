@@ -33,7 +33,7 @@ permit(
 when {
   principal.department == "HardwareEngineering" &&
   principal.jobLevel >= 10 &&
-  context.now.timestamp.durationSince(principal.hireDate) > duration("365d")
+  context.now.timestamp.durationSince(principal.hireDate).longerThan(duration("365d"))
 };
 ```
 
@@ -65,7 +65,7 @@ permit(
   resource is Photo
 ) when {
   resource.fileType == "JPEG" &&
-  context.now.timestamp.durationSince(resource.creationTime) <= duration("7d")
+  context.now.timestamp.durationSince(resource.creationTime).shorterThanOrEqualTo(duration("7d"))
 };
 ```
 
@@ -78,8 +78,8 @@ permit(
   resource
 ) when {
   context.srcIp.isInRange(ip("192.168.1.0/24")) &&
-  context.workdayStart <= context.now.timestamp &&
-  context.now.timestamp < context.workdayEnd
+  context.workdayStart.beforeOrEqualTo(context.now.timestamp) &&
+  context.now.timestamp.before(context.workdayEnd)
 };
 ```
 
@@ -118,7 +118,7 @@ forbid(
   action,
   resource
 ) when {
-  context.now.timestamp > datetime("2020-01-31T23:00:00Z") &&
+  context.now.timestamp.after(datetime("2020-01-31T23:00:00Z")) &&
   context.location.countryOfOrigin == 'GB' &&
   resource.owner == 'EU'
 }
@@ -447,19 +447,10 @@ permit(
   action == Action::"access",
   resource
 ) when {
-  context.now.timestamp.offset(principal.timeZoneOffset).toTime() >= duration("9h") &&
-  context.now.timestamp.offset(principal.timeZoneOffset).toTime() <= duration("17h")
+  context.now.timestamp.offset(principal.timeZoneOffset).toTime().longerThanOrEqualTo(duration("9h")) &&
+  context.now.timestamp.offset(principal.timeZoneOffset).toTime().shorterThanOrEqualTo(duration("17h"))
 };
 ```
-
-### Operator overloading
-
-This RFC proposes to use operators `<`, `<=`, `>`, and `>=` for comparing `datetime` and `duration` objects.
-Currently in Cedar, these operations are only supported for `long`-typed values.
-For other extension types with similar operations, Cedar instead uses extension functions (e.g., `.lessThan()` for decimal values).
-
-This RFC proposes to _reverse_ this decision, and instead allow using builtin operators for extension functions, as appropriate.
-This will add some implementation complexity (at least in the primary [Rust implementation](https://github.com/cedar-policy/cedar)), but it will make policies that use these operations easier to read and easier to write.
 
 ### Millisecond precision
 
