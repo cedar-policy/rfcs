@@ -105,7 +105,7 @@ permit(
 ) when {
   principal.birthDate.day == 29 &&
   principal.birthDate.month == 2 &&
-  context.now.day == 29 && 
+  context.now.day == 29 &&
   context.now.month == 2
 };
 ```
@@ -177,8 +177,8 @@ The quantity part is a positive integer. The unit is one of the following:
 - `s`: seconds
 - `ms`: milliseconds
 
-Duration strings are required to be ordered from largest unit to smallest unit, and contain one quantity per unit. Units with zero quantity may be omitted. 
-`"1h"`, `"-10h"`, `"5d3ms"`, and `"3h5m"` are all valid duration strings. 
+Duration strings are required to be ordered from largest unit to smallest unit, and contain one quantity per unit. Units with zero quantity may be omitted.
+`"1h"`, `"-10h"`, `"5d3ms"`, and `"3h5m"` are all valid duration strings.
 
 A duration may be negative. Negative duration strings must begin with `-`.
 
@@ -198,6 +198,8 @@ Values with type `duration` can also be used with comparison operators:
 - `DUR1 >= DUR2` returns `true` when `DUR1` is longer than or equal to `DUR2`
 - `DUR1 == DUR2` returns `true` when `DUR1` is equal to `DUR2`
 - `DUR1 != DUR2` returns `true` when `DUR1` is not equal to `DUR2`
+
+Comparisons are done with respect to the sign of a duration. I.e., `duration("-1d") < duration("1s")`.
 
 Equality is based on the underlying representation (see below) so, for example, `duration("1d") == duration("24h")` is true.
 
@@ -294,7 +296,7 @@ permit(
   resource is Photo
 ) when {
   resource.fileType == "JPEG" &&
-  resource.creationDate <= (context.currentTime - (7 * 24 * 60 * 60)) 
+  resource.creationDate <= (context.currentTime - (7 * 24 * 60 * 60))
 };
 ```
 
