@@ -1,9 +1,9 @@
-# Annotations for Schemas 
+# Annotations for Cedar Schemas 
 
 ## Related issues and PRs
 
 - Reference Issues: 
-- Implementation PR(s): 
+- Implementation PR(s): https://github.com/cedar-policy/cedar/tree/feature/shaobo/rfc48
 
 ## Timeline
 
@@ -12,8 +12,8 @@
 ## Summary
 
 Like Cedar policies, users may want to associate arbitrary, machine readable metadata with Schema objects.
-We solved this problem in Cedar Policies by allowing for *annotations*: arbitrary key/value pairs that are attachable to policies.
-This could be extended to Cedar Schemas, allowing users to attach attributes an entity type, common type, and action definitions.
+We solved this problem in Cedar policies by allowing for *annotations*: arbitrary key/value pairs that are attachable to policies.
+This could be extended to Cedar schemas, allowing users to attach attributes an entity type, common type, and action definitions.
 
 
 ## Basic example
@@ -33,7 +33,7 @@ The `@id("...")` notation is similar to the notation used for policy annotations
 Users should be allowed to associate machine readable metadata with objects in a Schema.
 While we could create special syntax for associating particular kinds of metadata, we cannot
 predict all of the metadata uses that users will have. 
-Thus providing a flexible system that users can adapt to their needs is preferrable.
+Thus providing a flexible system that users can adapt to their needs is preferable.
 This proposal re-uses the same syntax from Cedar Policies, creating a unified syntax.
 
 
@@ -49,12 +49,12 @@ Attributes are arbitrary key/value pairs where:
 The Cedar spec takes no opinion or stance on the interpretation of annotations.
 The interpretation is entirely up to users of Cedar.
 
-### Human Readable Syntax
+### Cedar Schema Syntax
 Attributes in Cedar Schemas will mirror the syntax used for attributes in a policy: informally that's `@<key>("value")`.
 Formally the following rule is added to the Cedar grammar: 
 ```
 Annotation := '@' IDENT '(' STR ')'
-Annotations := Annotation {Annotations}
+Annotations := {Annotations}
 ```
 With an arbitrary number of them being able to prepend to a top level declaration in a schema.
 
@@ -70,7 +70,7 @@ Type        := PRIMTYPE | IDENT | SetType | RecType
 EntType     := Path
 SetType     := 'Set' '<' Type '>'
 RecType     := '{' [AttrDecls] '}'
-AttrDecls   := Name ['?'] ':' Type [',' | ',' AttrDecls]
+AttrDecls   := Annotations Name ['?'] ':' Type [',' | ',' AttrDecls]
 AppliesTo   := 'appliesTo' '{' AppDecls '}'
 ActAttrs    := 'attributes' '{' AttrDecls '}'
 AppDecls    := ('principal' | 'resource') ':' EntOrTyps [',' | ',' AppDecls]
