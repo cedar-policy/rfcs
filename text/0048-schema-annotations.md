@@ -13,7 +13,7 @@
 
 Like Cedar policies, users may want to associate arbitrary, machine readable metadata with Schema objects.
 We solved this problem in Cedar policies by allowing for *annotations*: arbitrary key/value pairs that are attachable to policies.
-This could be extended to Cedar schemas, allowing users to attach attributes an entity type, common type, and action definitions.
+This could be extended to Cedar schemas, allowing users to attach attributes an entity type/common type/action declaration and attribute declaration.
 
 
 ## Basic example
@@ -80,22 +80,21 @@ Formally the following rule is added to the Cedar grammar:
 Annotation := '@' IDENT '(' STR ')'
 Annotations := {Annotations}
 ```
-With an arbitrary number of them being able to prepend to a namespace declaration, entity type declaration, common type declaration, action declaration, and an entity type attribute declaration.
+With an arbitrary number of them being able to prepend to a namespace declaration, entity type declaration, common type declaration, action declaration, and an attribute declaration.
 
 Thus the full schema syntax becomes:
 ```
 Schema      := {Namespace}
 Namespace   := (Annotations 'namespace' Path '{' {Decl} '}') | {Decl}
 Decl        := Entity | Action | TypeDecl
-Entity      := Annotations 'entity' Idents ['in' EntOrTyps] [['='] '{' [AnnotatedAttrDecls] '}'] ';'
+Entity      := Annotations 'entity' Idents ['in' EntOrTyps] [['='] RecType] ';'
 Action      := Annotations 'action' Names ['in' (Name | '[' [Names] ']')] [AppliesTo] [ActAttrs]';'
 TypeDecl    := Annotations 'type' IDENT '=' Type ';'
 Type        := PRIMTYPE | IDENT | SetType | RecType
 EntType     := Path
 SetType     := 'Set' '<' Type '>'
 RecType     := '{' [AttrDecls] '}'
-AnnotatedAttrDecls := Annotations Name ['?'] ':' Type [',' | ',' AnnotatedAttrDecls]
-AttrDecls   := Name ['?'] ':' Type [',' | ',' AttrDecls]
+AttrDecls   := Annotations Name ['?'] ':' Type [',' | ',' AttrDecls]
 AppliesTo   := 'appliesTo' '{' AppDecls '}'
 ActAttrs    := 'attributes' '{' AttrDecls '}'
 AppDecls    := ('principal' | 'resource') ':' EntOrTyps [',' | ',' AppDecls]
