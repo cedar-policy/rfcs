@@ -20,11 +20,35 @@ This could be extended to Cedar schemas, allowing users to attach attributes an 
 
 Here is a basic example for doc comments.
 ```
-@doc("This entity defines our central user type")
-entity User { 
-    manager : User,
-    team : String
-};
+@doc("this is the namespace")
+namespace TinyTodo {
+    @doc("a common type representing a task")
+    type Task = {
+        "id": Long,
+        "name": String,
+        "state": String,
+    };
+    @doc("a common type representing a set of tasks")
+    type Tasks = Set<Task>;
+
+    @doc("an entity type representing a list")
+    @doc("any entity type is a child of type `Application`")
+    entity List in [Application] = {
+        @doc("editors of a list")
+        "editors": Team,
+        "name": String,
+        "owner": User,
+        @doc("readers of a list")
+        "readers": Team,
+        "tasks": Tasks,
+    };
+
+    @doc("actions that a user can operate on a list")
+    action DeleteList, GetList, UpdateList appliesTo {
+        principal: [User],
+        resource: [List]
+    };
+}
 ```
 The `@id("...")` notation is similar to the notation used for policy annotations.
 
@@ -56,21 +80,22 @@ Formally the following rule is added to the Cedar grammar:
 Annotation := '@' IDENT '(' STR ')'
 Annotations := {Annotations}
 ```
-With an arbitrary number of them being able to prepend to a top level declaration in a schema.
+With an arbitrary number of them being able to prepend to a namespace declaration, entity type declaration, common type declaration, action declaration, and an entity type attribute declaration.
 
 Thus the full schema syntax becomes:
 ```
 Schema      := {Namespace}
-Namespace   := ('namespace' Path '{' {Decl} '}') | {Decl}
+Namespace   := (Annotations 'namespace' Path '{' {Decl} '}') | {Decl}
 Decl        := Entity | Action | TypeDecl
-Entity      := Annotations 'entity' Idents ['in' EntOrTyps] [['='] RecType] ';'
+Entity      := Annotations 'entity' Idents ['in' EntOrTyps] [['='] '{' [AnnotatedAttrDecls] '}'] ';'
 Action      := Annotations 'action' Names ['in' (Name | '[' [Names] ']')] [AppliesTo] [ActAttrs]';'
 TypeDecl    := Annotations 'type' IDENT '=' Type ';'
 Type        := PRIMTYPE | IDENT | SetType | RecType
 EntType     := Path
 SetType     := 'Set' '<' Type '>'
 RecType     := '{' [AttrDecls] '}'
-AttrDecls   := Annotations Name ['?'] ':' Type [',' | ',' AttrDecls]
+AnnotatedAttrDecls := Annotations Name ['?'] ':' Type [',' | ',' AnnotatedAttrDecls]
+AttrDecls   := Name ['?'] ':' Type [',' | ',' AttrDecls]
 AppliesTo   := 'appliesTo' '{' AppDecls '}'
 ActAttrs    := 'attributes' '{' AttrDecls '}'
 AppDecls    := ('principal' | 'resource') ':' EntOrTyps [',' | ',' AppDecls]
@@ -90,13 +115,6 @@ PRIMTYPE    := 'Long' | 'String' | 'Bool'
 WHITESPC    := Unicode whitespace
 COMMENT     := '//' ~NEWLINE* NEWLINE
 ```
-
-### JSON Syntax
-None of the three top-level constructs (EntityTypes, Actions, CommonTypes) in schemas allow for arbitrary key/value pairs. 
-This means a new key can be safely added while preserving backwards compatibility.
-This proposal reserves the `annotations` key at the top level of each of those constructs, which contains an Object, containing each annotation key as an Object key, associated with the annotation value.
-The only oddness here is Common Types, whose toplevel is a regular type. While this should still be backwards compatible, it will look a little odd to have annotations in some types and not in others.
-
 
 ## Drawbacks
 
