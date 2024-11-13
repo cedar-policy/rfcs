@@ -1,8 +1,8 @@
-# Annotations for Cedar Schemas 
+# Annotations for Cedar Schemas
 
 ## Related issues and PRs
 
-- Reference Issues: 
+- Reference Issues:
 - Implementation PR(s): https://github.com/cedar-policy/cedar/tree/feature/shaobo/rfc48
 
 ## Timeline
@@ -24,6 +24,7 @@ Here is a basic example for doc comments.
 namespace TinyTodo {
     @doc("a common type representing a task")
     type Task = {
+        @doc("task id")
         "id": Long,
         "name": String,
         "state": String,
@@ -32,7 +33,7 @@ namespace TinyTodo {
     type Tasks = Set<Task>;
 
     @doc("an entity type representing a list")
-    @doc("any entity type is a child of type `Application`")
+    @docComment("any entity type is a child of type `Application`")
     entity List in [Application] = {
         @doc("editors of a list")
         "editors": Team,
@@ -56,7 +57,7 @@ The `@id("...")` notation is similar to the notation used for policy annotations
 
 Users should be allowed to associate machine readable metadata with objects in a Schema.
 While we could create special syntax for associating particular kinds of metadata, we cannot
-predict all of the metadata uses that users will have. 
+predict all of the metadata uses that users will have.
 Thus providing a flexible system that users can adapt to their needs is preferable.
 This proposal re-uses the same syntax from Cedar Policies, creating a unified syntax.
 
@@ -64,7 +65,7 @@ This proposal re-uses the same syntax from Cedar Policies, creating a unified sy
 ## Detailed design
 
 ### Semantics
-Attributes have **no** impact on validation decisions. 
+Attributes have **no** impact on validation decisions.
 Attributes are arbitrary key/value pairs where:
 * 'key' is a valid Cedar identifier
 * 'value' is a Cedar string
@@ -75,7 +76,7 @@ The interpretation is entirely up to users of Cedar.
 
 ### Cedar Schema Syntax
 Attributes in Cedar Schemas will mirror the syntax used for attributes in a policy: informally that's `@<key>("value")`.
-Formally the following rule is added to the Cedar grammar: 
+Formally the following rule is added to the Cedar grammar:
 ```
 Annotation := '@' IDENT '(' STR ')'
 Annotations := {Annotations}
@@ -122,6 +123,92 @@ The same fact also applies to entity attribute declarations.
 This proposal reserves the `annotations` key at the top level of each of those constructs, which contains an Object, containing each annotation key as an Object key, associated with the annotation string.
 The only oddness here is Common Types, whose toplevel is a regular type. While this should still be backwards compatible, it will look a little odd to have annotations in some types and not in others.
 
+A corresponding JSON schema for the above example is as follows.
+```JSON
+{
+    "": {
+    "annotations": {
+        "doc": "this is the namespace"
+    },
+    "commonTypes": {
+        "Task": {
+        "annotations": {
+            "doc": "a common type representing a task"
+        },
+        "type": "Record",
+        "attributes": {
+            "id": {
+            "type": "Long",
+            "annotations": {
+                "doc": "task id"
+            },
+            },
+            "name": {
+            "type": "String"
+            },
+            "state": {
+            "type": "String"
+            }
+        }
+        },
+        "Tasks": {
+        "type": "Set",
+        "element": {
+            "type": "Task"
+        }
+        }
+    },
+    "entityTypes": {
+        "Application": {},
+        "List": {
+        "annotations": {
+            "doc": "an entity type representing a list",
+            "docComment": "any entity type is a child of type `Application`"
+        },
+        "memberOfTypes": [
+            "Application"
+        ],
+        "shape": {
+            "type": "Record",
+            "attributes": {
+            "editors": {
+                "type": "Team"
+            },
+            "name": {
+                "type": "String"
+            },
+            "owner": {
+                "type": "User"
+            },
+            "readers": {
+                "type": "Team"
+            },
+            "tasks": {
+                "type": "Tasks"
+            }
+            }
+        }
+        }
+    },
+    "actions": {
+        "CreateList": {
+         "annotations": {
+            "doc": "actions that a user can operate on a list"
+        },
+        "appliesTo": {
+            "resourceTypes": [
+            "Application"
+            ],
+            "principalTypes": [
+            "User"
+            ]
+        }
+       }
+    }
+  }
+}
+```
+
 ## Drawbacks
 
 1. Complexity: adds more complexity to schema
@@ -133,7 +220,7 @@ The only oddness here is Common Types, whose toplevel is a regular type. While t
 
 ### Take a stance
 Reverse our decision around annotations and start taking stances on what annotations mean.
-This lets us standardize certain annotations, like `doc`. 
+This lets us standardize certain annotations, like `doc`.
 This probably can't happen unless we also do this for policies, which we've said we don't want to do.
 ### Doc Strings as comments
 Instead of annotations, we could add "doc-strings" as a first class feature.
