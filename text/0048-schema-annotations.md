@@ -236,7 +236,3 @@ unless {
 };
 ```
 This has nice and easy multi-line syntax, but is special cased and not as general.
-
-## Unresolved questions
-
-* If this RFC is accepted, do we want to patch [RFC24 (Schema Syntax](https://github.com/cedar-policy/rfcs/issues/24") to contain the full new grammar so it's in one place?
