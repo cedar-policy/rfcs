@@ -169,7 +169,7 @@ The `datetime` type is internally represented as a `long` and contains a Unix Ti
 
 The `duration(string)` function constructs a duration value from a duration string. Strict validation requires the argument to be a literal, although evaluation/authorization support any appropriately-typed expressions. The `string` is a concatenated sequence of quantity-unit pairs. For example, `"1d2h3m4s5ms"` is a valid duration string.
 
-The quantity part is a positive integer. The unit is one of the following:
+The quantity part is a natural number. The unit is one of the following:
 
 - `d`: days
 - `h`: hours
@@ -205,7 +205,7 @@ Equality is based on the underlying representation (see below) so, for example, 
 
 #### Representation
 
-The `duration` type is internally represented as a positive or negative quantity of milliseconds as a `long`.
+The `duration` type is internally represented as a quantity of milliseconds as a `long`, which can be positive, negative, or zero.
 
 A negative duration may be useful when a user wants to use `.offset()` to shift a date backwards.
 For example: `context.now.offset(duration("-3d"))` expresses "three days before the current date".
