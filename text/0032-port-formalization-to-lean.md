@@ -12,6 +12,8 @@
 - Landed: 2023-10-26 on `main`
 - Released: The Dafny formalization was deprecated in `cedar-spec` v3.1.0 (released 2024-03-08)
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 This RFC proposes to port our current Cedar models and proofs (written in [Dafny](https://dafny.org/)) to an alternative verification tool ([Lean](https://lean-lang.org/)) that is better suited for meta-theory proofs, like Cedar’s validation soundness proof.

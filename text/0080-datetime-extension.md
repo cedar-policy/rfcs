@@ -12,6 +12,8 @@
 - Landed: TBD
 - Released: TBD
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 Cedar currently supports extension functions for IP addresses and decimal values.

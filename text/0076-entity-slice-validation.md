@@ -9,6 +9,8 @@
 
 * Started: 2024-08-01
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 This RFC introduces "Entity Slicing Validation" (ESV), which consists of

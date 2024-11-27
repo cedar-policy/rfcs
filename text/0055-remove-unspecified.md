@@ -12,6 +12,8 @@
 - Landed: 2024-06-19 on `main` ([#983](https://github.com/cedar-policy/cedar/pull/983))
 - Released: TBD
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 Cedar currently supports _unspecified entities_, which are entities of a special, unique type that have no attributes, and are not ancestors or descendants of any other entity in the store. Unspecified entities are intended to act as placeholders for entities that don’t influence authorization (see examples below).

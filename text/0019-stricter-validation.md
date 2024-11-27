@@ -12,6 +12,8 @@
 - Landed: 2023-09-08 on `main`
 - Released: 2023-12-15 in `cedar-policy` v3.0.0
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 Internally, strict validation of a policy is implemented as 1/ checking and transforming the policy using a _permissive_ validation mode; 2/ annotating the transformed policy with types, and 3/ checking the types against more restrictive rules. We would like to be able to at least _explain_ strict mode independently of permissive mode, but there is no easy way to do that. This RFC proposes to separate strict mode from permissive mode, making the implementation simpler and more understandable/explainable, though somewhat more strict.

@@ -12,6 +12,8 @@
 - Landed: TBD
 - Released: TBD
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 The Cedar grammar (both policies and schemas) should accept trailing

@@ -12,6 +12,8 @@
 - Landed: 2023-10-24 on `main`
 - Released: 2023-12-15 in `cedar-policy` v3.0.0
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 Today, Cedar allows duplicate keys in record literals (and other record values, including `context`), with last-value-wins semantics.

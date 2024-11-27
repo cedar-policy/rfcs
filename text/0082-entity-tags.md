@@ -13,6 +13,8 @@
 * Landed: TBD
 * Released: TBD
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 This RFC proposes to extend the Cedar language, type system, and symbolic analysis to include full-featured *entity tags* for entity types. Tags are a mechanism used by cloud services to attach key-value pairs to resources. Cedar will allow them to be attached to any entities (not just resources).

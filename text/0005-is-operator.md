@@ -12,6 +12,8 @@
 - Landed: 2023-11-08 on `main`
 - Released: 2023-12-15 in `cedar-policy` v3.0.0
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 This RFC proposes to add an `is` operator to the Cedar language that allows users to check the type of entities.

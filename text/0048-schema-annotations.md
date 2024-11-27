@@ -9,6 +9,8 @@
 
 - Started: 2024-02-05
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 Like Cedar policies, users may want to associate arbitrary, machine readable metadata with Schema objects.

@@ -12,6 +12,8 @@
 - Landed: 2024-03-20 in `cedar-policy`
 - Released: 2024-03-29 in `cedar-policy` v3.1.2
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 Allow multiplication of arbitrary expressions (that evaluate to Long), not just

@@ -7,6 +7,8 @@
 - Landed: TBD
 - Released: TBD
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 Extend schemas to support declared enumerations of entity-typed values, analogous to how schemas can currently be used to enumerate a finite list of `Action`-typed values.

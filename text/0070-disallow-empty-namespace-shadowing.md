@@ -12,6 +12,8 @@
 - Landed: 2024-08-26 on `main` ([#1147](https://github.com/cedar-policy/cedar/pull/1147))
 - Released: TBD
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 In schemas, disallow definitions of entity types, common types, and actions that
