@@ -9,8 +9,7 @@
 
 - Started: (fill in with today's date, YYYY-MM-DD)
 - Accepted: TBD
-- Landed: TBD
-- Released: TBD
+- Stabilized: TBD
 
 ## Summary
 
