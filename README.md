@@ -29,6 +29,8 @@ Here's a flowchart of the RFC process: (Newly-opened RFCs start in [Pending](htt
 
 ![RFC process flowchart](process-v2-flowchart.png)
 
+Note: The previous version of the RFC process can be found [here](./archive/process-v1/).
+
 ### Experimental features
 
 During the "Pending" and/or "Unstable" stages, an experimental Rust implementation may be available
