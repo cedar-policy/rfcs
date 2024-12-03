@@ -78,7 +78,7 @@ It's often helpful to get feedback on your concept before diving into the design
 
 In short, to get a major feature added to Cedar, you must first get the RFC merged into the RFC repo as a markdown file. At that point the RFC is 'active' and may be implemented with the goal of eventual inclusion into Cedar.
 
-* Work on your proposal in a markdown file based on the template (<https://github.com/cedar-policy/rfcs/blob/main/0000-template.md>). Put care into the details: RFCs that do not present convincing motivation, demonstrate understanding of the impact of the design, or are disingenuous about the drawbacks or alternatives tend to be poorly-received. Copy your markdown file into `text/0000-my-feature.md`, where my-feature is descriptive.
+* Work on your proposal in a markdown file based on the template (<https://github.com/cedar-policy/rfcs/blob/main/text/0000-template.md>). Put care into the details: RFCs that do not present convincing motivation, demonstrate understanding of the impact of the design, or are disingenuous about the drawbacks or alternatives tend to be poorly-received. Copy your markdown file into `text/0000-my-feature.md`, where my-feature is descriptive.
 * Fork this repository and create a PR with your markdown file. Once you have a PR, fill in the number in your filename with the PR number (e.g., `0003-my-feature.md` for PR #3). We will use this PR to provide feedback and to come to a consensus on whether the RFC should be accepted. Revisions to the RFC based on feedback should be done in the same PR.
 * Your RFC is now Pending. See "The RFC life-cycle" above for more on the next steps.
 
