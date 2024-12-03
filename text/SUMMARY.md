@@ -17,7 +17,6 @@
 - [0055-remove-unspecified](0055-remove-unspecified.md)
 - [0057-general-multiplication](0057-general-multiplication.md)
 - [0062-extended-has](0062-extended-has.md)
-- [0068-entity-tags](0068-entity-tags.md)
 - [0070-disallow-empty-namespace-shadowing](0070-disallow-empty-namespace-shadowing.md)
 - [0071-trailing-commas](0071-trailing-commas.md)
 - [0076-entity-slice-validation](0076-entity-slice-validation.md)
