@@ -12,6 +12,8 @@
 - Landed: TBD
 - Released: TBD
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 This RFC proposes to extend the syntax of the `has` operator to check for the presence of all attributes in an access path.

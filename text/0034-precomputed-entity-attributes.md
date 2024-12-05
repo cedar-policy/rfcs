@@ -15,6 +15,8 @@
 - Landed: 2023-11-16 on `main`
 - Released: 2023-12-15 in `cedar-policy` v3.0.0
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 Internally, Cedar entity objects will store their attribute values as

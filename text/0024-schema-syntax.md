@@ -12,6 +12,8 @@
 - Landed: 2024-02-19 on `main` ([#557](https://github.com/cedar-policy/cedar/pull/557))
 - Released: 2024-03-08 in `cedar-policy` v3.1.0
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 This document proposes a custom syntax for Cedar schemas. The syntax was developed with the following goals in mind:

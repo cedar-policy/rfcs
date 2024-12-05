@@ -12,6 +12,8 @@
 - Landed: 2024-07-15 on `main` ([#969](https://github.com/cedar-policy/cedar/pull/969))
 - Released: TBD
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 This RFC extends the reservation of the `__cedar` namespace in schema in [RFC24](https://github.com/cedar-policy/rfcs/blob/main/text/0024-schema-syntax.md) and

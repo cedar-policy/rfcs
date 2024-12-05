@@ -12,6 +12,8 @@
 - Accepted: 2024-07-26
 - Rejected: 2024-09-11; see RFC 82
 
+Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
+
 ## Summary
 
 This RFC proposes to extend the Cedar type system with the ability to include _embedded attribute maps_ (EA-maps for short) in entity types, with the primary goal of supporting a full-featured encoding for _tags_. For evaluation purposes, EA-maps have the same programming interface as records: keys are like record attributes and values are like attribute values. The difference is in how they are validated: the keys of EA-maps need not be enumerated in advance, as is required with record attributes, and all values must have the same type. Moreover, EA-maps are treated by the validator as second-class, meaning valid usage scenarios are somewhat restricted.
