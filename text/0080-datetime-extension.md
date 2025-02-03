@@ -225,7 +225,10 @@ For example: `context.now.offset(duration("-3d"))` expresses "three days before 
 ### Errors
 
 All the extension functions proposed in this RFC will throw a type error at authorization time if called with the wrong type of arguments.
-Additionally, the `datetime` and `duration` constructors will return an error if the input string does not match the expected format, or if the internal representation of the value (a 64-bit signed int) would overflow. `.offset(duration)` will return an error if the resulting datetime would overflow.
+Additionally, the `datetime` and `duration` constructors will return an error if the input string does not match the expected format, or if the internal representation of the value (a 64-bit signed int) would overflow.
+The `datetime` constructor will also return an error if the input string refers to a non-existent calendar date (e.g., `"2025-02-31"`).
+Unlike some datetime libraries that perform [overflow normalization](#overflow-handling), this extension explicitly rejects such invalid dates.
+`.offset(duration)` will return an error if the resulting datetime would overflow.
 
 As noted above, strict validation will require passing literals to the `duration` and `datetime` constructors, and it will raise an error if those strings are malformed. Otherwise, validation is straightforward.
 
@@ -486,3 +489,11 @@ The current proposal sets additional restrictions on most fields of datetime str
 These restrictions are common in datetime frameworks for popular programming languages like Python and TypeScript
 (more details [here](https://github.com/cedar-policy/cedar-spec/pull/519#issuecomment-2613547897)),
 and they help us avoid discrepancies between different Cedar implementations.
+
+### Overflow handling
+
+The current proposal rejects non-existent dates like `2025-02-31`.
+However, some programming languages and datetime libraries accept such dates and handle excess days through overflow normalization, resulting in a different valid calendar date.
+For instance, `2025-02-31` is interpreted as being 3 days later than `2025-02-28`, thus normalizing to `2025-03-03`.
+The standard `Date` type in TypeScript reflects this behavior, as shown in [this comparison](https://github.com/cedar-policy/cedar-spec/pull/519#issuecomment-2613547897).
+We argue that this normalization behavior, while convenient for general programming, may be too implicit and potentially surprising for an authorization system.
