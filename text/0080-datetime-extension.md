@@ -142,6 +142,16 @@ The `datetime(string)` function constructs a datetime value. Like with other ext
 - `"YYYY-MM-DDThh:mm:ss(+/-)hhmm"` (With timezone offset in hours and minutes)
 - `"YYYY-MM-DDThh:mm:ss.SSS(+/-)hhmm"` (With timezone offset in hours and minutes and millisecond precision)
 
+All formats must adhere to these additional restrictions:
+- The month field (`MM`) must be in the range 01-12
+- The day field (`DD`) must be in the range 01-31
+- The hour field (`hh`) must be in the range 00-23
+- The minute field (`mm`) must be in the range 00-59
+- The seconds field (`ss`) must be in the range 00-59 (leap seconds are not supported)
+
+Note that the restrictions on the hour and minute fields also apply to timezone offsets.
+This implies that timezone offsets must have an absolute value less than 24 hours (i.e., between `-2359` and `+2359`).
+
 The `datetime` type does not provide a way for a policy author to create a `datetime` from a numeric timestamp. One of the readable formats listed above must be used, instead.
 
 Values of type `datetime` have the following methods:
@@ -215,7 +225,10 @@ For example: `context.now.offset(duration("-3d"))` expresses "three days before 
 ### Errors
 
 All the extension functions proposed in this RFC will throw a type error at authorization time if called with the wrong type of arguments.
-Additionally, the `datetime` and `duration` constructors will return an error if the input string does not match the expected format, or if the internal representation of the value (a 64-bit signed int) would overflow. `.offset(duration)` will return an error if the resulting datetime would overflow.
+Additionally, the `datetime` and `duration` constructors will return an error if the input string does not match the expected format, or if the internal representation of the value (a 64-bit signed int) would overflow.
+The `datetime` constructor will also return an error if the input string refers to a non-existent calendar date (e.g., `"2025-02-31"`).
+Unlike some datetime libraries that perform [overflow normalization](#overflow-handling), this extension explicitly rejects such invalid dates.
+`.offset(duration)` will return an error if the resulting datetime would overflow.
 
 As noted above, strict validation will require passing literals to the `duration` and `datetime` constructors, and it will raise an error if those strings are malformed. Otherwise, validation is straightforward.
 
@@ -469,3 +482,18 @@ The current proposal supports milliseconds. The ISO 8601 format does not specify
 During discussion, we decided that sub-second accuracy was potentially useful, but we did not have a use case in mind for sub-millisecond accuracy.
 So in the end we landed on milliseconds.
 Note that this is the backwards compatible option (at least with respect to allowable date/time strings) because we can add precision later, but not remove it without a breaking change.
+
+### Additional restrictions on datetime strings
+
+The current proposal sets additional restrictions on most fields of datetime string formats.
+These restrictions are common in datetime frameworks for popular programming languages like Python and TypeScript
+(more details [here](https://github.com/cedar-policy/cedar-spec/pull/519#issuecomment-2613547897)),
+and they help us avoid discrepancies between different Cedar implementations.
+
+### Overflow handling
+
+The current proposal rejects non-existent dates like `2025-02-31`.
+However, some programming languages and datetime libraries accept such dates and handle excess days through overflow normalization, resulting in a different valid calendar date.
+For instance, `2025-02-31` is interpreted as being 3 days later than `2025-02-28`, thus normalizing to `2025-03-03`.
+The standard `Date` type in TypeScript reflects this behavior, as shown in [this comparison](https://github.com/cedar-policy/cedar-spec/pull/519#issuecomment-2613547897).
+We argue that this normalization behavior, while convenient for general programming, may be too implicit and potentially surprising for an authorization system.
