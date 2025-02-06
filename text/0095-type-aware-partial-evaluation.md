@@ -343,7 +343,7 @@ entity UnknownIP {
 };
 ```
 
-Next, we change the type of `context` for the `delete` action to use the new entity type for `srcIP`:
+Next, we change the type of `context` for the `Delete` action to use the new entity type for `srcIP`:
 
 ```
 action Delete appliesTo {
@@ -407,7 +407,7 @@ TPE returns the following residual that shows the value of Alice's source IP is 
 ```
 permit (principal, action, resource)
 when {
-  UnknownIP:"AliceIP".isInRange(ip("1.1.1.0/24"))
+  UnknownIP:"AliceIP".value.isInRange(ip("1.1.1.0/24"))
 };
 ```
 
