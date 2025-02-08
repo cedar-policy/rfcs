@@ -329,7 +329,7 @@ when {
 };
 ```
 
-The residual says that Alice can perform the delete action if her source IP address is in the given range. In contigent authorization, an application would examine this residual, take further steps to determine Alice's IP address, and re-authorize against the residual to reach a concrete authorization decision.
+The residual says that Alice can perform the delete action if her source IP address is in the given range. In contingent authorization, an application would examine this residual, take further steps to determine Alice's IP address, and re-authorize against the residual to reach a concrete authorization decision.
 
 #### Contingent authorization with entity-based unknown values
 
