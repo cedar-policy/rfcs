@@ -448,9 +448,22 @@ There are four main drawbacks to this RFC:
 
 ## Alternatives
 
-An alternative approach would be to build on CPE's existing interface for specifying unknowns, while adding type awareness. Like TPE, this approach would require policies and unknowns to be typed, so users would still lose the ability to partially evaluate untyped policies.
+We considered two alternatives to TPE, each adding different levels of type awareness to CPE:
+1. A lightweight approach that adds partial type awareness to CPE's algorithm.
+2. A comprehensive approach that adds full type awareness to both CPE's algorithm and interface.
 
-The key advantage of this approach would be a smoother transition for current CPE users, especially those with advanced use cases not directly supported by TPE. The interface would also be more flexible, allowing unknowns to be specified anywhere in the request and entity data.
+### Adding partial type-awareness to CPE
 
-But this flexibility comes at the cost of significantly more complex implementation, models, and proofs. This added complexity would support advanced functionality that most users may not need. If we do find that a CPE-like interface is needed in the future, we can implement it as a [transformation layer](#future-improvements) on top of TPE.
+A lightweight approach would modify CPE's algorithm to take advantage of operator-specific type information. For example, CPE could safely drop `true` from the expression `true && resource.owner == principal` by tracking that the equality operator always produces boolean results (or errors).
+
+This approach would be easier to implement than TPE while enabling more optimizations than CPE. But like CPE, it could still return ill-typed residuals, and it would miss optimizations that require full type awareness. For example, `true && context.isPrivate` cannot be simplified without a schema because `context.isPrivate` might not be boolean.
+
+
+### Adding full type-awareness to CPE
+
+A more comprehensive approach is to build on CPE's existing interface for specifying unknowns, while adding full type awareness to the underlying algorithm. Like TPE, this approach would require policies and unknowns to be typed, so users would lose the ability to partially evaluate untyped policies.
+
+The key advantage would be a smoother transition for current CPE users, especially those with advanced use cases not directly supported by TPE. The CPE-style interface would remain more flexible, allowing unknowns to be specified anywhere in the request and entity data.
+
+However, this approach would require significantly more complex implementation, models, and proofs to support advanced functionality that most users may not need. If we do find that a CPE-style interface is needed in the future, we can implement it as a [transformation layer](#future-improvements) on top of TPE.
 
