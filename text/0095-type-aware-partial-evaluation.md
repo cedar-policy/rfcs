@@ -13,7 +13,7 @@
 
 ## Summary
 
-This RFC proposes a simple _type-aware partial evaluator_ (TPE) for Cedar. Cedar’s current partial evaluator (CPE) is untyped and as a result, it can produce an ill-typed residual when applied to a well-typed policy and partial input. The lack of type awareness also prevents CPE from safely performing basic optimizations such as reducing `true && context.isPrivate` to `context.isPrivate`. TPE addresses these limitations with a simplified design that handles key use cases for partial evaluation such as permission queries.
+This RFC proposes a simple _type-aware partial evaluator_ (TPE) for Cedar. Cedar’s current partial evaluator (CPE) is untyped and as a result, it can produce an ill-typed residual when applied to a well-typed policy and partial input. The lack of type awareness also prevents CPE from safely performing basic optimizations such as reducing `true && context.isPrivate` to `context.isPrivate`. TPE addresses these limitations with a simplified design that handles key use cases for partial evaluation such as [permission queries](#permissions-queries-with-tpe).
 
 ## Basic example
 
