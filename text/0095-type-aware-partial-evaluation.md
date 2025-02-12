@@ -407,7 +407,7 @@ TPE returns the following residual that shows the value of Alice's source IP is 
 ```
 permit (principal, action, resource)
 when {
-  UnknownIP:"AliceIP".value.isInRange(ip("1.1.1.0/24"))
+  UnknownIP::"AliceIP".value.isInRange(ip("1.1.1.0/24"))
 };
 ```
 
