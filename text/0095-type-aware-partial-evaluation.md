@@ -261,6 +261,8 @@ For example, this partial entities list for our [basic schema](#basic-example) s
 
 There are two key differences between the TPE and CPE interfaces for partial entities. First, TPE allows mixing known and unknown parts of entity data; for example, an entity can have known attributes but unknown ancestors. This is important for applications that implement role or relation-based access control using Cedar's hierarchy, where entities typically have a few simple attributes but potentially large ancestor sets. In such cases, TPE can attempt to authorize requests using just the attributes, avoiding the cost of loading the full ancestor set. Second, entity attributes must be either unknown or fully specified. TPE doesn't support partially known attributes, following the same design principle as with `context` data.
 
+TPE treats absent entities as present entities with unknown contents. In other words, omitting an entity from the partial entity store is equivalent to including it but leaving all of its parts as unknown.  This is convenient for partially evaluating conditions such as `User::"Alice" in principal.friends` without having to determine which literals are referenced in the policies and then map them to unknown contents.
+
 ### Permissions queries with TPE
 
 TPE provides native support for basic permission queries:
