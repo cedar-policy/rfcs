@@ -2,14 +2,13 @@
 
 ## Related issues and PRs
 
-- Reference Issues:
 - Implementation PR(s): [cedar#347](https://github.com/cedar-policy/cedar/pull/347) (cancelled), [cedar#557](https://github.com/cedar-policy/cedar/pull/557) (merged)
 
 ## Timeline
 
 - Started: 2023-07-24
 - Accepted: 2023-10-02
-- Landed: 2024-02-19 on `main` ([#557](https://github.com/cedar-policy/cedar/pull/557))
+- Landed: 2024-02-19 on `main`
 - Released: 2024-03-08 in `cedar-policy` v3.1.0
 
 Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).

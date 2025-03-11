@@ -2,15 +2,15 @@
 
 ## Related issues and PRs
 
-- Reference Issues: Successor to [RFC 64]
-- Implementation PR(s):
+- Reference Issues: Successor to [RFC 64](https://github.com/cedar-policy/rfcs/pull/64)
+- Implementation PR(s): [#1147](https://github.com/cedar-policy/cedar/pull/1147)
 
 ## Timeline
 
 - Started: 2024-06-26
 - Accepted: 2024-08-01
-- Landed: 2024-08-26 on `main` ([#1147](https://github.com/cedar-policy/cedar/pull/1147))
-- Released: TBD
+- Landed: 2024-08-26 on `main`
+- Released: 2024-09-16 in `cedar-policy` v4.0.0
 
 Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
 

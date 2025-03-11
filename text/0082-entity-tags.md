@@ -2,16 +2,17 @@
 
 ## Related issues and PRs
 
-* Reference Issues: [#305](https://github.com/cedar-policy/cedar/issues/305)
-* Supersedes [RFC 68](https://github.com/cedar-policy/rfcs/pull/68)
-* Implementation PR(s): (leave this empty)
+- Reference Issues: [cedar#305](https://github.com/cedar-policy/cedar/issues/305)
+- Related RFC(s): Supersedes [RFC 68](https://github.com/cedar-policy/rfcs/pull/68)
+- Implementation PR(s): [cedar#1207](https://github.com/cedar-policy/cedar/pull/1207)
 
 ## Timeline
 
-* Started: 2024-09-11
-* Accepted: TBD
-* Landed: TBD
-* Released: TBD
+- Started: 2024-09-11
+- Accepted: 2024-09-19
+- Landed: 2024-09-18 on `main`
+- Released: 2024-09-30 in `cedar-policy` v4.1.0 as an experimental feature
+- Stabilized: 2024-10-07 in `cedar-policy` v4.2.0
 
 Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
 

@@ -2,12 +2,14 @@
 
 ## Related issues and PRs
 
-- Reference Issues:
-- Implementation PR(s): https://github.com/cedar-policy/cedar/tree/feature/shaobo/rfc48
+- Implementation PR(s): [cedar#1316](https://github.com/cedar-policy/cedar/issues/1316)
 
 ## Timeline
 
 - Started: 2024-02-05
+- Accepted: 2024-11-07
+- Landed: 2024-12-16 on `main`
+- Released: 2025-01-21 in `cedar-policy` v4.3.0
 
 Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
 

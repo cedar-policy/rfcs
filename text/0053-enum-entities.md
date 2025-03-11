@@ -1,10 +1,14 @@
 # Enumerated Entity Types
 
+## Related issues and PRs
+
+- Implementation PR(s): [cedar#1377](https://github.com/cedar-policy/cedar/pull/1377)
+
 ## Timeline
 
 - Started: 2024-02-20
 - Accepted: 2024-03-20
-- Landed: TBD
+- Landed: 2025-02-05 on `main`
 - Released: TBD
 
 Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).
