@@ -2,8 +2,7 @@
 
 ## Related issues and PRs
 
-- Reference Issues: N/A
-- Implementation PR(s): <https://github.com/cedar-policy/cedar-spec/pull/138>
+- Implementation PR(s): [cedar-spec#138](https://github.com/cedar-policy/cedar-spec/pull/138)
 
 ## Timeline
 

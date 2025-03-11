@@ -2,14 +2,14 @@
 
 ## Related issues and PRs
 
-- Reference Issues: related to [RFC 50]
-- Implementation PR(s): [cedar#702]
+- Related RFC(s): [RFC 50](https://github.com/cedar-policy/rfcs/pull/50)
+- Implementation PR(s): [cedar#702](https://github.com/cedar-policy/cedar/pull/702)
 
 ## Timeline
 
 - Started: 2024-03-07
 - Accepted: 2024-03-15
-- Landed: 2024-03-20 in `cedar-policy`
+- Landed: 2024-03-20 on `main`
 - Released: 2024-03-29 in `cedar-policy` v3.1.2
 
 Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).

@@ -2,11 +2,11 @@
 
 ## Related issues and PRs
 
-- This RFC is mostly directly taken from [RFC 28](https://github.com/cedar-policy/rfcs/pull/28);
+- Related RFC(s): This RFC is mostly directly taken from [RFC 28](https://github.com/cedar-policy/rfcs/pull/28);
   it splits out the changes from RFC 28 that relate to precomputed entity
   attributes, without the larger changes in RFC 28 regarding `EntityDataSource`.
-- This RFC is also the successor to [RFC 23](https://github.com/cedar-policy/rfcs/pull/23).
-- Implementation PR: [cedar#430](https://github.com/cedar-policy/cedar/pull/430)
+  This RFC is also the successor to [RFC 23](https://github.com/cedar-policy/rfcs/pull/23).
+- Implementation PR(s): [cedar#430](https://github.com/cedar-policy/cedar/pull/430)
 
 ## Timeline
 

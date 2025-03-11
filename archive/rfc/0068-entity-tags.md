@@ -9,7 +9,7 @@
 ## Timeline
 
 - Started: 2024-05-29
-- Accepted: 2024-07-26
+- Accepted: 2024-07-26 (but later rejected, see below)
 - Rejected: 2024-09-11; see RFC 82
 
 Note: These statuses are based on [the first version of the RFC process](./../archive/process-v1/README.md).

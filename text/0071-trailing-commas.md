@@ -2,7 +2,7 @@
 
 ## Related issues and PRs
 
-- Reference Issues: https://github.com/cedar-policy/cedar/issues/1024
+- Reference Issues: [cedar#1024](https://github.com/cedar-policy/cedar/issues/1024)
 - Implementation PR(s):
 
 ## Timeline
