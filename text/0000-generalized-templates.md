@@ -29,7 +29,7 @@ Generalized templates should only be used when provided a schema and strict vali
 
 ### Example 1 
 
-By allowing ```?principal``` and ```?resource``` in the condition of the policy if it also appears in the scope, it allows us to express templates where it is bound to a general variable. In this example since we are able to allow ```?resource``` in the condition of the policy we are able to express the constraint that we can only view resource's who's owner is the same as the owner of the resource that we instantiate for the typed hole. 
+By allowing ```?principal``` and ```?resource``` in the condition of the policy if it also appears in the scope, it allows us to express templates where we want to access attributes of a slot. In this example since we are able to allow ```?resource``` in the condition of the policy we are able to express the constraint that we can only view resource's who's owner is the same as the owner of the resource that we instantiate for the typed hole. 
 
 #### Schema 
 ```
@@ -76,9 +76,7 @@ By allowing generalized typed slots we are able to express the following Cedar t
 #### Schema 
 ```
 namespace FS {
-    entity Disk = {
-        storage: Long, 
-    };
+    entity Disk;
     entity Folder in Disk;
     entity Document in Folder;
     entity Person;
@@ -146,7 +144,7 @@ permit(
 
 Suppose there are certain professors with dual appointments under two different departments. You want to give students of their group access to both the resources in the first department and the resources in their second department. 
 
-Note: Although we can create two seperate templates and instantiate them individually, by using generalized templates we are able to make sure that these two templates stay in sync. Error states where only one part of the template is applied but not the other would not occur. Generalized templates subsumes the functionality described in [#7](https://github.com/cedar-policy/rfcs/pull/7).
+Note: Although we can create two seperate templates and instantiate them individually, by using generalized templates we are able to make sure that these two templates stay in sync. Error states where only one part of the template is applied but not the other would not occur. Generalized templates allows us to subsume the functionality described in [#7](https://github.com/cedar-policy/rfcs/pull/7) and with typed slots we can for the most part express the motivating example for template-groups.
 
 #### Schema 
 ```
