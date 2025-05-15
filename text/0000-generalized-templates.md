@@ -251,7 +251,7 @@ Slots can only appear on the left hand side of a ```has``` and must be a type of
 Downsides: 
 1. Type annotation is not much overhead. 
 2. It is possible that the inferred possible types is different from what the user expects. 
-3. There would need to be some restrictions on where slots can appear that can be unintuitive for users. (```?slot1 == ?slot2```, in this case we can only type either slots as AnyType) 
+3. There would need to be some restrictions on where slots can appear which can be unintuitive for users. (```?slot1 == ?slot2```, would result in us only being able to infer the type of the slot as AnyType) 
 
 ## Unresolved questions
 
