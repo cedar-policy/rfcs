@@ -246,7 +246,7 @@ structure PartialEntityData where
   tags : Option (Map String Value)   -- Tags are fully known or fully unknown.
 ```
 
-In JSON, we describe partial entities as a list of JSON objects whose known parts are specified using the [Cedar JSON format for entities](https://docs.cedarpolicy.com/auth/entities-syntax.html#entities).
+In JSON, we describe partial entities as a list of JSON objects whose known parts are specified using the [Cedar JSON format for entities](https://docs.cedarpolicy.com/auth/entities-syntax.html#entities). Note that the ancestor hierarchy of an entity must be either unknown or fully specified.  So, the "parents" field of an entity cannot include an entity whose "parents" are unknown.
 
 For example, this partial entities list for our [basic schema](#basic-example) specifies the ancestors for the entity `Document::"Manual"` and leaves the attributes unknown:
 
