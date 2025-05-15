@@ -159,7 +159,7 @@ namespace University {
 action "View" appliesTo {
     principal: University::Person,
     resource: University::InternalDoc,
-    context: {"date": dateTime }
+    context: { "date": dateTime }
 }
 ```
 
@@ -255,6 +255,9 @@ Downsides:
 
 ## Unresolved questions
 
-1. What should the syntax be for supplying aribtrary bound variables be. There was some discussion of it (here)[https://github.com/cedar-policy/rfcs/pull/3#issuecomment-1611845728]. Initial thoughts are to ensure that the user supplies a map 
+1. What should the syntax be for supplying aribtrary bound variables be. There was some discussion of it [here](https://github.com/cedar-policy/rfcs/pull/3#issuecomment-1611845728). Initial thoughts are to ensure that the user supplies a map so there is no confusion with regards to ordering. 
 
-2. Would we want to generalize the action clause. This can support even more general templates. However, it becomes less clear what the connection of each template is with each other if we support a ```?action``` slot. This would also likely result in difficulty with analysis of templates since now ```?principal``` and ```?resource``` would have no constraints on them until link time. This would also involve some changes in the validator code since we would not be able to 
+2. Would we want to generalize the action clause. This can support even more general templates. However, it becomes less clear what the connection of each template is with each other if we support a ```?action``` slot. This would also likely result in difficulty with analysis of templates since now ```?principal``` and ```?resource``` would have no constraints on them. 
+
+3. Would we want to support generalized templates for policies with no schema? Maybe we can do a type of link time type check rather than at creation time since we are not performing validation with a schema or analysis. 
+
