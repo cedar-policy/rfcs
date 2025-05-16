@@ -181,7 +181,7 @@ This is a follow up on the discussion on [#3](https://github.com/cedar-policy/rf
 
 The main motivation to support generalized templates is to allow users to take advantages of templates: (1) prevention against injection attacks (2) ability to change a group of policies overtime. At the same time however, we still want to balance validation, and analysis on templates. 
 
-In it's previous form, generalized templates were proposed to allow ```?principal``` and ```?resource``` in the condition if it was in the scope and disallowing arbitrary slots. However, this addition would not be able to capture the use cases of examples #2 and examples #3.  
+In it's previous form, generalized templates were proposed to allow ```?principal``` and ```?resource``` in the condition if it was in the scope and disallowing arbitrary slots. However, this addition would not be able to capture the use cases of examples #2, #3, and #4. 
 
 In this proposal, by having the Cedar user explicitly supply types for slots that are not ```?principal``` and ```?resource``` we are able to express all of the examples listed above while still supporting analysis on templates and allowing for link time validation to be more performant (we can just check that the supplied values are inhabitants of the types of the slots rather than running the type checker on the instantiated template when the slots are filled in). Types are also a form of documentation that can help with reading templates in the future. 
 
@@ -269,3 +269,5 @@ Downsides:
 1. What should the syntax be for supplying aribtrary bound variables be. There was some discussion of it [here](https://github.com/cedar-policy/rfcs/pull/3#issuecomment-1611845728). Initial thoughts are to ensure that the user supplies a map so there is no confusion with regards to ordering. 
 
 2. Would we want to generalize the action clause. This can support even more general templates. However, it becomes less clear what the connection of each template is with each other if we support a ```?action``` slot. This would also likely result in difficulty with analysis of templates since now ```?principal``` and ```?resource``` would have no constraints on them. 
+
+3. Will it be confusing for user's that 
