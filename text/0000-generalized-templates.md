@@ -187,7 +187,7 @@ In this proposal, by having the Cedar user explicitly supply types for slots tha
 
 ## Detailed design
 
-The implementation of (1) Allowing ```?principal``` and ```?resource``` in the condition of the policy only if they also appear in the scope as well will likely will not require substantial changes to the typechecker code. 
+The implementation of (1) Allowing ```?principal``` and ```?resource``` in the condition of the policy only if they also appear in the scope as well will not require changes to the typechecker code. 
 
 For example, consider this schema and template:
 
@@ -222,7 +222,7 @@ With this, we check to see if for all request environments any combination of th
 
 With this extension, we would now need to check if for all combinations of valid types for ```principal```, ```resource```, ```?principal```, and ```?resource``` our template including the condition evaluates to a boolean. Cedar's validator already handles this case and the only change that would need to made is to check whether or not ```?principal``` or ```?resource``` appears in the scope of the template. 
 
-The implementation of (2) Allowing for an arbitrary number of user defined slots to appear in the condition of the policy contingent on the type being explicitly annotated would involve adding an additional map to store slot variables that are not in the scope with their corresponding types. This will likely not involve any changes to the typechecker and typechecking can proceed as described above. 
+The implementation of (2) Allowing for an arbitrary number of user defined slots to appear in the condition of the policy contingent on the type being explicitly annotated would involve adding an additional map to store slot variables with their corresponding types. This will likely not involve any changes to the typechecker and typechecking can proceed as described above. 
 
 For users that don't provide a schema, generalized templates will support typed slots with link time checking of types. Here, it is up to the user to provide correct types. Note that without schemas there are no guarantees made about the runtime behavior of your program. Policies such as the following, where ```?bound1``` is provided a substitution of ```true``` will still be able to be expressed and an error will be thrown at runtime. The only check that is provided when you do not use a schema with generalized templates is that the value you substitute in for ```?bound1``` is indeed of the type that you had specified, in this case ```Bool```.
 
@@ -270,4 +270,4 @@ Downsides:
 
 2. Would we want to generalize the action clause. This can support even more general templates. However, it becomes less clear what the connection of each template is with each other if we support a ```?action``` slot. This would also likely result in difficulty with analysis of templates since now ```?principal``` and ```?resource``` would have no constraints on them. 
 
-3. Will it be confusing for user's that 
+3. Will it be confusing for users' of Cedar that even though we perform a type check when we don't use a schema that there can still be runtime errors? 
