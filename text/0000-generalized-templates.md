@@ -23,7 +23,7 @@ Cedar templates are quite restrictive. There are only two slots provided (```?pr
 
 Both of these additions, do not seem to require substiantial changes to the existing type checking code. However, that may change upon diving deeper into the implementation. 
 
-Generalized templates should only be used when provided a schema and strict validation mode. 
+For user's without schemas generalized templates will be supported. Correct type annotations will need to be supplied by a user of Cedar and a link time check will be performed to make sure that instantiations of the template are values of that type. However, note that without a schema it is still possible for a program that passes the link time type check to exhibit runtime errors. 
 
 ## Basic example
 
@@ -46,12 +46,12 @@ namespace FS {
     entity Person;
 }
 
-action "Navigate" appliesTo {
+action Navigate appliesTo {
     principal: FS::Person,
     resource: [FS::Disk, FS::Folder, FS::Document],
 };
 
-action "Write" appliesTo {
+action Write appliesTo {
     principal: FS::Person,
     resource: [FS::Disk, FS::Folder, FS::Document],
 };
@@ -59,8 +59,7 @@ action "Write" appliesTo {
 
 #### Cedar Template 
 ```
-@id("Admin")
-template(?folder: FS::Folder)
+template(?folder: FS::Folder) =>
 permit(
   principal == ?principal,
   action,
@@ -82,12 +81,12 @@ namespace FS {
     entity Person;
 }
 
-action "Navigate" appliesTo {
+action Navigate appliesTo {
     principal: FS::Person,
     resource: [FS::Disk, FS::Folder, FS::Document],
 };
 
-action "Write" appliesTo {
+action Write appliesTo {
     principal: FS::Person,
     resource: [FS::Disk, FS::Folder, FS::Document],
 };
@@ -95,8 +94,7 @@ action "Write" appliesTo {
 
 #### Cedar Template 
 ```
-@id("Admin")
-template(?folder: FS::Folder)
+template(?folder: FS::Folder) =>
 permit(
   principal == ?principal,
   action,
@@ -106,7 +104,7 @@ when {
     resource in ?folder
         
     // allow access up the tree for navigation
-    || (action == Action::"Navigate" && ?folder in resource)
+    || (action == Action::Navigate && ?folder in resource)
 };
 ```
 
@@ -121,10 +119,10 @@ namespace Company {
     entity InternalServices;
 }
     
-action "Access" appliesTo {
+action Access appliesTo {
     principal: Company::Employee,
     resource: Company::InternalServices,
-    context: { "date": datetime }
+    context: { date: datetime }
 }
 ```
 
@@ -133,7 +131,7 @@ action "Access" appliesTo {
 template(?date: datetime) => 
 permit(
   principal == ?principal, 
-  action == Action::"Access",
+  action == Action::Access,
   resource is Company::InternalServices
 ) when {
     context.date > ?date 
@@ -156,10 +154,10 @@ namespace University {
     entity InternalDoc in Department;
 }
     
-action "View" appliesTo {
+action View appliesTo {
     principal: University::Person,
     resource: University::InternalDoc,
-    context: { "date": dateTime }
+    context: { date: dateTime }
 }
 ```
 
@@ -168,7 +166,7 @@ action "View" appliesTo {
 template(?department1: University::Department, ?department2: University::Department) => 
 permit(
   principal == ?principal
-  action == Action::"View",
+  action == Action::View,
   resource 
 ) when {
     (resource in ?department1 || 
@@ -203,12 +201,12 @@ namespace FS {
     entity Person;
 }
 
-action "Navigate" appliesTo {
+action Navigate appliesTo {
     principal: FS::Person,
     resource: [FS::Disk, FS::Folder, FS::Document],
 };
 
-permit (principal, action == Action::"Navigate", resource in ?resource) 
+permit (principal, action == Action::Navigate, resource in ?resource) 
 when { 
   ?resource has storage && ?resource.storage == 5 
 };
@@ -225,6 +223,19 @@ With this, we check to see if for all request environments any combination of th
 With this extension, we would now need to check if for all combinations of valid types for ```principal```, ```resource```, ```?principal```, and ```?resource``` our template including the condition evaluates to a boolean. Cedar's validator already handles this case and the only change that would need to made is to check whether or not ```?principal``` or ```?resource``` appears in the scope of the template. 
 
 The implementation of (2) Allowing for an arbitrary number of user defined slots to appear in the condition of the policy contingent on the type being explicitly annotated would involve adding an additional map to store slot variables that are not in the scope with their corresponding types. This will likely not involve any changes to the typechecker and typechecking can proceed as described above. 
+
+For users that don't provide a schema, generalized templates will support typed slots with link time checking of types. Here, it is up to the user to provide correct types. Note that without schemas there are no guarantees made about the runtime behavior of your program. Policies such as the following, where ```?bound1``` is provided a substitution of ```true``` will still be able to be expressed and an error will be thrown at runtime. The only check that is provided when you do not use a schema with generalized templates is that the value you substitute in for ```?bound1``` is indeed of the type that you had specified, in this case ```Bool```.
+
+``` 
+template(?bound1: Bool) => 
+permit (
+    principal, 
+    action, 
+    resource,
+) when {
+    1 + ?bound1
+};
+```
 
 The proposed syntax looks as follows ```template(?bound1: type1, ?bound2: type2) =>``` and types specified must be valid types and variable names for slots cannot conflict. ```?principal``` and ```?resource``` are reserved slot names and should not be used within ```template()```.  
 
@@ -258,6 +269,3 @@ Downsides:
 1. What should the syntax be for supplying aribtrary bound variables be. There was some discussion of it [here](https://github.com/cedar-policy/rfcs/pull/3#issuecomment-1611845728). Initial thoughts are to ensure that the user supplies a map so there is no confusion with regards to ordering. 
 
 2. Would we want to generalize the action clause. This can support even more general templates. However, it becomes less clear what the connection of each template is with each other if we support a ```?action``` slot. This would also likely result in difficulty with analysis of templates since now ```?principal``` and ```?resource``` would have no constraints on them. 
-
-3. Would we want to support generalized templates for policies with no schema? Maybe we can do a type of link time type check rather than at creation time since we are not performing validation with a schema or analysis. 
-
