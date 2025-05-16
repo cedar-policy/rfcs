@@ -131,7 +131,7 @@ action Access appliesTo {
 template(?date: datetime) => 
 permit(
   principal == ?principal, 
-  action == Action::Access,
+  action == Action::"Access",
   resource is Company::InternalServices
 ) when {
     context.date > ?date 
@@ -166,7 +166,7 @@ action View appliesTo {
 template(?department1: University::Department, ?department2: University::Department) => 
 permit(
   principal == ?principal
-  action == Action::View,
+  action == Action::"View",
   resource 
 ) when {
     (resource in ?department1 || 
