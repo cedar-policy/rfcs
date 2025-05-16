@@ -16,14 +16,14 @@
 
 ## Summary
 
-Cedar templates are quite restrictive. There are only two slots provided (```?principal``` and ```?resource```) and they are limited to appearing in the scope of the policy. This results in users of Cedar needing to come up with their own [solution](https://github.com/cedar-policy/rfcs/pull/3#issuecomment-1632645305) to handling templates that can not be expressed in Cedar currently. In this RFC, we propose to generalize Cedar templates to support: 
+Cedar templates are quite restrictive. There are only two slots provided (```?principal``` and ```?resource```) and they are limited to appearing in the scope of the policy. This results in users' of Cedar needing to come up with their own [solution](https://github.com/cedar-policy/rfcs/pull/3#issuecomment-1632645305) to handling templates that can not be expressed in Cedar currently. In this RFC, we propose to generalize Cedar templates to support: 
 
 1. Allowing ```?principal``` and ```?resource``` in the condition of the policy only if they also appear in the scope as well.  
 2. Allowing for an arbitrary number of user defined slots to appear in the ```when/unless``` clause of the template contingent on the type being explicitly annotated. This would also include slots that are not entity types. 
 
 Both of these additions, do not seem to require substiantial changes to the existing type checking code. However, that may change upon diving deeper into the implementation. 
 
-For user's without schemas generalized templates will be supported. Correct type annotations will need to be supplied by a user of Cedar and a link time check will be performed to make sure that instantiations of the template are values of that type. However, note that without a schema it is still possible for a program that passes the link time type check to exhibit runtime errors. 
+For policies without schemas generalized templates will be supported. Correct type annotations will need to be supplied by a user of Cedar and a link time check will be performed to make sure that instantiations of the template are values of that type. However, note that without a schema it is still possible for a program that passes the link time type check to exhibit runtime errors. 
 
 ## Basic example
 
@@ -237,7 +237,9 @@ permit (
 };
 ```
 
-The proposed syntax looks as follows ```template(?bound1: type1, ?bound2: type2) =>``` and types specified must be valid types and variable names for slots cannot conflict. ```?principal``` and ```?resource``` are reserved slot names and should not be used within ```template()```.  
+The proposed syntax looks as follows ```template(?bound1: type1, ?bound2: type2) =>``` and types specified must be valid types and variable names for slots cannot conflict. 
+
+```?principal``` and ```?resource``` can optionally have their types annotated in ```template()```. A similiar effect can be done using the ```is``` operator in the condition. However, this would allow templates to be instantiated with slots always evaluate to false. By having an explicit type annotation, we prevent these instantiations from being linked in the first place. 
 
 This proposal will have to touch Cedar's AST, typechecker, parser and introduce type checking when linking with templates. 
 
