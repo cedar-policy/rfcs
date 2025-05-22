@@ -236,11 +236,21 @@ permit (
 };
 ```
 
-The proposed syntax looks as follows ```template(?bound1: type1, ?bound2: type2) =>``` and types specified must be valid types and variable names for slots cannot conflict. 
-
 ```?principal``` and ```?resource``` can optionally have their types annotated in ```template()```. A similiar effect can be done using the ```is``` operator in the condition. However, this would allow templates to be instantiated with slots always evaluate to false. By having an explicit type annotation, we prevent these instantiations from being linked in the first place. 
 
-This proposal will have to touch Cedar's AST, typechecker, parser and introduce type checking when linking with templates. 
+The proposed syntax looks as follows ```template(?bound1: type1, ?bound2: type2) =>``` and types specified must be valid schema types. Schema types are chosen over AST types because they allow us to more precisely specify the type for sets and records. Each new typed slot requires a distinct variable name. However, within the when/unless clause the same typed slot can be used multiple times. The grammar of template annotations is as follows. ```Type``` is taken directly from the Cedar documentation for schema types.
+
+```
+Template := 'template' '(' ( TypeAnnotation { ',' TypeAnnotation } ) ')' '=>'
+
+TypeAnnotation := ‘?’ IDENT ‘:’ Type
+
+Type := Path | SetType | RecType
+```
+
+Typed slots can only be instantiated with value types. In the implementation this corresponds to the ```RestrictedExpression``` type. 
+
+This proposal will have to touch Cedar's AST, typechecker, parser and introduce type checking when linking with templates. In addition to maintain backwards compatability with the current API, interacting with generalized templates will have to be treated under a seperate set of API functions. 
 
 ## Drawbacks
 
