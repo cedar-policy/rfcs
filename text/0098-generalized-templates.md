@@ -35,7 +35,7 @@ By allowing ```?principal``` and ```?resource``` in the condition of the policy 
 ```
 namespace FS {
     entity Disk = {
-        storage: Long, 
+        owner: String, 
     };
     entity Folder in Disk = {
         owner: String,
@@ -59,13 +59,12 @@ action Write appliesTo {
 
 #### Cedar Template 
 ```
-template(?folder: FS::Folder) =>
 permit(
   principal == ?principal,
   action,
   resource in ?resource)
 when {
-    ?resource.created_by == resource.created_by 
+    ?resource.owner == resource.owner 
 };
 ```
 
