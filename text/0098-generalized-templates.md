@@ -252,6 +252,19 @@ Typed slots can only be instantiated with value types. In the implementation thi
 
 This proposal will have to touch Cedar's AST, typechecker, parser and introduce type checking when linking with templates. In addition to maintain backwards compatability with the current API, interacting with generalized templates will have to be treated under a seperate set of API functions. 
 
+The changes to the JSON policy format would include another attribute ```typed_slots``` and would look as follows: 
+```
+"typed_slots": [
+    { "type": "University::Department", "id": "?department1" }, 
+    { "type": "University::Department", "id": "?department2" }, 
+    ]
+```
+
+In the JSON policy format, typed slots can be referred to with the same syntax as what is done for ```?principal``` and ```?resource```, except with the identifier being replaced. It would look as follows: 
+```
+"slot": "?department1"
+``` 
+
 ## Drawbacks
 
 Type annotations for slots can be a user burden.    
@@ -271,9 +284,10 @@ Any slot that is used with ```if <boolean> then <T> else <U>``` must have boolea
 Slots can only appear on the left hand side of a ```has``` and must be a type of an entity that has this attribute. 
 
 Downsides: 
-1. Type annotation is not much overhead. 
-2. It is possible that the inferred possible types is different from what the user expects. 
-3. There would need to be some restrictions on where slots can appear which can be unintuitive for users. (```?slot1 == ?slot2```, would result in us only being able to infer the type of the slot as AnyType) 
+1. It could result in analysis being overly general, since it would now have to consider all possible combinations of the types of the slots that will allow for link time validation to succeed.
+2. Type annotation is not much overhead.
+3. It is possible that the inferred possible types is different from what the user expects.
+4. There would need to be some restrictions on where slots can appear which can be unintuitive for users. (```?slot1 == ?slot2```, would result in us only being able to infer the type of the slot as AnyType) 
 
 ## Unresolved questions
 
@@ -281,4 +295,6 @@ Downsides:
 
 2. Would we want to generalize the action clause. This can support even more general templates. However, it becomes less clear what the connection of each template is with each other if we support a ```?action``` slot. This would also likely result in difficulty with analysis of templates since now ```?principal``` and ```?resource``` would have no constraints on them. 
 
-3. Will it be confusing for users' of Cedar that even though we perform a type check when we don't use a schema that there can still be runtime errors? 
+3. Will it be confusing for users' of Cedar that even though we perform a type check when we don't use a schema that there can still be runtime errors?
+
+4. Currently, there will be no reserved keywords for typed slots. Should there be any? 
