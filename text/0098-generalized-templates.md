@@ -205,7 +205,7 @@ action Navigate appliesTo {
     resource: [FS::Disk, FS::Folder, FS::Document],
 };
 
-permit (principal, action == Action::Navigate, resource in ?resource) 
+permit (principal == ?principal, action == Action::"Navigate", resource in ?resource) 
 when { 
   ?resource has storage && ?resource.storage == 5 
 };
