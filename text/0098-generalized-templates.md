@@ -16,7 +16,7 @@
 
 ## Summary
 
-Cedar templates are quite restrictive. There are only two slots provided (```?principal``` and ```?resource```) and they are limited to appearing in the scope of the policy. This results in users of Cedar needing to come up with their own [solution](https://github.com/cedar-policy/rfcs/pull/3#issuecomment-1632645305) to handling templates that can not be expressed in Cedar currently. In this RFC, we propose to generalize Cedar templates by allowing for an arbitrary number of user defined slots. User defined slots have different rules depending on whether or not they appear in the scope. If the user defined slot appears in the scope then it's type annotations are optional. Note that user defined slots that appear in the scope can only appear on the right-hand side of the ```==``` or ```in``` operators. This includes in operators when appearing together with an is operator, but excludes solitary is operators. User defined slots that appear in the scope can also be used in the condition as well. If the user defined slot appears in the condition of the template, then it must have it's type annotated and the type can be of any valid Cedar Schema Type including common types. 
+Cedar templates are quite restrictive. There are only two slots provided (```?principal``` and ```?resource```) and they are limited to appearing in the scope of the policy. This results in users of Cedar needing to come up with their own [solution](https://github.com/cedar-policy/rfcs/pull/3#issuecomment-1632645305) to handling templates that can not be expressed in Cedar currently. In this RFC, we propose to generalize Cedar templates by allowing for an arbitrary number of user defined slots. User defined slots have different rules depending on whether or not they appear in the scope. If the user defined slot appears in the scope then it's type annotations are optional. Note that user defined slots that appear in the scope can only appear on the right-hand side of the ```==``` or ```in``` operators. This includes in operators when appearing together with an is operator, but excludes solitary is operators. User defined slots that appear in the scope can be used in the condition as well. If the user defined slot appears in the condition of the template, then it must have it's type annotated and the type can be of any valid Cedar Schema Type including common types. 
 
 In order to eliminate confusion, if using ```?principal``` and ```?resource``` slots they must be used exactly the same way as how they are being used currently. 
 
@@ -187,7 +187,7 @@ We restrict the usage of ```?principal``` and ```?resource``` to the current imp
 permit(principal == ?resources, action == Action::"Navigate", resource == ?principals)
 ```
 
-User defined slots that appear in the scope of the template will only be allowed to link with entity types. User defined slots that appear only in the condition of the template will only be allowed to be linked with values, this corresponds with the ```RestrictedExpression``` type in ```cedar-policy-core```. 
+User defined slots that appear in the scope of the template will only be allowed to link with Entity types. User defined slots that appear only in the condition of the template will only be allowed to be linked with values, this corresponds with the ```RestrictedExpression``` type in ```cedar-policy-core```. 
 
 For users that do not use a schema, there is no notion of common types as common types only appear when using a schema. 
 
@@ -303,10 +303,15 @@ By moving the type annotations to the Schema file, the notion of types can all b
 1. What should the syntax be for supplying aribtrary bound variables be. There was some discussion of it [here](https://github.com/cedar-policy/rfcs/pull/3#issuecomment-1611845728). Initial thoughts are to ensure that the user supplies a map so there is no confusion with regards to ordering. 
 
 # Changelog since 6/2
-## Letting users define slots in the scope if they are used in the same way as how ```?principal``` and ```?resource``` are used today. 
-Pros: 
-1. Allows for users to define more suggestive names rather than using ```?principal``` and ```?resource```. 
-2. Gives a solution to the problem of confusing ```?principal``` and ```?resource``` when used in the condition of the template.  
+
+1. User defined slots are allowed to appear in the scope if they are used in the same way as how ```?principal``` and ```?resource``` is currently being used. User defined slots have different rules depending on whether or not they appear in the scope. If the user defined slot appears in the scope then it's type annotations are optional. However if provided, it must be of an Entity type. User defined slots that appear in the scope can be used in the condition as well. If the user defined slot appears in the condition of the template, then it must have it's type annotated and the type can be of any valid Cedar Schema Type including common types. 
+
+2. ```?principal``` and ```?resource``` will be treated the same as how it is currently being used. This means that you will not be able to use it in the condition of the template nor supply type annotations. 
+
+## Pros: 
+1. Allows for users to define more suggestive names in the scope rather than using ```?principal``` and ```?resource```. 
+2. Users aren't allowed to use ```?principal``` and ```?resource``` in the condition, so they can't be confused with the variables of the same name. This use case can still be done if the user provides their own names. 
 3. Makes clearer the distinction between ```?principal``` and ```?resource``` vs. user defined slots. 
-Cons:
-1. It might be confusing why ```?principal``` and ```?resource``` aren't treated the same as user defined slots. 
+
+## Cons:
+1. It might be confusing why ```?principal``` and ```?resource``` aren't treated the same as user defined slots. However, by doing so its gets rid of the user needing to remember corner cases.
