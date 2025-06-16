@@ -143,7 +143,7 @@ Suppose there are professors with dual appointments under two different departme
 ```
 namespace University {
     entity Person = {
-        graduationDate: dateTime
+        graduationDate: datetime
     };
     entity Department;
     entity InternalDoc in Department;
@@ -152,7 +152,7 @@ namespace University {
 action View appliesTo {
     principal: University::Person,
     resource: University::InternalDoc,
-    context: { date: dateTime }
+    context: { date: datetime }
 }
 ```
 
