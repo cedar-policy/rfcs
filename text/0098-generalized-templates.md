@@ -160,7 +160,7 @@ action View appliesTo {
 ```
 template(?department1: University::Department, ?department2: University::Department) => 
 permit(
-  principal == ?principal
+  principal == ?principal,
   action == Action::"View",
   resource 
 ) when {
