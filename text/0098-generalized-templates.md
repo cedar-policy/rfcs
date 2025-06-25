@@ -199,6 +199,7 @@ Below I provide a brief explanation of how Cedar's typechecker will work for use
 
 Consider this schema and template:
 
+#### Schema 
 ```
 namespace FS {
     entity Disk = {
@@ -213,7 +214,10 @@ action Navigate appliesTo {
     principal: FS::Person,
     resource: [FS::Disk, FS::Folder, FS::Document],
 };
+```
 
+#### Template
+```
 permit (principal == ?person, action == Action::"Navigate", resource in ?fs)  
 when { 
   ?fs has storage && ?fs.storage == 5 
