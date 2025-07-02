@@ -113,6 +113,9 @@ Cedar policies are designed to be easy to read and understand by both technical 
 
 ## Detailed design
 
+If any of the arguments passed to `.isInRange` are not of the `ipaddr` type, a type error should be returned and evaluation of this policy be skipped. This is similar to the behavior of the in operator where the evaluator always throws a type error if there exists an ill-typed element even if certain previous element evaluators to true.
+
+
 This is the bulk of the RFC. Explain the design in enough detail for somebody familiar with Cedar to understand, and for somebody familiar with the implementation to implement. This should get into specifics and corner-cases, and include examples of how the feature is used. Any new terminology should be defined here.
 
 // TODO
