@@ -113,12 +113,11 @@ Cedar policies are designed to be easy to read and understand by both technical 
 
 ## Detailed design
 
-If any of the arguments passed to `.isInRange` are not of the `ipaddr` type, a type error should be returned and evaluation of this policy be skipped. This is similar to the behavior of the in operator where the evaluator always throws a type error if there exists an ill-typed element even if certain previous element evaluators to true.
+Implementing this RFC requires extending the parser, evaluator, typechecker, and symbolic compiler to allow `.isInRange` to take one or more arguments. Since `.isInRange` is an extension function, there is no need to change the AST, since the AST nodes for extension functions already take as input a list of arguments.
 
+The evaluator should be modified so that it no longer forces `.isInRange` to have exactly one argument. Instead, the evaluator checks that at least one argument is provided and that all provided arguments are of type ipaddr. If not, the evaluation errors. Otherwise, the evaluator checks if the receiver IP address is in the range of any argument IP addresses.
 
-This is the bulk of the RFC. Explain the design in enough detail for somebody familiar with Cedar to understand, and for somebody familiar with the implementation to implement. This should get into specifics and corner-cases, and include examples of how the feature is used. Any new terminology should be defined here.
-
-// TODO
+The typechecker and symbolic compiler should be modified similarly to the evaluator.
 
 ## Drawbacks
 
