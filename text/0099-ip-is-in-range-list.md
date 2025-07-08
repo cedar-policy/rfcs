@@ -106,10 +106,12 @@ And we can represent the variadic expression as follows
 Making the `.isInRange` operator variadic is motivated by several key factors that align with Cedar's goals of expressiveness and readability.
 
 ### Smaller JSON Formatted Policies
-The current method of chaining `.isInRange()` calls with `||` operators creates a large and object tree that can quickly exceeded the stack depth and recursion limit of systems. The use of a variadic operator would allow for the reduction in not only the policy objet's size.
+The current method of chaining `.isInRange()` calls with `||` operators creates a large and object tree that can quickly exceeded the stack depth and recursion limit of systems. The use of a variadic operator would allow for the reduction in not only the policy objet's size, but also the overall tree depth (the origin of this RFC).
 
 ### Improved Policy Readability and Authoring
-Cedar policies are designed to be easy to read and understand by both technical and non-technical stakeholders. Chaining `.isInRange()` calls with `||` operators creates syntactically complex expressions that obscure the simple intent of "is this IP in our allowlist?". As the list of IP ranges grows, the policy becomes increasingly unwieldy, increasing cognitive load and the likelihood of authoring errors, such as typos or misplaced logical operators. The proposed operator replaces a complex boolean expression with a single, declarative function call, significantly improving the clarity and conciseness of the policy.
+Cedar policies are designed to be easy to read and understand by both technical and non-technical stakeholders. Chaining `.isInRange()` calls with `||` operators creates syntactically complex expressions that obscure the simple intent of "is this IP in our allowlist?". As the list of IP ranges grows, the policy becomes increasingly unwieldy. The proposed operator replaces a complex boolean expression with a single, declarative function call, significantly improving the clarity and conciseness of the policy.
+
+It should be explicitly documented that this operator performs an OR operation among the ranges provided, such that the provided IP address is in at least one of the listed ranges, not all of them.
 
 ## Detailed design
 
@@ -119,11 +121,13 @@ The evaluator should be modified so that it no longer forces `.isInRange` to hav
 
 The typechecker and symbolic compiler should be modified similarly to the evaluator.
 
+Similar to other functions, the arguments should be eagerly evaluated. In the event that an error occurs, or one of the arguments passed to the function is not an IP address, the function call should produce an error.
+
 ## Drawbacks
 
 * __Increased Language Surface Area:__ Any new feature adds to the complexity of the language. However, the proposed operator's logic is a minimal change, making it an intuitive and easily understood addition rather than a complex new concept.
 
-* __Implementation Effort:__ This is a substantial feature that requires coordinated development effort across the cedar core repository (parser, validator, evaluator) and the cedar-spec repository for the formal model. This is a standard and expected cost for any significant language enhancement, similar to the effort required for features like the is operator.   
+* __Implementation Effort:__ This is a substantial feature that requires coordinated development effort across the cedar core repository (parser, validator, evaluator) and the cedar-spec repository for the formal model. This is a standard and expected cost for any significant language enhancement, similar to the effort required for features like the isEmpty operator.
 
 ## Alternatives
 
