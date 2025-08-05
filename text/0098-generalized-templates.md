@@ -75,7 +75,7 @@ namespace FS {
     entity Folder;
     entity Document in Folder;
     entity Person = {
-        owned_documents: Set<Document>
+        owned_folders: Set<Folder>
     };
 }
 
@@ -88,7 +88,7 @@ action AccessDocument appliesTo {
 #### Template
 ```
 permit(principal, action == Action::"AccessDocument", resource in ?resource) { 
-    ?resource in principal.owned_documents
+    ?resource in principal.owned_folders
 }
 ```
 
