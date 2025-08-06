@@ -22,26 +22,19 @@ Create a specification that recommends a JSON descriptor file to store Cedar pol
 
 ## Motivation
 
-
-_Why are we doing this? What use cases does it support? What is the expected outcome?_
-
-_Please focus on explaining the motivation so that if this RFC is not accepted, the motivation could be used to develop alternative solutions. In other words, enumerate the constraints you are trying to solve without coupling them too closely to the solution you have in mind._
-
-------
-
 The proposal in this RFC targets the following constraint:
 
 ### Lack of a recommended method to co-locate and bind policies, schema, and other information
 
 Cedar does not prescribe any method or system that co-locates and binds together the information about the schema, and the policies that use that schema. In Cedar, a policy's binding with its schema happens at the time of evaluation. This approach gives flexibility to combine any schema with any policy at evaluation time. But in practice, more often than not, the policies are targeted to a specific schema, which they use every time. 
 
-In light of this fact, not having a prescribed method of co-location and binding the policy, schema and other information has the following drawbacks:
+The following drawbacks stem from not having a prescribed method of co-location and binding the policy, schema, and other information:
  
-* Versioning: in the audit logs to create a cryptographic chain of custody, it's critical to know the exact version of the policies at evaluation time. Formally binding the policies and schema makes the audit logs more clear
-* Productivity: Developers will have to separately map all the assets individually. Federated identity protocols like SAML and OpenID typically bundle entity metadata, which simplifies both development and operations
-* Risk: The lack of a formal binding increases the risk of error, e.g., using the wrong schema or schema version
+* **Versioning**: in the audit logs to create a cryptographic chain of custody, it's critical to know the exact version of the policies at evaluation time. Formally binding the policies and schema makes the audit logs more clear
+* **Productivity**: Developers will have to separately map all the assets individually. Federated identity protocols like SAML and OpenID typically bundle entity metadata, which simplifies both development and operations
+* **Risk**: The lack of a formal binding increases the risk of error, e.g., using the wrong schema or schema version
 
-This lack of a prescribed method for co-locating and binding the policy, schema and other information together, creates more pain points for large organizations. Large organizations invariably see a multitude of policies and corresponding schemas. To maintain order, organizations will establish their own conventions and structures for storage policies and schemas. Invariably, this will result in inconsistent storage structures across different organizations or within different teams in the same organization.
+This lack of a prescribed method creates even more pain for large organizations, as they have to deal with a multitude of policies and corresponding schemas. To maintain order, organizations will establish their own conventions and structures for storage policies and schemas. Invariably, this will result in inconsistent storage structures across different organizations or within different teams in the same organization.
 
 Such inconsistency in methods used by organizations will create the following systemic issues in the Cedar ecosystem:
 
@@ -53,7 +46,7 @@ Such inconsistency in methods used by organizations will create the following sy
 
 This RFC proposes to create a new "policy store" specification. The specification will recommend a file descriptor format that contains all information required to evaluate an authz request. 
 
-Sample policy-store-descriptor.json structure--only an illustrative hypothetical sample--check below [design](detailed-design) for the details.
+See the sample content of a descriptor file below. This is only an illustrative example. Check [design](detailed-design) section for more details.
 
 ```
 {
@@ -74,7 +67,7 @@ Sample policy-store-descriptor.json structure--only an illustrative hypothetical
 ## Benefits
 
 ### Easier for End Users
-Having one one file versus three lowers the transaction costs for end-users of Cedar. As working with policies and schema is quite common, the cumulative productivity benefit of a small optimizations can add up! 
+Having one file versus three(policies, schema, etc) lowers the transaction costs for end-users of Cedar. As working with policies and schema is quite common, the cumulative productivity benefit of a small optimizations can add up! 
 
 ### Strong versioning
 
@@ -96,9 +89,11 @@ A robust Cedar third party developer ecosystem will help drive broader adoption 
 
 ## Detailed design
 
-* [Field descriptions](#field-descriptions) below define each field in the JSON structure. 
-* The [JSON schema](#json-schema-for-the-policy-store) provides an accurate structure of the policy store. 
-* Refer to the policy store [examples](#policy-store-examples) to help visualize the policy store in real-life usage.
+Content structure of the policy store descriptor file is detailed in three sections below.
+
+* [Field descriptions](#field-descriptions) section describes each field in the policy store's JSON structure. 
+* The [JSON schema](#json-schema-for-the-policy-store) section provides an accurate structure of the policy store's JSON structure. 
+* Refer to the policy store file [examples](#policy-store-examples) to help visualize the policy store in real-life usage.
 
 ### Field Descriptions
 
@@ -125,7 +120,7 @@ The structure below loosely follows policy store JSON structure, minus some stru
 
 ##### Trusted issuers
 
-The `trusted_issuers` field is OPTIONAL. It contains information about a domain that mints JWT tokens. A store can have many trusted issuers, each who issue different kinds of tokens. Specifying the trusted issuers enables Cedar-based PDPs to establish the sources of truth who can supply evidence to satisfy policies. The signed tokens from trusted issuers are essential to establish a cryptographic chain of custody that compliments policy store versioning, proven delivery of the policy store, and secure deliver of decision logs. 
+OPTIONAL. It contains information about a domain that mints JWT tokens. A store can have many trusted issuers, each who issue different kinds of tokens. Specifying the trusted issuers enables Cedar-based PDPs to establish the sources of truth who can supply evidence to satisfy policies. The signed tokens from trusted issuers are essential to establish a cryptographic chain of custody that compliments policy store versioning, proven delivery of the policy store, and secure deliver of decision logs. 
 
 ###### Claims to schema mapping
 
