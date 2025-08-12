@@ -176,7 +176,7 @@ Currently, how Cedar's typechecker works is by enumerating all possible request 
 
 Under each individual enumeration, we now check to see if these respective assignment of types to variables and user defined slots evaluates to a boolean. If every enumeration does, then our template passes the typechecker, otherwise it fails. With ```?principal``` and ```?resource``` now appearing in the condition of the template, we would just need to use the type supplied by the request environment to type check it. 
 
-Since user defined slots are required to have their types annotated, we do not need to perform this enumeration. Instead, now we use the type supplied by the user  and see if the template evaluates to a boolean type.
+Since user defined slots are required to have their types annotated, we do not need to perform this enumeration. Instead, now we use the type supplied by the user and see if the template evaluates to a boolean type.
 
 Note: Typed slots can only be instantiated with value types. In the implementation this corresponds to the ```RestrictedExpression``` type. 
 
