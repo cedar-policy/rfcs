@@ -87,9 +87,9 @@ action AccessDocument appliesTo {
 
 #### Template
 ```
-permit(principal, action == Action::"AccessDocument", resource in ?resource) { 
+permit(principal, action == Action::"AccessDocument", resource in ?resource) when { 
     ?resource in principal.owned_folders
-}
+};
 ```
 
 ### Example 3
