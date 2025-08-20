@@ -5,6 +5,10 @@
 * Dhaval Desai (@ossdhaval)
 * Michael Schwartz (@nynymike)
 
+#### Contributors
+
+* Victor Moreno (@Swolebrain)
+
 ## Related issues and PRs
 
 - Reference Issues: None
@@ -18,7 +22,7 @@
 
 ## Summary
 
-Create a specification that recommends a JSON descriptor file to store Cedar policies, schemas, default entities, and other relevant information.
+Create a specification that recommends a structured directory format to store Cedar policies, schemas, default entities, and other relevant information. The specification supports both a developer-friendly directory structure for development and editing, and a compressed archive format for distribution and deployment. Each policy and template is stored as an individual human-readable file, enabling better version control, IDE support, and collaborative development workflows.
 
 ## Motivation
 
@@ -26,11 +30,11 @@ The proposal in this RFC targets the following constraint:
 
 ### Lack of a recommended method to co-locate and bind policies, schema, and other information
 
-Cedar does not prescribe any method or system that co-locates and binds together the information about the schema, and the policies that use that schema. In Cedar, a policy's binding with its schema happens at the time of evaluation. This approach gives flexibility to combine any schema with any policy at evaluation time. But in practice, more often than not, the policies are targeted to a specific schema, which they use every time. 
+Cedar does not prescribe any method or system that co-locates and binds together the information about the schema and the policies that use that schema. This approach gives flexibility to combine any schema with any policy at evaluation time. But in practice, more often than not, the policies are targeted to a specific schema, which they use every time. 
 
 The following drawbacks stem from not having a prescribed method of co-location and binding the policy, schema, and other information:
  
-* **Versioning**: in the audit logs to create a cryptographic chain of custody, it's critical to know the exact version of the policies at evaluation time. Formally binding the policies and schema makes the audit logs more clear
+* **Versioning**: In the audit logs to create a cryptographic chain of custody, it's critical to know the exact version of the policies and the schema used at evaluation time. For example, when using schema-based entity parsing. Formally binding the policies and schema makes the audit logs more clear.
 * **Productivity**: Developers will have to separately map all the assets individually. Federated identity protocols like SAML and OpenID typically bundle entity metadata, which simplifies both development and operations
 * **Risk**: The lack of a formal binding increases the risk of error, e.g., using the wrong schema or schema version
 
@@ -44,215 +48,303 @@ Such inconsistency in methods used by organizations will create the following sy
 
 ### Proposed solution
 
-This RFC proposes to create a new "policy store" specification. The specification will recommend a file descriptor format that contains all information required to evaluate an authz request. 
+This RFC proposes to create a new "policy store" specification. The specification will recommend a structured format that contains all information required to evaluate an authz request.
 
-See the sample content of a descriptor file below. This is only an illustrative example. Check [design](detailed-design) section for more details.
+The policy store can be distributed in two formats:
+
+1. **Directory Structure Format**: A folder-based approach where each component (policies, templates, schema, entities) is stored as individual files within a structured directory hierarchy
+2. **Archive Format**: A compressed archive (zip file) with the file extension `.cjar`, containing the same directory structure for easy distribution and deployment
+
+See the sample directory structure below:
 
 ```
-{
-    "cedar_version": "4.4.0",
-    "policy_stores": {
-        "9e96b204911d1c3": {
-            "name": "Acme Analytics Web Application",
-            "description": "Acme's premier tool for counting narwhals, doves and gorns.",
-            "policies": {"a270f688133cd00": "base64-content",...},
-            "trusted_issuers": {...},
-            "schema": "base64-content"
-            "default_entities": {"1694c954f8d9": "base64-content",...}
-        }
-    }
-}
+policy-store/
+├── metadata.json                    # Policy store metadata
+├── manifest.json                    # Inventory of files
+├── schema.cedarschema               # Cedar schema file
+├── policies/                        # Individual policy files
+│   ├── policy-001.cedar
+│   ├── policy-002.cedar
+│   └── ...
+├── templates/                       # Policy template files
+│   ├── template-001.cedar
+│   └── ...
+├── entities/                        # Default entity files
+│   ├── organizations.json
+│   ├── roles.json
+│   └── ... 
+└── trusted-issuers/                 # Trusted issuer configurations
+    ├── issuer-001.json
+    └── ...
 ```
+
+For distribution, this directory structure can be packaged as a zip file with the `.cjar` file extension, providing a single deployable unit while maintaining the benefits of individual file organization.
 
 ## Benefits
 
-### Easier for End Users
-Having one file versus three(policies, schema, etc) lowers the transaction costs for end-users of Cedar. As working with policies and schema is quite common, the cumulative productivity benefit of a small optimizations can add up! 
+### Developer-Friendly Organization
+The folder-based structure provides several advantages for developers:
+* **Individual file editing**: Each policy and template can be edited as a separate file, enabling better IDE support, syntax highlighting, and version control
+* **Granular version control**: Git and other VCS systems can track changes to individual policies, providing clearer diff views and blame information
+* **Modular development**: Teams can work on different policies simultaneously without merge conflicts
+* **Easier debugging**: Issues can be traced to specific policy files rather than searching through large JSON blobs
+
+### Flexible Distribution Options
+* **Development format**: Use the directory structure during development for maximum flexibility
+* **Deployment format**: Package as a `.cjar` zip file for atomic deployment and distribution
+* **Hybrid approach**: Tools can work with either format, converting between them as needed
 
 ### Strong versioning
 
 * For forensic analysis of an audit log, you must know the exact version of the policies and schema in use at the time of the decision. 
 * Versioning provides an opportunity for review and governance. For example, the CISO may want to review the policies of a certain application and then review all subsequent changes. Versioning aligns with existing change management and CI/CD pipelines.
-* Strong versioning aligns with cloud native declartive syntax goals, making the deployment of new code and rollback to old code easier.
+* Strong versioning aligns with cloud native declarative syntax goals, making the deployment of new code and rollback to old code easier.
+* **File-level versioning**: Individual policies can be versioned independently, allowing for more granular change tracking
 
 ### Create a self-contained unit
 
-The policy store standardizes the JSON schema of the policy store metadata. This helps with deployment, keeping several elements that should not be separated bundled together as one unit. 
+The policy store standardizes the structure and metadata format. This helps with deployment, keeping several elements that should not be separated bundled together as one unit, whether as a directory structure or compressed archive.
 
 ### Policy grouping and separation of concern
 
-Organisations may create a policy store to group shared policies. This could perhaps help organizations maintain a master set of policies for certain types of applications, for example, a policy store that applies to all Internet-facing web applications. 
+Organizations may create a policy store to group shared policies. This could perhaps help organizations maintain a master set of policies for certain types of applications, for example, a policy store that applies to all Internet-facing web applications. The file-based structure makes it easier to organize policies by domain, team, or functionality.
 
 ### Interoperable tools and knowledge
 
-A robust Cedar third party developer ecosystem will help drive broader adoption of Cedar. A standard policy store format will promote interoperability of third-party tools. 
+A robust Cedar third party developer ecosystem will help drive broader adoption of Cedar. A standard policy store format will promote interoperability of third-party tools. The file-based approach is more accessible to standard development tools and workflows. 
 
 ## Detailed design
 
-Content structure of the policy store descriptor file is detailed in three sections below.
+The policy store specification defines both a directory structure format and an archive format. The content structure is detailed in three sections below:
 
-* [Field descriptions](#field-descriptions) section describes each field in the policy store's JSON structure. 
-* The [JSON schema](#json-schema-for-the-policy-store) section provides an accurate structure of the policy store's JSON structure. 
-* Refer to the policy store file [examples](#policy-store-examples) to help visualize the policy store in real-life usage.
+* [Directory Structure](#directory-structure) section describes the folder organization and file naming conventions
+* [Metadata Format](#metadata-format) section describes the metadata.json file structure
+* [Archive Format](#archive-format) section describes how the directory structure is packaged for distribution
+* [Examples](#policy-store-examples) section provides concrete examples of policy stores in both formats
 
-### Field Descriptions
+### Directory Structure
 
-The structure below loosely follows policy store JSON structure, minus some structural elements removed for clarity.
-
-- `cedar_version`: The version of the CEDAR policy language used to write policies in this policy store.
-- `policy_stores`: A mapping of policy store identifiers (hex hashes) to their configurations. 
-  - `<policy_store_id>`: A single policy store identified by its unique hash key.
-    - `name`: A human-readable name for the policy store.
-    - `description`: An optional description for the policy store.
-    - `policies`: A mapping of policy IDs to their definitions. A policy store can have multiple policies.
-      - `<policy_id>`: A single policy object identified by its unique ID.
-        - `description`: Optional description of the policy.
-        - `creation_date`: ISO 8601 formatted timestamp indicating when the policy was created.
-        - `policy_content`: base64-encoded CEDAR policy content.
-    - `trusted_issuers`: A mapping of trusted issuer IDs to their metadata.
-      - `<issuer_id>`: unique hash to identify a trusted issuer
-        - `name`: Name of the trusted issuer.
-        - `description`: A human-readable description of the issuer
-        - `openid_configuration_endpoint`: OpenID Connect discovery endpoint URL for this issuer.
-        - More fields can be added to describe the trusted issuer and token metadata
-    - `schema`: base64-encoded Cedar schema used by policies in this store. There can be only one schema per policy store.
-    - `default_entities`: A mapping of entity IDs to base64-encoded JSON entity data. 
-
-##### Trusted issuers
-
-OPTIONAL. It contains information about a domain that mints JWT tokens. A store can have many trusted issuers, each who issue different kinds of tokens. Specifying the trusted issuers enables Cedar-based PDPs to establish the sources of truth who can supply evidence to satisfy policies. The signed tokens from trusted issuers are essential to establish a cryptographic chain of custody that compliments policy store versioning, proven delivery of the policy store, and secure deliver of decision logs. 
-
-###### Claims to schema mapping
-
-OPTIONAL. Different issuers may use different claims to convey the same information, e.g. `STATE` v. `ST`. The trusted issuer metadata helps Cedar users normalize such differences by defining how the JWT claims of issuers map to shared Cedar entity attributes, and how to parse strings sent as JWT token claims.
-
-##### Default Entities
-
-OPTIONAL. A JSON object that contains base64 encoded JSON entity data. 
-
-The default entities JSON is used to capture static resource entities, for example organization information that doesn't frequently change. This enables reviews and a consistent change control process (like git) for resource information that is important for policy. 
-
-- Reusability of entities. The default entities have unique identifiers that make the reuse of such entities easier across policies. 
-
-Sample default entity JSON:
+The policy store follows a standardized directory structure:
 
 ```
+policy-store-root/
+├── metadata.json                    # Required: Policy store metadata
+├── manifest.json                    # Inventory of folder
+├── schema.cedarschema               # Required: Cedar schema file
+├── policies/                        # Required: Directory containing policy files
+│   ├── *.cedar                      # Individual policy files
+├── templates/                       # Optional: Directory containing template files  
+│   ├── *.cedar                      # Individual template files
+├── entities/                        # Optional: Directory containing default entities
+│   ├── *.json                       # Entity definition files
+└── trusted-issuers/                 # Optional: Directory containing issuer configs
+    ├── *.json                       # Individual issuer configuration files
+```
+
+#### File Naming Conventions
+
+- **Policy files**: Must have `.cedar` extension and contain a single Cedar policy
+- **Template files**: Must have `.cedar` extension and contain a single Cedar template
+- **Entity files**: Must have `.json` extension and contain entity definitions in Cedar JSON format
+- **Issuer files**: Must have `.json` extension and contain trusted issuer configurations
+- **Schema file**: Must be named `schema.cedarschema` and contain the Cedar schema
+- **Metadata file**: Must be named `metadata.json` and contain policy store metadata
+- **Archive file**: Must have `.cjar` suffix
+
+#### File Content Requirements
+
+- **Policy files**: Each file must contain exactly one Cedar policy with an `@id()` annotation
+- **Template files**: Each file must contain exactly one Cedar template with an `@id()` annotation  
+- **Entity files**: Each file contains a JSON array of entity definitions or a single entity definition
+- **Schema file**: Contains the Cedar schema in `.cedarschema` format
+- **Metadata file**: Contains policy store metadata in JSON format (see Metadata Format section) 
+
+### Metadata Format
+
+The `metadata.json` file contains policy store metadata and configuration:
+
+```json
 {
-    "1694c954f8d9": {
-        "entity_id": "1694c954f8d9",
-        "o": "Acme Dolphins Division",
-        "org_id": "100129",
-        "domain": "acme-dolphin.sea",
-        "regions": ["Atlantic", "Pacific", "Indian"]
-    },
-    "74d109b20248": {
-        "entity_id": "74d109b20248",
-        "description": "2025 Price List",
-        "products": {"15020": 9.95, "15050": 14.95,}
-        "services": {"51001": 99.00, "51020": 299.00,}
-    }
+  "cedar_version": "4.4.0",
+  "policy_store": {
+    "id": "9e96b204911d1c3",
+    "name": "Acme Analytics Web Application", 
+    "description": "Acme's premier tool for counting narwhals, doves and gorns.",
+    "version": "1.2.0",
+    "created_date": "2025-01-15T10:30:00Z",
+    "updated_date": "2025-01-18T14:22:00Z"
+  }
 }
 ```
 
+#### Metadata Fields
 
+- `cedar_version`: The version of the Cedar policy language used in this policy store
+- `policy_store`: Policy store configuration object
+  - `id`: Unique identifier for the policy store (hex hash)
+  - `name`: Human-readable name for the policy store
+  - `description`: Optional description of the policy store
+  - `version`: Semantic version of the policy store content
+  - `created_date`: ISO 8601 timestamp when the policy store was created
+  - `updated_date`: ISO 8601 timestamp when the policy store was last modified
 
-### JSON Schema for the policy store
+#### Trusted Issuers
 
-[JSON Schema](https://json-schema.org/) for policy store JSON.
+Trusted issuer configurations are stored as individual JSON files in the `trusted-issuers/` directory. Each file contains information about a domain that mints JWT tokens. Specifying trusted issuers enables Cedar-based PDPs to establish the sources of truth who can supply evidence to satisfy policies.
+
+Sample trusted issuer file (`trusted-issuers/acme-idp.json`):
+
+```json
+{
+  "id": "3af079fa58a915a4d37a668fb874b7a25b70a37c03cf",
+  "name": "Acme Dolphins Division",
+  "description": "Global cetacian aquariums",
+  "configuration_endpoint": "https://acme-dolphin.sea/.well-known/openid-configuration",
+  "token_metadata": {
+    "access_token": {
+      "trusted": true,
+      "entity_type_name": "Jans::Access_token",
+      "required_claims": ["jti", "iss", "aud", "sub", "exp", "nbf"]
+    }
+  }
+}
+```
+
+##### Trusted Issuer Field Definitions
+
+**Top-level fields:**
+- `id`: Unique identifier for the trusted issuer (hex hash). Used internally by the PDP to reference this issuer configuration.
+- `name`: Short, human-readable name for the trusted issuer. Used for display and logging purposes.
+- `description`: Detailed description of the issuer, such as the organization name or identity provider type.
+- `configuration_endpoint`: Endpoint URL where the issuer publishes its configuration, including the location of the JWKS endpoints for token verification.
+
+**Token metadata fields:**
+The `token_metadata` object contains configuration for different token types that this issuer can mint. Three token types are RESERVED: `access_token`, `id_token`, and `userinfo_token`. The following claims for these token types are also RESERVED:
+
+- `trusted`: OPTIONAL - Boolean flag indicating whether tokens of this type from this issuer should be trusted by the PDP. When `false`, tokens are rejected during validation.
+- `entity_type_name`: The Cedar entity type name that represents this token type in Cedar policies. This allows policies to reference tokens as Cedar entities (e.g., `context.token_collection[0].location == "miami"`).
+- `required_claims`: OPTIONAL - Array of JWT claim names that must be present in tokens of this type for them to be considered valid. Missing required claims will cause token validation to fail.
+
+##### Extensibility
+
+The trusted issuer configuration is extensible beyond the fields shown in the sample. PDPs may define additional fields as long as the PDP implementation understands how to interpret them. Common extensions include:
+
+- **Custom token validation rules**: Additional validation logic specific to the issuer
+- **Claim mapping configurations**: Mapping JWT claims to Cedar entity attributes for normalization
+- **Role and permission mappings**: How to extract user roles from token claims
+- **Principal mapping**: Which Cedar entity types this token can represent as a principal
+- **Issuer-specific metadata**: Custom fields needed for integration with proprietary identity systems
+
+This extensibility allows the specification to support diverse identity provider ecosystems while maintaining a common foundation for interoperability.
+
+#### Default Entities
+
+Default entities are stored as individual JSON files in the `entities/` directory. These files capture static resource entities, such as organization information that doesn't frequently change.
+
+Sample entity file (`entities/organizations.json`):
+
+```json
+[
+  {
+    "uid": "Organization::acme-dolphins",
+    "attrs": {
+      "name": "Acme Dolphins Division",
+      "org_id": "100129", 
+      "domain": "acme-dolphin.sea",
+      "regions": ["Atlantic", "Pacific", "Indian"]
+    }
+  }
+]
+```
+
+### Archive Format
+
+For distribution and deployment, the policy store directory structure can be packaged as a zip archive with the file extension `.cjar`. The archive format provides:
+
+- **Atomic deployment**: Single file contains all policy store components
+- **Version control friendly**: Can be stored and versioned as a single artifact
+- **Easy distribution**: Simple to share, upload, or deploy policy stores
+- **Integrity**: Archive checksums help ensure policy store integrity
+
+#### Archive Structure
+
+The cjar zip archive contains the exact same directory structure as the folder format:
 
 ```
+policy-store.cjar
+├── metadata.json
+├── manifest.json
+├── schema.cedarschema  
+├── policies/
+│   ├── user-access.cedar
+│   ├── admin-permissions.cedar
+│   └── ...
+├── templates/
+│   ├── resource-template.cedar
+│   └── ...
+├── entities/
+│   ├── organizations.json
+│   └── ...
+└── trusted-issuers/
+    ├── jans-idp.json
+    └── ...
+```
+
+#### Archive Naming Convention
+
+Policy store archives should follow the naming pattern:
+`{policy-store-name}-{version}.cjar`
+
+Examples:
+- `acme-analytics-v1.2.0.cjar`
+- `user-management-v2.1.3.cjar`
+
+### JSON Schema for Metadata
+
+[JSON Schema](https://json-schema.org/) for the metadata.json file:
+
+```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "description": "Top-level schema representing a CEDAR policy store configuration.",
-  "required": ["cedar_version", "policy_stores"],
+  "description": "Policy store metadata configuration",
+  "required": ["cedar_version", "policy_store"],
   "properties": {
     "cedar_version": {
       "type": "string",
-      "description": "The version of the CEDAR policy language used to write policies in this policy store"
+      "description": "The version of the Cedar policy language used in this policy store"
     },
-    "policy_stores": {
+    "policy_store": {
       "type": "object",
-      "description": "A mapping of policy store identifiers (hex hashes) to their configurations",
-      "patternProperties": {
-        "^[a-fA-F0-9]{40,64}$": {
-          "type": "object",
-          "description": "A single policy store identified by its unique hash key",
-          "required": ["name", "policies", "trusted_issuers", "schema"],
-          "properties": {
-            "name": {
-              "type": "string",
-              "description": "A human-readable name for the policy store."
-            },
-            "description": {
-              "type": "string",
-              "description": "An optional description for the policy store."
-            },
-            "policies": {
-              "type": "object",
-              "description": "A mapping of policy IDs to their definitions. A policy store can have multiple policies",
-              "patternProperties": {
-                "^[a-fA-F0-9]{40,64}$": {
-                  "type": "object",
-                  "description": "A single policy object identified by its unique ID.",
-                  "required": ["description", "creation_date", "policy_content"],
-                  "properties": {
-                    "description": {
-                      "type": "string",
-                      "description": "Optional description of the policy."
-                    },
-                    "creation_date": {
-                      "type": "string",
-                      "format": "date-time",
-                      "description": "ISO 8601 formatted timestamp indicating when the policy was created."
-                    },
-                    "policy_content": {
-                      "type": "string",
-                      "description": "Base64-encoded CEDAR policy content."
-                    }
-                  }
-                }
-              },
-              "additionalProperties": false
-            },
-            "trusted_issuers": {
-              "type": "object",
-              "description": "A mapping of trusted issuer IDs to their metadata.",
-              "patternProperties": {
-                "^[a-fA-F0-9]{40,64}$": {
-                  "type": "object",
-                  "description": "Metadata for a trusted issuer identified by a unique hash.",
-                  "required": ["name"],
-                  "properties": {
-                    "name": {
-                      "type": "string",
-                      "description": "Name of the trusted issuer."
-                    },
-                    "description": {
-                      "type": "string",
-                      "description": "A human-readable description of the issuer (e.g., identity provider type)."
-                    },
-                    "openid_configuration_endpoint": {
-                      "type": "string",
-                      "format": "URI",
-                      "description": "OpenID Connect discovery endpoint URL for this issuer."
-                    },
-                    "additionalProperties": true
-                  }
-                }
-              },
-              "additionalProperties": false
-            },
-            "schema": {
-              "type": "string",
-              "description": "Base64-encoded schema associated with the policy store."
-            },
-            "default_entities": {
-              "type": "string",
-              "description": "Base64-encoded entities that contain static information needed by an application."
-            }
-          },
-          "additionalProperties": false
+      "description": "Policy store configuration",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{15,64}$",
+          "description": "Unique identifier for the policy store (hex hash)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name for the policy store"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description of the policy store"
+        },
+        "version": {
+          "type": "string",
+          "description": "Semantic version of the policy store content"
+        },
+        "created_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when created"
+        },
+        "updated_date": {
+          "type": "string", 
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when last modified"
         }
       },
       "additionalProperties": false
@@ -264,165 +356,240 @@ Sample default entity JSON:
 
 ## Policy store examples
 
-### Policy store with two policies
+### Example 1: Directory Structure Format
+
+A complete policy store for a todo application:
 
 ```
+todo-app-policy-store/
+├── metadata.json
+├── manifest.json
+├── schema.cedarschema
+├── policies/
+│   ├── alice-read-access.cedar
+│   └── jack-search-access.cedar
+├── entities/
+│   └── default-roles.json
+└── trusted-issuers/
+    ├── jans-idp.json
+    └── acb-issuer.json
+```
+
+**metadata.json:**
+```json
 {
-    "cedar_version": "4.4.0",
-    "policy_stores": {
-        "9496b204911615307f6338de8a18c6885f2370793c31": {
-            "name": "todo_app_policy_store",
-            "description": "",
-            "policies": {
-                "1310471f02198263fbd487f6b695afd929cbe830dc91": {
-                    "description": "",
-                    "creation_date": "2025-07-23T09:57:06.348765",
-                    "policy_content": "QGlkKCIiKQpwZXJtaXQocHJpbmNpcGFsID09IEphbnM6OlVzZXI6OiJBbGljZSIsIGFjdGlvbiA9PSBKYW5zOjpBY3Rpb246OiJSZWFkIiwgcmVzb3VyY2UgPT0gSmFuczo6QXBwbGljYXRpb246OiJ0b2RvIik7"
-                },
-                "2227b487ece354ac4bf822f5f0f1f083532361db2691": {
-                    "description": "",
-                    "creation_date": "2025-07-23T09:59:55.341180",
-                    "policy_content": "QGlkKCIiKQpwZXJtaXQocHJpbmNpcGFsID09IEphbnM6OlVzZXI6OiJKYWNrIiwgYWN0aW9uID09IEphbnM6OkFjdGlvbjo6IlNlYXJjaCIsIHJlc291cmNlID09IEphbnM6OlJvbGU6OiJTZWFyY2hhYmxlIik7"
-                }
-            },
-            "trusted_issuers": {
-                "3af079fa58a915a4d37a668fb874b7a25b70a37c03cf": {
-                    "name": "jans",
-                    "description": "Jans IDP",
-                    "openid_configuration_endpoint": "https://jans-host.com/.well-known/openid-configuration",
-                    "token_metadata": {
-                        "access_token": {
-                            "trusted": true,
-                            "entity_type_name": "Jans::Access_token",
-                            "user_id": "sub",
-                            "token_id": "jti",
-                            "workload_id": "rp_id",
-                            "claim_mapping": {},
-                            "required_claims": [
-                                "jti",
-                                "iss",
-                                "aud",
-                                "sub",
-                                "exp",
-                                "nbf"
-                            ],
-                            "role_mapping": "role",
-                            "principal_mapping": [
-                                "Jans::Workload"
-                            ]
-                        },
-                        "id_token": {
-                            "trusted": true,
-                            "entity_type_name": "Jans::id_token",
-                            "user_id": "sub",
-                            "token_id": "jti",
-                            "role_mapping": "role",
-                            "claim_mapping": {},
-                            "principal_mapping": [
-                                "Jans::User"
-                            ]
-                        },
-                        "userinfo_token": {
-                            "trusted": true,
-                            "entity_type_name": "Jans::Userinfo_token",
-                            "user_id": "sub",
-                            "token_id": "jti",
-                            "role_mapping": "role",
-                            "claim_mapping": {},
-                            "principal_mapping": [
-                                "Jans::User"
-                            ]
-                        },
-                        "tx_token": {
-                            "trusted": true,
-                            "entity_type_name": "Jans::Access_token",
-                            "user_id": "sub",
-                            "token_id": "jti"
-                        }
-                    }
-                },
-                "7e84b6790b6cc3a5aa8d9501295abf62d6a07bcb3665": {
-                    "name": "acb",
-                    "description": "second issuer",
-                    "openid_configuration_endpoint": "https://jans-host.com/.well-known/openid-configuration",
-                    "token_metadata": {
-                        "access_token": {
-                            "trusted": true,
-                            "entity_type_name": "Jans::Access_token",
-                            "user_id": "sub",
-                            "token_id": "jti",
-                            "workload_id": "rp_id",
-                            "claim_mapping": {},
-                            "required_claims": [
-                                "jti",
-                                "iss",
-                                "aud",
-                                "sub",
-                                "exp",
-                                "nbf"
-                            ],
-                            "role_mapping": "role",
-                            "principal_mapping": [
-                                "Jans::Workload"
-                            ]
-                        },
-                        "id_token": {
-                            "trusted": true,
-                            "entity_type_name": "Jans::id_token",
-                            "user_id": "sub",
-                            "token_id": "jti",
-                            "role_mapping": "role",
-                            "claim_mapping": {},
-                            "principal_mapping": [
-                                "Jans::User"
-                            ]
-                        },
-                        "userinfo_token": {
-                            "trusted": true,
-                            "entity_type_name": "Jans::Userinfo_token",
-                            "user_id": "sub",
-                            "token_id": "jti",
-                            "role_mapping": "role",
-                            "claim_mapping": {},
-                            "principal_mapping": [
-                                "Jans::User"
-                            ]
-                        },
-                        "tx_token": {
-                            "trusted": true,
-                            "entity_type_name": "Jans::Access_token",
-                            "user_id": "sub",
-                            "token_id": "jti"
-                        }
-                    }
-                }
-            },
-            "schema": "ewogICAgIkphbnMiOiB7CiAgICAgICAgImNv...",
-            "default_entities": {"1694c954f8d9": "ey3dIlkXdmZhs9la0...", ...}
-        }
-    }
+  "cedar_version": "4.4.0",
+  "policy_store": {
+    "id": "9496b204911615307f6338de8a18c6885f2370793c31",
+    "name": "todo_app_policy_store",
+    "description": "Policy store for the Todo application",
+    "version": "1.0.0",
+    "created_date": "2025-07-23T09:57:06.348765Z",
+    "updated_date": "2025-07-23T09:59:55.341180Z"
+  }
 }
 ```
 
+**policies/alice-read-access.cedar:**
+```cedar
+@id("alice-read-policy")
+permit(
+  principal == Jans::User::"Alice", 
+  action == Jans::Action::"Read", 
+  resource == Jans::Application::"todo"
+);
+```
+
+**policies/jack-search-access.cedar:**
+```cedar
+@id("jack-search-policy")  
+permit(
+  principal == Jans::User::"Jack",
+  action == Jans::Action::"Search", 
+  resource == Jans::Role::"Searchable"
+);
+```
+
+**schema.cedarschema:**
+```
+namespace Jans {
+  entity User = {
+    name: String,
+    email: String
+  };
+  
+  entity Application = {
+    name: String,
+    owner: User
+  };
+  
+  entity Role = {
+    name: String,
+    permissions: Set<String>
+  };
+  
+  action Read appliesTo {
+    principal: User,
+    resource: Application
+  };
+  
+  action Search appliesTo {
+    principal: User, 
+    resource: Role
+  };
+}
+```
+
+**entities/default-roles.json:**
+```json
+[
+  {
+    "uid": "Jans::Role::\"Searchable\"",
+    "attrs": {
+      "name": "Searchable",
+      "permissions": ["search", "read"]
+    }
+  }
+]
+```
+
+**trusted-issuers/jans-idp.json:**
+```json
+{
+  "id": "3af079fa58a915a4d37a668fb874b7a25b70a37c03cf",
+  "name": "jans",
+  "description": "Jans IDP",
+  "openid_configuration_endpoint": "https://jans-host.com/.well-known/openid-configuration",
+  "token_metadata": {
+    "access_token": {
+      "trusted": true,
+      "entity_type_name": "Jans::Access_token",
+      "user_id": "sub",
+      "token_id": "jti",
+      "workload_id": "rp_id",
+      "claim_mapping": {},
+      "required_claims": ["jti", "iss", "aud", "sub", "exp", "nbf"],
+      "role_mapping": "role",
+      "principal_mapping": ["Jans::Workload"]
+    },
+    "id_token": {
+      "trusted": true,
+      "entity_type_name": "Jans::id_token", 
+      "user_id": "sub",
+      "token_id": "jti",
+      "role_mapping": "role",
+      "claim_mapping": {},
+      "principal_mapping": ["Jans::User"]
+    }
+  }
+}
+```
+
+### Example 2: Archive Format
+
+The same policy store packaged as a `.cjar` zip file:
+
+**todo-app-policy-store-v1.0.0.cjar** contains the identical directory structure shown above.
+
+Tools can extract the archive to work with individual files during development, then repackage for deployment.
+
 ## Drawbacks
 
-Why should we *not* do this? Please consider:
+### Increased Complexity for Simple Use Cases
 
-There are no apparent drawbacks to creating this specification. Primarily owing to the facts below:
+The folder structure approach may be overkill for simple applications with just a few policies. The overhead of managing multiple files and directories could be burdensome for basic use cases.
 
-- Implementation cost: None, as this specification does not require any code changes in the Cedar language
-- Migration of applications using Cedar: Apps using Cedar can choose not to adopt this specification. It is voluntary. If they choose to adopt, the apps can take a gradual path to adopt this specification. Release of this specification does not force compliance or timelines on applications using Cedar. 
+### Tooling Requirements
+
+Applications will need to implement logic to:
+- Parse and validate the directory structure
+- Handle both directory and archive formats
+- Manage file-to-policy mappings
+- Validate cross-references between files
+
+### Migration Complexity
+
+Existing applications using ad-hoc policy storage methods will need to:
+- Restructure their existing policy organization
+- Update deployment pipelines to handle the new format
+- Modify policy loading and validation logic
+
+### Potential for Inconsistency
+
+With policies spread across multiple files, there's an increased risk of:
+- Inconsistent naming conventions across teams
+- Missing files during deployment
+- Broken references between policies and entities
+
+However, these drawbacks are mitigated by:
+
+- **Voluntary adoption**: Applications can choose whether to adopt this specification
+- **Gradual migration**: Apps can incrementally adopt the specification
+- **Tooling support**: Standard tooling can help validate and manage policy stores
+- **Flexibility**: Both directory and archive formats provide options for different use cases 
 
 ## Alternatives
 
-Not applicable
+### Single JSON File Format (Original Proposal)
+
+The original design proposed a single JSON file containing all policies, schemas, and metadata as base64-encoded content. While this approach provides a single deployable unit, it has several limitations:
+
+- **Poor developer experience**: Policies embedded as base64 strings are not human-readable or editable
+- **Version control issues**: Changes to individual policies result in large, opaque diffs
+- **Limited tooling support**: Standard development tools cannot provide syntax highlighting or validation for embedded policies
+- **Merge conflicts**: Multiple developers working on policies in the same JSON file will frequently encounter conflicts
+
+### Hybrid Approach
+
+A hybrid approach could support both formats:
+- Use the directory structure during development
+- Convert to JSON format for specific deployment scenarios that require a single file
+- Provide tooling to convert between formats
+
+This approach provides flexibility but increases implementation complexity.
+
+### Database-Backed Storage
+
+Instead of file-based storage, policies could be stored in a database with a standardized schema. This approach offers:
+- **Advantages**: Better querying capabilities, atomic transactions, built-in versioning
+- **Disadvantages**: Requires database infrastructure, less portable, harder to version control
+
+### Git-Based Policy Repositories
+
+Policies could be stored directly in Git repositories with minimal additional structure:
+- **Advantages**: Leverages existing Git workflows, excellent version control
+- **Disadvantages**: Requires Git infrastructure, less standardized, harder to package for deployment
+
+### Do Nothing and Wait
+
+Another alternative is to not create any standardized policy store specification at this time and wait for the Cedar ecosystem to mature further:
+- **Advantages**: 
+  - No immediate implementation burden on the Cedar team
+  - Allows more time to observe real-world usage patterns and pain points
+  - Avoids potential premature standardization that might not fit all use cases
+  - Let the community experiment with different approaches organically
+- **Disadvantages**: 
+  - Delays the benefits of standardization for tooling and interoperability
+  - May result in more entrenched ad-hoc solutions that are harder to migrate later
+  - Misses the opportunity to guide the ecosystem toward best practices early
+
+While waiting has some merit, the current pain points around policy organization, version control, and tooling integration suggest that standardization would provide immediate value to the Cedar community.
+
+The proposed folder/archive approach strikes a balance between developer experience, portability, and standardization.
 
 ## Unresolved questions
 
-None
+### Policy ID Management
+How should policy IDs be managed across the file-based format? Should they be:
+- Derived from filenames?
+- Required in `@id()` annotations?
+- Managed in a separate index file?
 
+### Template Instantiation
+How should policy templates be instantiated and linked to their concrete policies in the file-based format?
 
+### Cross-Policy Dependencies
+How should dependencies between policies be expressed and validated in the distributed file format?
 
-
-
-
+### Namespace Organization
+Should policies be organized into subdirectories by namespace, or should namespace be purely a logical construct within individual policy files?
