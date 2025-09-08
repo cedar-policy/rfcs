@@ -1,4 +1,4 @@
-# Allow Nested Namespaced in Cedar Schemas
+# Allow Nested Namespaces in Cedar Schemas
 
 ## Related issues and PRs
 
