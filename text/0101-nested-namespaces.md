@@ -224,8 +224,6 @@ namespace Foo {
   }
 ```
 
-This is the bulk of the RFC. Explain the design in enough detail for somebody familiar with Cedar to understand, and for somebody familiar with the implementation to implement. This should get into specifics and corner-cases, and include examples of how the feature is used. Any new terminology should be defined here.
-
 ### Name Resolution Algorithm
 
 Below is some pythonic pseudo-code for determining name resolution (simplified to only concern the portions of name resolution that are due to nested namespace, e.g., not dealing with specifics of common types, cedar_types, etc.).
