@@ -42,9 +42,9 @@ This lack of a prescribed method creates even more pain for large organizations,
 
 Such inconsistency in methods used by organizations will create the following systemic issues in the Cedar ecosystem:
 
+- Reduces PDP interoperability, for example makes it harder to move a policy store from Janssen Project Cedarling to Amazon Verified Permissions and vice versa. 
 - Impedes the development and deployment of third-party tools that need to access policies and schema. For instance, third-party policy analysis tools, visualization tools, or workflow integration tools like n8n. A uniform method of storing information across teams and organizations will reduce the configuration and customization burden on third-party tools.  
-- Adds overhead to achieve interoperability. For instance, a merger between two companies that use different storage methods. Tools and apps written by one organization will not be able to be deployed without the additional effort to unify policy and schema storage methods.
-- Makes it difficult for policy administrators who work with different teams of the same organisation if the teams have their policies and schema stored differently. 
+- Reduces portability, for instance, a merger between two companies that use different storage methods. Tools and apps written by one organization will not be able to be deployed without the additional effort to unify policy and schema storage methods. Also makes it difficult for policy administrators who work with different teams of the same organisation if the teams have their policies and schema stored differently. 
 
 ### Proposed solution
 
@@ -149,6 +149,7 @@ policy-store-root/
 - **Issuer files**: Must have `.json` extension and contain trusted issuer configurations
 - **Schema file**: Must be named `schema.cedarschema` and contain the Cedar schema
 - **Metadata file**: Must be named `metadata.json` and contain policy store metadata
+- **Manifest file**: Must be named `manifest.json` and contain data about files in the policy store
 - **Archive file**: Must have `.cjar` suffix
 
 #### File Content Requirements
@@ -157,7 +158,8 @@ policy-store-root/
 - **Template files**: Each file must contain exactly one Cedar template with an `@id()` annotation  
 - **Entity files**: Each file contains a JSON array of entity definitions or a single entity definition
 - **Schema file**: Contains the Cedar schema in `.cedarschema` format
-- **Metadata file**: Contains policy store metadata in JSON format (see Metadata Format section) 
+- **Metadata file**: Contains policy store metadata in JSON format (see Metadata Format section)
+- **Manifest file**: Contains an inventory of all files in the policy store for validation and integrity checking 
 
 ### Metadata Format
 
@@ -219,15 +221,17 @@ Sample trusted issuer file (`trusted-issuers/acme-idp.json`):
 - `configuration_endpoint`: Endpoint URL where the issuer publishes its configuration, including the location of the JWKS endpoints for token verification.
 
 **Token metadata fields:**
-The `token_metadata` object contains configuration for different token types that this issuer can mint. Three token types are RESERVED: `access_token`, `id_token`, and `userinfo_token`. The following claims for these token types are also RESERVED:
+The `token_metadata` object contains configuration for different token types that this issuer can mint. Each token type is identified by a domain-chosen name (such as "access_token", "id_token", "refresh_token", etc.) which serves as a semantic short name that PDPs can use to reference this specific token type. The token type name becomes a key in the `token_metadata` object, and its value contains the configuration for that token type.
 
+For each token type, the following configuration fields are available:
+
+- `entity_type_name`: REQUIRED - The Cedar entity type name that represents this token type in Cedar policies. This is required for mapping tokens to policies.
 - `trusted`: OPTIONAL - Boolean flag indicating whether tokens of this type from this issuer should be trusted by the PDP. When `false`, tokens are rejected during validation.
-- `entity_type_name`: The Cedar entity type name that represents this token type in Cedar policies. This allows policies to reference tokens as Cedar entities (e.g., `context.token_collection[0].location == "miami"`).
 - `required_claims`: OPTIONAL - Array of JWT claim names that must be present in tokens of this type for them to be considered valid. Missing required claims will cause token validation to fail.
 
 ##### Extensibility
 
-The trusted issuer configuration is extensible beyond the fields shown in the sample. PDPs may define additional fields as long as the PDP implementation understands how to interpret them. Common extensions include:
+The trusted issuer configuration is extensible beyond the fields shown in the sample. PDPs may define additional fields as long as the PDP implementation understands how to interpret them. Extensions may include:
 
 - **Custom token validation rules**: Additional validation logic specific to the issuer
 - **Claim mapping configurations**: Mapping JWT claims to Cedar entity attributes for normalization
@@ -239,14 +243,23 @@ This extensibility allows the specification to support diverse identity provider
 
 #### Default Entities
 
-Default entities are stored as individual JSON files in the `entities/` directory. These files capture static resource entities, such as organization information that doesn't frequently change.
+Default entities are stored as individual JSON files in the `entities/` directory. These files capture static resource entities, such as organization information, user groups, or action groups that don't frequently change and can be pre-loaded into the policy evaluation context.
+
+Each entity file contains a JSON array of entity definitions that follow the Cedar JSON entity format as specified in the [Cedar JSON Schema documentation](https://docs.cedarpolicy.com/schema/json-schema.html). Each entity definition must contain the following required fields:
+- `uid`: An object with `type` and `id` fields that uniquely identifies the entity
+- `attrs`: An object containing the entity's attributes and their values
+- `parents`: (Optional) An array of parent entity references for hierarchical relationships
+- `tags`: (Optional) An object containing key-value pairs for entity metadata and classification
 
 Sample entity file (`entities/organizations.json`):
 
 ```json
 [
   {
-    "uid": "Organization::acme-dolphins",
+    "uid": {
+      "type": "Organization",
+      "id": "acme-dolphins"
+    },
     "attrs": {
       "name": "Acme Dolphins Division",
       "org_id": "100129", 
@@ -256,6 +269,44 @@ Sample entity file (`entities/organizations.json`):
   }
 ]
 ```
+
+Sample entity file for action groups (`entities/action-groups.json`):
+
+```json
+[
+  {
+    "uid": {
+      "type": "Acme::ActionGroups",
+      "id": "Write"
+    },
+    "attrs": {
+      "name": "Write Operations",
+      "description": "Actions that modify data"
+    },
+    "parents": [
+      {
+        "type": "Acme::Action", 
+        "id": "add"
+      },
+      {
+        "type": "Acme::Action",
+        "id": "modify" 
+      },
+      {
+        "type": "Acme::Action",
+        "id": "delete"
+      }
+    ],
+    "tags": {
+      "category": "data-modification",
+      "risk_level": "medium",
+      "audit_required": "true"
+    }
+  }
+]
+```
+
+
 
 ### Archive Format
 
@@ -268,7 +319,7 @@ For distribution and deployment, the policy store directory structure can be pac
 
 #### Archive Structure
 
-The cjar zip archive contains the exact same directory structure as the folder format:
+The `.cjar` zip archive contains the exact same directory structure as the folder format:
 
 ```
 policy-store.cjar
@@ -351,6 +402,175 @@ Examples:
     }
   },
   "additionalProperties": false
+}
+```
+
+### JSON Schema for Trusted Issuers
+
+[JSON Schema](https://json-schema.org/) for trusted issuer configuration files:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Trusted issuer configuration",
+  "required": ["id", "name", "configuration_endpoint"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{15,64}$",
+      "description": "Unique identifier for the trusted issuer (hex hash)"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Short, human-readable name for the trusted issuer"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the issuer"
+    },
+    "configuration_endpoint": {
+      "type": "string",
+      "format": "uri",
+      "description": "Endpoint URL where the issuer publishes its configuration"
+    },
+    "token_metadata": {
+      "type": "object",
+      "description": "Configuration for different token types that this issuer can mint",
+      "patternProperties": {
+        "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+          "type": "object",
+          "description": "Token type configuration",
+          "properties": {
+            "trusted": {
+              "type": "boolean",
+              "description": "Whether tokens of this type from this issuer should be trusted by the PDP",
+              "default": true
+            },
+            "entity_type_name": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*::[a-zA-Z_][a-zA-Z0-9_]*$",
+              "description": "The Cedar entity type name that represents this token type in Cedar policies"
+            },
+            "required_claims": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true,
+              "description": "Array of JWT claim names that must be present in tokens of this type"
+            },
+
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}
+```
+
+**Note on Extension Fields**: The JSON schema above defines the core specification fields. PDPs may extend token type configurations with additional fields such as `user_id`, `token_id`, `workload_id`, `role_mapping`, `claim_mapping`, and `principal_mapping`. These extension fields should be documented by the specific PDP implementation.
+
+### JSON Schema for Entity Files
+
+[JSON Schema](https://json-schema.org/) for entity definition files:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "array",
+  "description": "Array of Cedar entity definitions",
+  "items": {
+    "type": "object",
+    "description": "Cedar entity definition",
+    "required": ["uid", "attrs"],
+    "properties": {
+      "uid": {
+        "type": "object",
+        "description": "Entity unique identifier",
+        "required": ["type", "id"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*$",
+            "description": "Entity type name"
+          },
+          "id": {
+            "type": "string",
+            "description": "Entity identifier"
+          }
+        },
+        "additionalProperties": false
+      },
+      "attrs": {
+        "type": "object",
+        "description": "Entity attributes",
+        "additionalProperties": true
+      },
+      "parents": {
+        "type": "array",
+        "description": "Parent entity references for hierarchical relationships",
+        "items": {
+          "type": "object",
+          "required": ["type", "id"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*$",
+              "description": "Parent entity type name"
+            },
+            "id": {
+              "type": "string",
+              "description": "Parent entity identifier"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "tags": {
+        "type": "object",
+        "description": "Entity metadata and classification tags",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    },
+    "additionalProperties": false
+  }
+}
+```
+
+### Manifest File Format
+
+The `manifest.json` file provides an inventory of all files in the policy store for validation and integrity checking:
+
+```json
+{
+  "policy_store_id": "9496b204911615307f6338de8a18c6885f2370793c31",
+  "generated_date": "2025-01-18T14:22:00Z",
+  "files": {
+    "metadata.json": {
+      "size": 245,
+      "checksum": "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
+    },
+    "schema.cedarschema": {
+      "size": 1024,
+      "checksum": "sha256:b3a8e0e1f9ab1bfe3a36f231f676f78bb30a519d2b21e6c530c0b86a4c4700e2"
+    },
+    "policies/alice-read-access.cedar": {
+      "size": 156,
+      "checksum": "sha256:c2d4e6f2a1b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9"
+    },
+    "entities/default-roles.json": {
+      "size": 234,
+      "checksum": "sha256:d3e5f7a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2d4e6f8a0b2c4d6e8"
+    }
+  }
 }
 ```
 
@@ -444,7 +664,10 @@ namespace Jans {
 ```json
 [
   {
-    "uid": "Jans::Role::\"Searchable\"",
+    "uid": {
+      "type": "Jans::Role",
+      "id": "Searchable"
+    },
     "attrs": {
       "name": "Searchable",
       "permissions": ["search", "read"]
@@ -459,31 +682,25 @@ namespace Jans {
   "id": "3af079fa58a915a4d37a668fb874b7a25b70a37c03cf",
   "name": "jans",
   "description": "Jans IDP",
-  "openid_configuration_endpoint": "https://jans-host.com/.well-known/openid-configuration",
+  "configuration_endpoint": "https://jans-host.com/.well-known/openid-configuration",
   "token_metadata": {
     "access_token": {
       "trusted": true,
       "entity_type_name": "Jans::Access_token",
-      "user_id": "sub",
-      "token_id": "jti",
-      "workload_id": "rp_id",
-      "claim_mapping": {},
-      "required_claims": ["jti", "iss", "aud", "sub", "exp", "nbf"],
-      "role_mapping": "role",
-      "principal_mapping": ["Jans::Workload"]
+      "required_claims": ["jti", "iss", "aud", "sub", "exp", "nbf"]
     },
     "id_token": {
       "trusted": true,
       "entity_type_name": "Jans::id_token", 
       "user_id": "sub",
-      "token_id": "jti",
       "role_mapping": "role",
-      "claim_mapping": {},
       "principal_mapping": ["Jans::User"]
     }
   }
 }
 ```
+
+*Note: Fields such as `user_id`, `role_mapping`, and `principal_mapping` are extension fields and are not part of the core policy store specification. These are here for the purposes of illustration, e.g. how a PDP might use these fields.*
 
 ### Example 2: Archive Format
 
