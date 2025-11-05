@@ -19,3 +19,7 @@ https://github.com/myusername/rfcs/blob/awesome-rfc-idea/text/0001-awesome-rfc-i
 
 <!-- FIXME -->
 [Rendered](https://github.com/USERNAME/REPONAME/blob/BRANCHNAME/text/FILENAME.md)
+
+## Checklist
+
+- [ ] Added RFC to `text/SUMMARY.md` in numerical order
