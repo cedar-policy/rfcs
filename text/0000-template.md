@@ -1,3 +1,5 @@
+<!-- Remember to add your RFC to SUMMARY.md in numerical order (feel free to delete this comment after) -->
+
 # RFC Template (Fill in your title here)
 
 ## Related issues and PRs

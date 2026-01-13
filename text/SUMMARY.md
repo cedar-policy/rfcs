@@ -22,4 +22,5 @@
 - [0076-entity-slice-validation](0076-entity-slice-validation.md)
 - [0080-datetime-extension](0080-datetime-extension.md)
 - [0082-entity-tags](0082-entity-tags.md)
+- [0095-type-aware-partial-evaluation](0095-type-aware-partial-evaluation.md)
 - [0099-ip-is-in-range-list](0099-ip-is-in-range-list.md)
