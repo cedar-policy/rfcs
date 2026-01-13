@@ -23,3 +23,4 @@
 - [0080-datetime-extension](0080-datetime-extension.md)
 - [0082-entity-tags](0082-entity-tags.md)
 - [0099-ip-is-in-range-list](0099-ip-is-in-range-list.md)
+- [0110-expand-datetime-serialization](0110-expand-datetime-serialization.md)
