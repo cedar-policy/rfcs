@@ -25,3 +25,4 @@
 - [0095-type-aware-partial-evaluation](0095-type-aware-partial-evaluation.md)
 - [0099-ip-is-in-range-list](0099-ip-is-in-range-list.md)
 - [0110-expand-datetime-serialization](0110-expand-datetime-serialization.md)
+- [0117-uint256-extension](0117-uint256-extension.md)
