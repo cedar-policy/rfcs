@@ -3,7 +3,7 @@
 ## Related issues and PRs
 
 - Reference Issues: (none)
-- Implementation PR(s): (leave this empty)
+- Implementation PR(s): [#2615](https://github.com/cedar-policy/cedar/pull/2615)
 
 ## Timeline
 
@@ -14,6 +14,7 @@
 ## Summary
 
 This RFC proposes an extension to Cedar schemas (in both JSON and human-readable Cedar syntax) to enable _sound_ validation of Cedar entities given a schema fragment (a partial Cedar schema that may reference undefined entity types and actions). The extension introduces an `external` keyword that allows schema authors to declare entity types or actions without providing their full definitions, enabling validation of entities that reference them without requiring all schema fragments to be loaded.
+The extension also introduces linking of schema.
 
 ## Basic example
 
@@ -72,6 +73,8 @@ If every external declaration has a corresponding concrete definition, then we h
 
 Otherwise, we have a partial schema with unresolved external declarations. We cannot construct a complete `Schema`, which limits what we can do with it.
 
+Linking schema should not cause any declared entity's ancestor set to grow. Linking schema should not introduce an entity type whose name shadows a primitive, and in general the linked result is held to Cedar's existing name shadowing rules. Linking happens after the common types are resolved, so common type name shadowing and duplication are permitted, and behave as if the type definitions are inlined in each individual schema being linked.
+
 **We can:**
 
 * Validate instances of any defined entity types, even if their attributes, tags, or ancestors contain references to an unresolved external entity type. For attributes and tags, we only need to check that an entity reference has the expected entity type name. Ancestors also require enough hierarchy information to determine that their types are allowed, as described below.
@@ -103,6 +106,8 @@ entity Folder in Application;
 
 we cannot tell from the document fragment that `Application` can be an ancestor of `Document`. Validating a `Document` with an `Application` ancestor using only this fragment must result in an error, not a warning, because we were unable to check its ancestor hierarchy.
 
+For the same reason, linking the two schemas above also result in an error, because the linking enlarges the ancestor set of `Document`.
+
 To reduce how often users encounter this error, we allow external entities to specify their parent types:
 
 ```
@@ -111,7 +116,7 @@ external entity Folder in Application;
 entity Document in Folder;
 ```
 
-If parent types are declared, they are used to compute the transitive closure as if they were part of a complete entity type definition. Parent types from repeated external declarations are combined. When the concrete definition is linked, every declared parent type must also be a direct parent type in that definition; the concrete definition may have additional parent types. If no parent types are declared, we conservatively treat the external entity type as having no known parent types.
+If parent types are declared, they are used to compute the transitive closure as if they were part of a complete entity type definition. Parent types from repeated external declarations are combined. When the concrete definition is linked, every declared parent type must also be a direct parent type in that definition; the concrete definition may have additional parent types, but not additional ancestors. If no parent types are declared, we conservatively treat the external entity type as having no known parent types.
 
 A mismatch can only be detected when building the complete schema. Until then, an out-of-date fragment may be less permissive than the complete schema, but validation remains sound.
 
@@ -183,9 +188,21 @@ Following the same basic design, there are some alternative syntax options to co
 
 ## API
 
-We can reflect the distinction between parsed fragments, partial schemas, and complete schemas in the type system. `SchemaFragment` remains the parsed input type and may contain arbitrary unresolved references, so it is not sufficient for validation. Combining one or more `SchemaFragment`s and checking that every unresolved reference has a corresponding external declaration produces a `PartialSchema`. Combining fragments also links external declarations with concrete definitions and checks the consistency rules described above.
+After the update, `SchemaFragment` remains the parsed input type and may contain arbitrary unresolved references, so it is not sufficient for validation.
+Combining one or more `SchemaFragment`s and checking that every unresolved reference has a corresponding external declaration produces a `Schema`.
+`Schema`s can be then used for linking, and the result of linking remains `Schema` that may contain external references.
+Linking `schema` resolves external declarations with concrete definitions and checks the consistency rules described above.
 
-A `PartialSchema` may contain unresolved external declarations, but carries enough checked information to validate instances of its defined entity types and authorization requests for its defined actions. `Schema` represents only a complete schema, meaning every external entity type and external action has a corresponding concrete definition. A `Schema` can be constructed from a `PartialSchema` only when there are no unresolved external declarations, and it is required for validating policies and for downstream tooling like type-aware partial evaluation and policy analysis. Because a `Schema` is always complete, these consumers never have to reason about unresolved declarations.
+The API also provides an `is_complete` function to check if a `Schema` has any remaining `external` declaration.
+For any complete schema, validation behavior remains unaffected.
+Sound entity validation and request validation are supported for incomplete schema.
+
+## Formal Properties
+The linker enjoys three major properties
+- Order agnostic: Linking order does not affect the result of linking, but may produce different error messages. Type alias are resolved per-schema; so name shadowing caused by 
+- Soundness: If a schema validates a request or an entity, it keeps doing so after any successful linking with any other schema.
+- Completeness: If a schema does not validates a request or an entity, then there exists another schema that completes this schema when linked, and there exists a completion that causes the validation to fail.
+In other words, request validation and entity validation cannot be more permissive without breaking soundness.
 
 ## Drawbacks
 
