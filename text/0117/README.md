@@ -26,7 +26,7 @@ reports a single sample, marked `*`.
 ## What it generates
 
 The `bound` shape: over *k* structurally identical constraints, inputs are
-bounded by 2^(N/4) and the formula claims some operand term reaches 2^(N/2)
+bounded by 2^(n/4) and the formula claims some operand term reaches 2^(n/2)
 (unsatisfiable). Two arms differ only in the operand term —
 
 - `cmp`: `x_i` — no arithmetic
@@ -49,6 +49,6 @@ The medians in the RFC were taken with:
 
 Timings are machine- and version-specific, so absolute numbers will differ on
 other hardware; the 64-bit-vs-256-bit *ratio* is the portable result. On the
-reference host `bench.py` reproduces the table's comparison-only k=32 cells
+reference host, `bench.py` reproduces the table's comparison-only *k*=32 cells
 (~0.028 s at 64 bits, ~0.124 s at 256) and the `bvmul` k=32 64-bit cell
 (~2.58 s).

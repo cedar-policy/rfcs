@@ -41,8 +41,8 @@ THE FORMULA ("bound" shape, always UNSAT)
                   (bvuge x1 (_ bv4294967296 64)))) ; ...no: UNSAT
       (check-sat)
 
-  and `gen("mul", 64, 2)` is identical except each operand becomes a product
-  of two small inputs, so the large-value claim is about (bvmul y_i x_i):
+  and `gen("mul", 64, 2)` is identical except that each operand becomes a
+  product of two small inputs, so the large-value claim is about (bvmul y_i x_i):
 
       (declare-const x0 (_ BitVec 64)) (declare-const y0 (_ BitVec 64))
       (declare-const x1 (_ BitVec 64)) (declare-const y1 (_ BitVec 64))
@@ -94,7 +94,8 @@ def gen(op, n, k):
     2^(n/4), then assert that at least one operand term reaches 2^(n/2). The
     small-input bounds make that final disjunction impossible, so the formula
     is UNSAT -- which the runner checks, guarding against a formula that is
-    accidentally trivial. Returns the full script ending in (check-sat).
+    accidentally trivial. Returns the full script, ending in (check-sat) and
+    (exit).
     """
     small = 2 ** (n // 4)   # upper bound asserted on every input
     limit = 2 ** (n // 2)   # the (unreachable) magnitude the formula claims
