@@ -26,3 +26,4 @@
 - [0099-ip-is-in-range-list](0099-ip-is-in-range-list.md)
 - [0110-expand-datetime-serialization](0110-expand-datetime-serialization.md)
 - [0116-entity-validation-schema-fragments](0116-entity-validation-schema-fragments.md)
+- [0118-action-sliced-schemas](0118-action-sliced-schemas.md)
